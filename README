@@ -1,0 +1,23 @@
+Before you can build the plugin, you will need a built version of the
+Wireshark source tree somewhere.  You can get it from:
+http://www.wireshark.org/download.html
+
+Extract the package to some folder somewhere, then run:
+./configure
+make
+
+It should work normally, unless it needs a package that you don't have, in
+which case, install it!
+
+Then in your SVN folder of this project, run our configure script.
+It requires two parameters, the path to the root folder of the wireshark
+source you just built, and a path to the place you want the output shared
+object to be placed at.  NOTE: these paths should NOT have trailing slashes
+Example:
+./configure /home/wes/mtu/design/wireshark-2.0.6 /home/wes/mtu/design
+
+If there are no errors then you can run make:
+make
+
+Note that typically, Wireshark's plugin folder is ~/.wireshark/plugins
+so you can just have the .so built there and it should work
