@@ -1,0 +1,22 @@
+INCS=-I<WIRESHARK_SRC_ROOT> -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include
+SRCS = packet-fast.c dissect.c setup.c
+
+CC   = gcc
+
+OBJS = $(foreach src, $(SRCS), $(src:.c=.o))
+
+PLUGIN_NAME = packet-fast
+PLUGIN_DIR = <WIRESHARK_OUT>
+PLUGIN      = $(PLUGIN_DIR)/$(PLUGIN_NAME).so
+
+CFLAGS = -DHAVE_CONFIG_H $(INCS) -DINET6 -D_U_=__attribute__\(\(unused\)\) -Wall -Wpointer-arith -g -DXTHREADS -D_REENTRANT -DXUSE_MTSAFE_API -fPIC -DPIC
+
+$(PLUGIN) : $(OBJS)
+	mkdir -p $(PLUGIN_DIR)
+	$(CC) -shared $(OBJS) -o $@
+
+%.o : %.c
+	$(CC) -c $(CFLAGS) $< -o $@
+
+clean:
+	rm -f $(PLUGIN) $(OBJS) Makefile

@@ -1,0 +1,12 @@
+#!/bin/bash
+if [ $# -ne 2 ]
+then
+	echo "Usage: configure path_to_wireshark_source_root so_output_path"
+	exit
+fi
+
+cp Makefile.in Makefile
+
+# using ^ instead of / because it is very unlikely ^ will show up...
+sed -i -e "s^<WIRESHARK_SRC_ROOT>^$1^g" Makefile
+sed -i -e "s^<WIRESHARK_OUT>^$2^g" Makefile
