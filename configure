@@ -2,11 +2,14 @@
 if [ $# -ne 2 ]
 then
 	echo "Usage: configure path_to_wireshark_source_root so_output_path"
-	exit
+	exit 1
 fi
 
-cp Makefile.in Makefile
+ws_dir=`readlink -f "$1"`
+out_dir=`readlink -f "$2"`
 
 # using ^ instead of / because it is very unlikely ^ will show up...
-sed -i -e "s^<WIRESHARK_SRC_ROOT>^$1^g" Makefile
-sed -i -e "s^<WIRESHARK_OUT>^$2^g" Makefile
+sed -e "s^<WIRESHARK_SRC_ROOT>^${ws_dir}^g" \
+    -e "s^<WIRESHARK_OUT>^${out_dir}^g" \
+    Makefile.in > Makefile
+

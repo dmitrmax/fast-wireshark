@@ -8,6 +8,7 @@ OBJS = $(foreach src, $(SRCS), $(src:.c=.o))
 PLUGIN_NAME = packet-fast
 PLUGIN_DIR = <WIRESHARK_OUT>
 PLUGIN      = $(PLUGIN_DIR)/$(PLUGIN_NAME).so
+TEST = test-plugin
 
 CFLAGS = -DHAVE_CONFIG_H $(INCS) -DINET6 -D_U_=__attribute__\(\(unused\)\) -Wall -Wpointer-arith -g -DXTHREADS -D_REENTRANT -DXUSE_MTSAFE_API -fPIC -DPIC
 
@@ -18,5 +19,12 @@ $(PLUGIN) : $(OBJS)
 %.o : %.c
 	$(CC) -c $(CFLAGS) $< -o $@
 
+.PHONY: test
+test:
+	# At the moment, just make it
+	make -C $(TEST)
+
 clean:
 	rm -f $(PLUGIN) $(OBJS) Makefile
+	make -C $(TEST) clean
+
