@@ -21,3 +21,9 @@ make
 
 Note that typically, Wireshark's plugin folder is ~/.wireshark/plugins
 so you can just have the .so built there and it should work
+
+Another note:
+make clean
+will clean up the detritus of the build process (INCLUDING the output .so file)
+and remove the generated Makefile, so you will have to run configure to be
+able to build again.
