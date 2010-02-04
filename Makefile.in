@@ -20,10 +20,10 @@ $(PLUGIN) : $(OBJS)
 	$(CC) -c $(CFLAGS) $< -o $@
 
 .PHONY: test
-test:
-	# At the moment, just make it
-	make -C $(TEST)
+test: $(PLUGIN)
+	make -C $(TEST) test
 
+.PHONY: clean
 clean:
 	rm -f $(PLUGIN) $(OBJS) Makefile
 	make -C $(TEST) clean

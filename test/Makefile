@@ -5,8 +5,12 @@ DFLAGS = -D_POSIX_SOURCE
 
 EXEC = client server
 
-.PHONY: default
-default: client server
+.PHONY: all
+all: client server
+
+.PHONY: test
+test: all
+	sh simple.sh 1337 tshark
 
 # Specify correct dependencies for each member of EXEC
 # (just the .c file)

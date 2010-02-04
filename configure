@@ -1,12 +1,24 @@
 #!/bin/bash
-if [ $# -ne 2 ]
+
+if [ $# -lt 1 ]
 then
-	echo "Usage: configure path_to_wireshark_source_root so_output_path"
+    cat <<EOF
+Usage: configure wireshark_src [output_dir]
+  wireshark_src - directory with wireshark source
+  output_dir - directory to output plugin
+    default: $HOME/.wireshark/plugins
+EOF
 	exit 1
 fi
 
 ws_dir=`readlink -f "$1"`
-out_dir=`readlink -f "$2"`
+
+if [ "$2" ]
+then
+    out_dir=`readlink -f "$2"`
+else
+    out_dir="$HOME/.wireshark/plugins"
+fi
 
 # using ^ instead of / because it is very unlikely ^ will show up...
 sed -e "s^<WIRESHARK_SRC_ROOT>^${ws_dir}^g" \

@@ -64,14 +64,29 @@ G_MODULE_EXPORT void plugin_reg_handoff(void)
 
 /* used for setting up the information subtree */
 static int ett_fast=-1;
-static int* ett[] = {&ett_fast};
+static int ett_fast_text=-1;
+static int* ett[] = {&ett_fast, &ett_fast_text};
+
+static int hf_fast=-1;
+static int hf_fast_text=-1;
 
 /* registers our plugin */
 void proto_register_fast(void)
 {
+    static hf_register_info hf[] =
+    {
+        { &hf_fast,
+            {"Data", "fast.data", FT_NONE, BASE_NONE,
+                NULL, 0x0, "FAST PDU", HFILL}},
+        { &hf_fast_text,
+            { "Text", "fast.text", FT_STRING, BASE_NONE,
+                NULL, 0x0, "Text", HFILL }}
+    };
+
 	/* only do this if we haven't already */
 	if(proto_fast==-1)
 	{
+        module_t* mod;
 		proto_fast=proto_register_protocol(
 			"FAST (FIX Adjusted for STreaming) Protocol", /* long name */
 			"FAST", /* short name */
@@ -79,8 +94,11 @@ void proto_register_fast(void)
 			);
 
 		/* registers our module's dissector registration hook */
-		module_t* mod=prefs_register_protocol(
+		mod=prefs_register_protocol(
 			proto_fast,proto_reg_handoff_fast);
+
+        /* registers our field array */
+        proto_register_field_array (proto_fast, hf, array_length (hf));
 
 		/* registers our subtree array */
 		proto_register_subtree_array(ett,array_length(ett));
@@ -122,8 +140,17 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
 	/* only do dissection if we are asked */
 	if(tree)
 	{
-		proto_item* ti = proto_tree_add_item(tree,proto_fast,tvb,0,-1,FALSE);
+		proto_item* ti=NULL;
+        ti=proto_tree_add_item(tree,proto_fast,tvb,0,-1,FALSE);
 		tree=proto_item_add_subtree(ti,ett_fast);
+
+        {
+            gint length;
+            guint8 *str;
+            length=tvb_reported_length(tvb);
+            str=tvb_get_ephemeral_string(tvb, 0, length);
+            proto_tree_add_string(tree, hf_fast_text, tvb, 0, length, (gchar*) str);
+        }
 
 		/* call our actual dissection function */
 		FAST_dissect(proto_fast,tvb,0,pinfo,tree);
