@@ -19,12 +19,18 @@ $(PLUGIN) : $(OBJS)
 %.o : %.c
 	$(CC) -c $(CFLAGS) $< -o $@
 
+# Run this rule on Makefile.in
+fast-wireshark-%.tar.gz:
+	find . -name .svn -prune -o -type f -not -name fast-wireshark-0.1.tar.gz -print0 \
+	| tar -cvzf "$(@)" --null -T - --transform="s:^\.:fast-wireshark-$(*):"
+
+
 .PHONY: test
 test: $(PLUGIN)
 	make -C $(TEST) test
 
 .PHONY: clean
 clean:
-	rm -f $(PLUGIN) $(OBJS) Makefile
+	rm -f $(PLUGIN) $(OBJS) Makefile *.tar.gz
 	make -C $(TEST) clean
 
