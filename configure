@@ -25,3 +25,10 @@ sed -e "s^<WIRESHARK_SRC_ROOT>^${ws_dir}^g" \
     -e "s^<WIRESHARK_OUT>^${out_dir}^g" \
     Makefile.in > Makefile
 
+if [ ! -e "$ws_dir/config.h" ]
+then
+    echo "$ws_dir/config.h does not exist, you really should \
+run ./configure in the Wireshark source directory."
+    exit 1
+fi
+
