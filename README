@@ -3,11 +3,13 @@ Wireshark source tree somewhere.  You can get it from:
 http://www.wireshark.org/download.html
 
 Extract the package to some folder somewhere, then run:
-./configure
-make
+./configure; make
 
 note that you DO NOT need to run 'make install' unless you don't have a
-version of wireshark isntalled already, obviously
+version of wireshark isntalled already, obviously.
+If you do install from source, remember to do a 'sudo ldconfig' afterwards
+to refresh your shared object cache or wireshark will not be able to find
+all its shared objects.
 
 It should work normally, unless it needs a package that you don't have, in
 which case, install it!
