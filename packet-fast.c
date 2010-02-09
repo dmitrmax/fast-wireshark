@@ -75,9 +75,9 @@ void proto_register_fast(void)
 {
     static hf_register_info hf[] =
     {
-        { &hf_fast,
+        /*{ &hf_fast,
             {"Data", "fast.data", FT_NONE, BASE_NONE,
-                NULL, 0x0, "FAST PDU", HFILL}},
+                NULL, 0x0, "FAST PDU", HFILL}},*/
         { &hf_fast_text,
             { "Text", "fast.text", FT_STRING, BASE_NONE,
                 NULL, 0x0, "Text", HFILL }}
@@ -102,6 +102,8 @@ void proto_register_fast(void)
 
 		/* registers our subtree array */
 		proto_register_subtree_array(ett,array_length(ett));
+
+		register_dissector("fast",dissect_fast,proto_fast);
 
 		/* our actual setup function defined in setup.c */
 		FAST_setup(proto_fast);
