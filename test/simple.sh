@@ -14,45 +14,64 @@ TSHARK="$2"
 
 dir=`mktemp -d` || exit 1
 textf="$dir/text"
-capf="$dir/cap"
 
-#timeout 3 
-$TSHARK -i lo -c 2 -T fields -e fast.text -l \
- 2> /dev/null \
- > "$textf" \
- &
-
-tshark_pid=$!
-sleep 1 # We must wait a sec for tshark to get ready
-
-# Run client and server
-server_text="message from server"
 client_text="message from client"
 
-./server "$server_text" $PORT > /dev/null &
-./client "$client_text" localhost $PORT > /dev/null
+cleanup_script ()
+{
+    local pids
+    pids=$(cut -d ' ' -f '2' "$dir/pids")
 
-# Should wait for tshark to exit
-wait $tshark_pid
+    echo "killing: $pids"
+    kill $pids
 
-# See if wireshark got both messages
-grep -e "$server_text" "$textf" > /dev/null && grep -e "$client_text" "$textf" > /dev/null
-successp=$?
+} 2>&1 >> "$dir/logScript"
 
-# Clean up temp files
-rm -r "$dir"
-# TODO: Do we care about cleaning up the temp file wireshark makes?
+#timeout 3 
+{
+    $TSHARK -i lo -T fields -e fast.text -l \
+     > "$dir/stdoutTshark" \
+     2>&3 \
+     &
+    # Grap TShark's pid
+    echo "tshark $!" >> "$dir/pids"
+} 3>&1 \
+| \
+{ # IN: TShark's stderr 
+    
+    # Wait for TShark to be ready
+    read -r useless || exit 1
+
+    ./server $PORT butter 2> "$dir/stderrServ" &
+    echo "server $!" >> "$dir/pids"
+} \
+| \
+{ # IN: Server's stdout
+    read -r listenerc localhost || exit 1
+    echo "we have $listenerc listeners" >> "$dir/logScript"
+    # Server is now listening
+    # So run client
+    ./client "$client_text" $PORT localhost 2> "$dir/stderrClient"
+}
+
+sleep 2
+statusp=0
+
+# See if TShark got client_text
+grep -e "$client_text" "$dir/stdoutTshark" \
+ > /dev/null \
+|| statusp=1
 
 # Display test result
-if [ $successp -eq 0 ]
+if [ $statusp -eq 0 ]
 then
-    success_txt="PASSED"
+    echo "ALL TESTS PASSED"
+    # TODO: Do we care about cleaning up the temp file wireshark makes?
 else
-    success_txt="FAILED"
+    echo "SOME TESTS FAILED"
+    echo "check $dir for relevant files"
 fi
 
-echo "Simple text exchange: $success_txt"
-
-# Exit appropriately
-exit $successp
+cleanup_script
+exit $statusp
 

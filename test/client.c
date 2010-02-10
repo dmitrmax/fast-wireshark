@@ -8,98 +8,110 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
-int udp_connect (const char* host,
-                 const char* service)
+void send_string (int sock, char* init_strOut)
 {
-    struct addrinfo crit;
+    static char*  strOut = 0;
+    static size_t lenOut = 0;
 
-    memset (&crit, 0, sizeof (struct addrinfo));
+    ssize_t bytecOut;
 
-    crit.  ai_family = AF_UNSPEC;
-    crit.ai_socktype = SOCK_DGRAM;
-    crit.ai_protocol = IPPROTO_UDP;
+        /* Sneaky variable initialization */
+    if (! sock)
+    {
+        strOut = init_strOut;
+        lenOut = strlen (strOut);
+        return;
+    }
+
+    fprintf (stderr, "Woot connected to a socket!\n");
+
+
+    bytecOut = send (sock, strOut, lenOut, 0);
+    if (0 > bytecOut)
+    {
+        perror ("send() failed");
+    }
+}
+
+void
+    spawn_senders
+(const struct addrinfo* crit,
+ const char* host,
+ const char* service,
+ void (* sender_fn) (int))
+{
+    struct addrinfo* list;
+    struct addrinfo* addr;
 
     {
         int rtn;
-        struct addrinfo* addr;
-        struct addrinfo* list = 0;
-        int sock = -1;
-
-        rtn = getaddrinfo (host, service, &crit, &list);
-
-        if (rtn)
+        rtn = getaddrinfo (host, service, crit, &list);
+        if (rtn != 0)
         {
-            perror ("No addr info");
-            exit (EXIT_FAILURE);
+            fprintf (stderr, "getaddrinfo() failed: %s\n",
+                     gai_strerror (rtn));
+            return;
         }
-
-        for (addr = list; addr; addr = addr->ai_next)
-        {
-            sock = socket (addr->ai_family,
-                           addr->ai_socktype,
-                           addr->ai_protocol);
-            if (sock < 0)
-                continue;
-
-            if (0 == connect (sock, addr->ai_addr, addr->ai_addrlen))
-                break; /* connection succeeded */
-
-
-            close (sock); /* connection failed, try next >:( */
-            sock = -1;
-        }
-
-
-        freeaddrinfo (list);
-        return sock;
     }
+
+    for (addr = list; addr; addr = addr->ai_next)
+    {
+        int sock;
+        sock = socket (addr->ai_family,
+                       addr->ai_socktype,
+                       addr->ai_protocol);
+        if (0 > sock)
+        {
+            perror ("socket() failed");
+            continue;
+        }
+
+        if (0 > connect (sock, addr->ai_addr, addr->ai_addrlen))
+        {
+            perror ("connect() failed");
+            close (sock);
+            continue;
+        }
+
+        sender_fn (sock);
+        close (sock);
+    }
+
+    freeaddrinfo (list);
 }
 
 int main (int argc, char** argv)
 {
-    char* strOut;
-    int sock;
+    char* message;
+    char* host;
+    char* service;
+    struct addrinfo crit;
 
-    if (argc != 4)
+    if (3 > argc)
     {
-        fputs ("Usage:  client MESSAGE SERVER PORT\n", stderr);
+        fputs ("./client message port [host]\n", stderr);
         exit (EXIT_FAILURE);
     }
+    message = argv[1];
+    service = argv[2];
 
-    strOut = argv[1];
-    sock = udp_connect (argv[2], argv[3]);
+    if (4 <= argc)  host = argv[3];
+    else            host = "localhost";
 
-    if (sock < 0)
-    {
-        perror ("Socket open failed");
-        exit (EXIT_FAILURE);
-    }
+    memset (&crit, 0, sizeof (struct addrinfo));
 
-    {
-        ssize_t bytecIn = 0;
-        ssize_t bytecOut;
-        size_t lenOut = strlen (strOut);
+        /* crit.  ai_family = AF_INET6; */
+    crit.  ai_family = AF_UNSPEC;
+    crit.ai_socktype = SOCK_DGRAM;
+    crit.ai_protocol = IPPROTO_UDP;
 
-        printf ("Sending: %s\n", strOut);
-        bytecOut = send (sock, strOut, lenOut, 0);
-        assert (bytecOut >= 0);
+        /* Initialize message */
+    send_string (0, message);
 
-        {
-            char bufIn[BUFSIZ];
-            bytecIn = recv (sock, bufIn, BUFSIZ - 1, 0);
+    spawn_senders (&crit, host, service,
+                   (void (*) (int)) send_string);
 
-            if (bytecIn < 0)
-            {
-                perror ("recv() failed");
-                exit (EXIT_FAILURE);
-            }
-
-            bufIn[bytecIn] = '\0';
-            printf ("Received: %s\n", bufIn);
-        }
-
-    }
-    exit (EXIT_SUCCESS);
+    exit (0);
 }
 
 
