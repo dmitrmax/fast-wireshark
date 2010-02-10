@@ -42,12 +42,12 @@ cleanup_script ()
     # Wait for TShark to be ready
     read -r useless || exit 1
 
-    ./server $PORT butter 2> "$dir/stderrServ" &
+    ./server $PORT localhost 2> "$dir/stderrServ" &
     echo "server $!" >> "$dir/pids"
 } \
 | \
 { # IN: Server's stdout
-    read -r listenerc localhost || exit 1
+    read -r listenerc anon || exit 1
     echo "we have $listenerc listeners" >> "$dir/logScript"
     # Server is now listening
     # So run client
@@ -60,7 +60,8 @@ statusp=0
 # See if TShark got client_text
 grep -e "$client_text" "$dir/stdoutTshark" \
  > /dev/null \
-|| statusp=1
+&&   echo "Simple exchange PASSED" >&2 \
+|| { echo "Simple exchange FAILED" >&2 ; statusp=1 ; }
 
 # Display test result
 if [ $statusp -eq 0 ]
