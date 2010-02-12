@@ -3,7 +3,7 @@
 # Test to see if the dissector actually reads
 # the messages it should.
 
-if [ $# -ne 2 ]
+if [ $# -lt 1 ]
 then
     echo "Usage: $0 port [tshark]" >&2
     exit 1
@@ -22,20 +22,19 @@ fi
 
 dir=$(mktemp -d --tmpdir "fast-wireshark.XXXXXX") || exit 1
 
-outDTshark="$dir/tshark_output"
-mkdir "$outDTshark" || exit 1
-
-# Will turn to 1 if a test fails
-# This is our exit status
-STATUSP=0
+stderrTshark="$dir/stderrTshark"
+capturedTshark="$dir/captured.raw"
 
 ###### END GLOBAL VARIABLES ######
 
+tell_test_status_on_3 ()
+{
+    echo $1 >&3
+}
+
 start_tshark ()
 {
-    $TSHARK -i lo -l $@ \
-     2>> "$dir/stderrTshark" \
-     &
+    $TSHARK -i lo -w "$capturedTshark" 2>> "$stderrTshark" &
 
     # Grab TShark's pid
     printf 'tshark\t%d\n' $! >> "$dir/pids"
@@ -48,18 +47,13 @@ stop_tshark ()
 {
     # Wait for TShark to be ready
     sleep 1
-    stop_process tshark
-
-    # TShark needs time to flush buffers
-    sleep .2
+    stop_process 'tshark'
 }
 
 start_server ()
 {
     {
-        ./server $PORT localhost \
-         2>> "$dir/stderrServ" \
-         &
+        ./server $PORT localhost 2>> "$dir/stderrServ" &
 
         # Grab server's pid
         printf 'server\t%d\n' $! >> "$dir/pids"
@@ -81,12 +75,13 @@ start_server ()
 
 stop_process ()
 {
-    local name
+    local name pid
     name=$1
-    echo "killing $name"
+    pid=$(grep -e "$name" < "$dir/pids" | cut -f 2)
+    echo "killing $name $pid"
 
     # Kill the specified process
-    kill $(grep -e "$name" < "$dir/pids" | cut -f 2)
+    kill "$pid"
 
     # Remove its corresponding record
     sed -i -e "/$name/d" "$dir/pids"
@@ -108,108 +103,82 @@ process_test_result ()
         printf 'TEST: %s PASS\n' "$nameTest"
     else
         printf 'TEST: %s FAIL\n' "$nameTest"
-        STATUSP=1
     fi
+
+    tell_test_status_on_3 $status
     return $status
 } >&2
 
 script_is_done ()
 {
-    # Stop spawned server
-    stop_process server
-
+    local statusp
+    statusp=$1
     # Display test result
-    if [ $STATUSP -eq 0 ]
+    if [ "$statusp" -eq 0 ]
     then
         echo 'ALL TESTS PASSED'
         rm -r "$dir"
-        # TODO: Do we care about cleaning up the temp file wireshark makes?
     else
         echo 'SOME TESTS FAILED'
         echo '\-- Hint: Check the first failure'
         echo "\-- See $dir for relevant files"
     fi
 
-    return $STATUSP
+    return "$statusp"
 } >&2
 
-start_server || exit 1
-
-##### TEST: TShark Installed
-# See if we can even execute TShark
-command -v "$TSHARK" > /dev/null
-process_test_result 'TShark Installed' $? \
-|| \
+###### Generate test data
+generate_test_data ()
 {
-    STATUSP=1
-    echo '\-- You do not even have tshark installed >:('
-    if command -v wireshark > /dev/null
-    then
-        echo '\-- But the strange part is, you do have wireshark!'
-    fi
-    echo '\-- I will just exit now...'
-    script_is_done
-    exit $?
-}
+    local enabledp name statusp
+    start_server || return 1
+    start_tshark
 
-
-###### TEST: Plugin Recognition
-# See if the plugin is even recognized
-{
-    stdoutTshark="$outDTshark/plugin_recognition"
-
-    start_tshark > "$stdoutTshark"
-    run_client 'hello there server!'
-    stop_tshark
-
-    # TODO: this combo is ideal but doesn't work! why?
-    # start_tshark -T fields -e udp > "$stdoutTshark"
-    # sed -i -e 's/^.*Dst Port:\([^(]*\)(\([^)]*\)).*$/\1 \2/' "$stdoutTshark"
-    # grep -e "$PORT" "$stdoutTshark"
-
-    grep -e 'FAST' "$stdoutTshark" > /dev/null
-
-    process_test_result 'Plugin Recognition' $? \
-    || \
-    {
-        if [ -x "$HOME/.wireshark/plugins/packet-fast.so" ]
+    which_tests_to_run \
+    | \
+    while read enabledp name
+    do
+        if [ "$enabledp" = 'yes' ]
         then
-            echo '\-- But it looks like the plugin is installed'
-
-            grep -e '.' "$stdoutTshark" > /dev/null \
-            && echo '\-- ... but tshark did pick something else up in its'  \
-                    'place so there is definitely a problem with the plugin.' \
-            || echo '\-- ... but tshark did not pick up anything' \
-                    'so perhaps we killed it prematurely.'
-        else
-            echo '\-- Oh, the plugin is not installed, it should' \
-                 "be located at $HOME/.wireshark/plugins/packet-fast.so"
+            "test_$name" 'generate' || return 1
         fi
-    } >&2
-}
+    done
 
+    statusp=$?
 
-###### TEST: Plain Field Recognition
-# See if the plugin can echo a text message
-{
-    stdoutTshark="$outDTshark/plain_field_recognition"
-    client_text="message from client"
-
-    start_tshark -T fields -e udp.dstport -e fast.text > "$stdoutTshark"
-    run_client "$client_text"
+    stop_process 'server'
     stop_tshark
+    wait
 
-    # See if TShark got client_text
-    grep -e '^'"${PORT}.*${client_text}"'$' "$stdoutTshark" > /dev/null
-
-    process_test_result 'Plain Field Recognition' $? \
-    || \
-    {
-        grep -e "$PORT" "$stdoutTshark" > /dev/null \
-        || echo '\-- ... but it looks like we killed tshark prematurely'
-    } >&2
+    return $statusp
 }
 
-script_is_done
-exit $?
+###### Evaluate test data
+evaluate_test_data ()
+{
+    local enabledp name
+    which_tests_to_run \
+    | \
+    while read enabledp name
+    do
+        if [ "$enabledp" = 'yes' ]
+        then
+            "test_$name" 'evaluate' || return 1
+        fi
+    done
+}
+
+. './tests.sh'
+
+{
+    generate_test_data && evaluate_test_data
+} 3>&1 \
+| \
+{
+    # Check for failures
+    ! grep -e '1' >/dev/null
+    script_is_done $?
+}
+
+# Exit 1 if failed
 
