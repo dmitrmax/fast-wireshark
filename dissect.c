@@ -61,20 +61,20 @@ int decode_stop_bits(
 	// skipping the stop bits
 	char* bitstr = g_malloc(nbits);
 
-	for(i=0;i<nbytes,b<nbits;i++)
+	for(i=0;i<nbytes && b<nbits;i++)
 	{
-		bitstr[b] = nbytes[i]&0x40
-		bitstr[b+1]=nbytes[i]&0x20
-		bitstr[b+2]=nbytes[i]&0x10
-		bitstr[b+3]=nbytes[i]&0x08
-		bitstr[b+4]=nbytes[i]&0x04
-		bitstr[b+5]=nbytes[i]&0x02
-		bitstr[b+6]=nbytes[i]&0x01
+		bitstr[b] = in[i]&0x40;
+		bitstr[b+1]=in[i]&0x20;
+		bitstr[b+2]=in[i]&0x10;
+		bitstr[b+3]=in[i]&0x08;
+		bitstr[b+4]=in[i]&0x04;
+		bitstr[b+5]=in[i]&0x02;
+		bitstr[b+6]=in[i]&0x01;
 		b+=7;
 	}
 
 	// copy the bit string back out
-	for(i=0,b=0;i<outbytes,b<nbits;i++)
+	for(i=0,b=0;i<outbytes && b<nbits;i++)
 	{
 		out[i] =
 			(bitstr[ b ]<<7) | (bitstr[b+1]<<6) | (bitstr[b+2]<<5) |
