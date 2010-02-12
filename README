@@ -39,3 +39,17 @@ make clean
 will clean up the detritus of the build process (INCLUDING the output .so file)
 and remove the generated Makefile, so you will have to run configure to be
 able to build again.
+
+-------------
+
+A note about capture permissions on Linux:
+
+I couldn't seem to get wireshark to recognize user-added plugins when it
+was running as root, which is a bad idea anyway...
+The way i got wireshark to capture any interface as non-root was to allow
+the dumpcap program access to listen on any network interfaces:
+sudo setcap 'CAP_NET_RAW+eip CAP_NET_ADMIN+eip' `which dumpcap`
+
+However this is also not the most secure thing in the world.  A good summary
+of different approaches is on wiresharks wiki here:
+http://wiki.wireshark.org/CaptureSetup/CapturePrivileges
