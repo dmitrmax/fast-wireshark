@@ -21,7 +21,7 @@ test_tshark_installed ()
     || \
     {
         # Test failed
-        tell_test_status_on_3 1
+        alert_global_failure
 
         echo '\-- You do not even have tshark installed >:('
         if command -v wireshark > /dev/null

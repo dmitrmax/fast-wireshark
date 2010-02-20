@@ -3,33 +3,82 @@
 # Test to see if the dissector actually reads
 # the messages it should.
 
-if [ $# -lt 1 ]
-then
-    echo "Usage: $0 port [tshark]" >&2
-    exit 1
-fi
+show_usage ()
+{
+    local name
+    name=$(basename "$0")
+    cat <<EOF
+------ Usage ------
+$name (option)* -f file
+$name (option)* -p port
+    -f file
+       Do not generate data, instead get it from a file
+    -p port
+       Use this port for testing the plugin
+    -o file
+       Generate test data to this file
+    --tshark /path/to/tshark
+       Use a TShark install thet is not in the path
+EOF
+} >&2
+
 
 ###### BEGIN GLOBAL VARIABLES ######
 
-PORT="$1"
-
 TSHARK=tshark
 
-if [ -n "$2" ]
-then
-    TSHARK="$2"
-fi
+# Port on which to transfer data
+PORT=
+
+# To generate or not to generate. Default is unknown
+dopGenerate=2
 
 dir=$(mktemp -d --tmpdir "fast-wireshark.XXXXXX") || exit 1
 
-stderrTshark="$dir/stderrTshark"
-capturedTshark="$dir/captured.raw"
+stderrTshark=$dir/stderrTshark
+capturedTshark=$dir/capture.raw
 
 ###### END GLOBAL VARIABLES ######
 
-tell_test_status_on_3 ()
+set_globals ()
 {
-    echo $1 >&3
+    local opts
+    opts=$(getopt -l 'tshark:' -o 'f:p:o:' -- "$@") \
+    || { show_usage ; return 1 ; }
+
+    eval set -- $opts
+
+    while true
+    do
+        case "$1" in
+            '-f') dopGenerate=0 ; capturedTshark=$2 ; shift ;;
+            '-p') dopGenerate=1 ; PORT=$2           ; shift ;;
+            '-o')                 capturedTshark=$2 ; shift ;;
+            '--tshark')           TSHARK=$2         ; shift ;;
+            '--') break ;;
+            ''  ) echo 'Why is there an empty arg?' >&2 ; return 1 ;;
+        esac
+        shift
+    done
+    shift
+
+    if [ 2 = $dopGenerate ]
+    then
+        echo 'You must specify an input file or a port!' >&2
+        show_usage
+        return 1
+    fi
+
+    return 0
+}
+
+set_globals "$@" || exit 1
+
+
+
+alert_global_failure ()
+{
+    echo 1 >&3
 }
 
 start_tshark ()
@@ -64,7 +113,8 @@ start_server ()
         read -r listenerc anon \
         || \
         {
-            echo "Problem starting server, see error log in $dir" >&2
+            echo "Problem starting server, see error log in $dir/" >&2
+            alert_global_failure
             return 1
         }
 
@@ -103,9 +153,9 @@ process_test_result ()
         printf 'TEST: %s PASS\n' "$nameTest"
     else
         printf 'TEST: %s FAIL\n' "$nameTest"
+        alert_global_failure
     fi
 
-    tell_test_status_on_3 $status
     return $status
 } >&2
 
@@ -121,7 +171,7 @@ script_is_done ()
     else
         echo 'SOME TESTS FAILED'
         echo '\-- Hint: Check the first failure'
-        echo "\-- See $dir for relevant files"
+        echo "\-- See $dir/ for relevant files"
     fi
 
     return "$statusp"
@@ -131,6 +181,8 @@ script_is_done ()
 generate_test_data ()
 {
     local enabledp name statusp
+    [ 0 = $dopGenerate ] && return 0 # Skip this step
+
     start_server || return 1
     start_tshark
 
@@ -157,6 +209,13 @@ generate_test_data ()
 evaluate_test_data ()
 {
     local enabledp name
+    if [ ! -e "$capturedTshark" ]
+    then
+        printf 'No capture file: %s\n' "$capturedTshark" >&2
+        alert_global_failure
+        return 1
+    fi
+
     which_tests_to_run \
     | \
     while read enabledp name
