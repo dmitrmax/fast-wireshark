@@ -37,7 +37,7 @@ gint decode_int16(
 	gint16 ret;
 
 	ret= in[0] & ~(STOP_BIT|SIGN_BIT); // drop sign as well
-	ret<<7;
+	ret<<=7;
 	ret |= in[1] & ~STOP_BIT;
 
 	// complement if negative
@@ -61,12 +61,12 @@ gint decode_uint16(
 	guint16 ret;
 
 	ret= in[0] & ~(STOP_BIT);
-	ret<<7;
+	ret<<=7;
 	ret |= in[1] & ~STOP_BIT;
 
 	*out = g_ntohs(ret);
 
-	return sizeof(guint26);
+	return sizeof(guint16);
 }
 
 gint decode_int32(
@@ -82,11 +82,11 @@ gint decode_int32(
 	gint32 ret;
 
 	ret= in[0] & ~(STOP_BIT|SIGN_BIT); // drop sign as well
-	ret<<7;
+	ret<<=7;
 	ret |= in[1] & ~STOP_BIT;
-	ret<<7;
+	ret<<=7;
 	ret |= in[2] & ~STOP_BIT;
-	ret<<7;
+	ret<<=7;
 	ret |= in[3] & ~STOP_BIT;
 
 	// complement if negative
@@ -110,11 +110,11 @@ gint decode_uint32(
 	guint32 ret;
 
 	ret= in[0] & ~(STOP_BIT);
-	ret<<7;
+	ret<<=7;
 	ret |= in[1] & ~STOP_BIT;
-	ret<<7;
+	ret<<=7;
 	ret |= in[2] & ~STOP_BIT;
-	ret<<7;
+	ret<<=7;
 	ret |= in[3] & ~STOP_BIT;
 
 	*out = g_ntohl(ret);
@@ -135,22 +135,22 @@ gint decode_uint64(
 	guint64 ret;
 
 	ret = in[0] & ~STOP_BIT;
-	ret<<7;
+	ret<<=7;
 	ret |= in[1] & ~STOP_BIT;
-	ret<<7;
+	ret<<=7;
 	ret |= in[2] & ~STOP_BIT;
-	ret<<7;
+	ret<<=7;
 	ret |= in[3] & ~STOP_BIT;
-	ret<<7;
+	ret<<=7;
 	ret |= in[4] & ~STOP_BIT;
-	ret<<7;
+	ret<<=7;
 	ret |= in[5] & ~STOP_BIT;
-	ret<<7;
+	ret<<=7;
 	ret |= in[6] & ~STOP_BIT;
-	ret<<7;
+	ret<<=7;
 	ret |= in[7] & ~STOP_BIT;
 
-	*out = g_ntoh64(ret);
+	*out = GUINT64_FROM_BE(ret); // glib has no g_ntoh64()
 
 	return sizeof(guint64);
 }
@@ -168,24 +168,24 @@ gint decode_int64(
 	gint64 ret;
 
 	ret = in[0] & ~(STOP_BIT|SIGN_BIT);
-	ret<<7;
+	ret<<=7;
 	ret |= in[1] & ~STOP_BIT;
-	ret<<7;
+	ret<<=7;
 	ret |= in[2] & ~STOP_BIT;
-	ret<<7;
+	ret<<=7;
 	ret |= in[3] & ~STOP_BIT;
-	ret<<7;
+	ret<<=7;
 	ret |= in[4] & ~STOP_BIT;
-	ret<<7;
+	ret<<=7;
 	ret |= in[5] & ~STOP_BIT;
-	ret<<7;
+	ret<<=7;
 	ret |= in[6] & ~STOP_BIT;
-	ret<<7;
+	ret<<=7;
 	ret |= in[7] & ~STOP_BIT;
 
 	if(in[0]&SIGN_BIT) ret=~ret;
 
-	*out = g_ntoh64(ret);
+	*out = GINT64_FROM_BE(ret); // glib has no g_noth64()
 
 	return sizeof(gint64);
 }

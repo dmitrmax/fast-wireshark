@@ -18,7 +18,7 @@ gint decode_uint16(const guint8*,guint,guint16*);
 gint decode_int32(const guint8*,guint,gint32*);
 gint decode_uint32(const guint8*,guint,guint32*);
 gint decode_int64(const guint8*,guint,gint64*);
-gint decode_uint64(const guint8*,guint,gint64*);
+gint decode_uint64(const guint8*,guint,guint64*);
 
 gint decode_ascii(const guint8*,guint,gint8*,guint);
 gint decode_bytes(const guint8*,guint,guint8*,guint);
