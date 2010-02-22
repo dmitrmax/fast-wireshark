@@ -10,5 +10,4 @@
 
 void FAST_setup(int id)
 {
-	/* TODO: this may not really be needed */
 }
