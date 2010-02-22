@@ -3,6 +3,7 @@
 	@brief	shared definitions
 	@author	Wes Fournier
 
+	Shared include file for other headers
 	shared constants and function prototypes from dissect.c and setup.c
 */
 
