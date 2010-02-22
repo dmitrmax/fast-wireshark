@@ -6,8 +6,9 @@
 	|
 */
 
-#include "fast.h"
+#include "template.h"
 
 void FAST_setup(int id)
 {
+	init_templates();
 }
