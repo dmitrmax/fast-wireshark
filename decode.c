@@ -8,6 +8,8 @@
 
 #include "decode.h"
 
+this should cause a compiler error...
+
 #define STOP_BIT 0x80
 #define SIGN_BIT 0x40
 
