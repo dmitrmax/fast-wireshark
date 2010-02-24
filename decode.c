@@ -30,7 +30,7 @@ gint count_encoded_bytes(tvbuff_t* buf, guint off)
 gint decode_uint32(
 	tvbuff_t* buf,
 	guint off,
-	gint32* out)
+	guint32* out)
 {
 	if(!buf) return ERR_BADARG;
 	if(!out) return ERR_BADARG;
@@ -86,7 +86,7 @@ gint decode_int32(
 
 	if(i>sizeof(gint32)) return ERR_BADFMT;
 
-	if(sign) *out=g_ntohl(~ret)
+	if(sign) *out=g_ntohl(~ret);
 	else *out=g_ntohl(ret);
 
 	return i;
@@ -95,7 +95,7 @@ gint decode_int32(
 gint decode_uint64(
 	tvbuff_t* buf,
 	guint off,
-	gint64* out)
+	guint64* out)
 {
 	if(!buf) return ERR_BADARG;
 	if(!out) return ERR_BADARG;
@@ -151,7 +151,7 @@ gint decode_int64(
 
 	if(i>sizeof(gint64)) return ERR_BADFMT;
 
-	if(sign) *out=g_ntohl(~ret)
+	if(sign) *out=g_ntohl(~ret);
 	else *out=g_ntohl(ret);
 
 	return i;

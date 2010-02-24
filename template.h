@@ -50,17 +50,18 @@
 #define FIELD_REQUIRED(f)	((f)->type & FIELD_REQUIRED_BIT)
 #define FIELD_HAS_NULL(f)	((f)->type & FIELD_HAS_NULL_BIT)
 
+typedef union field_value_type
+{
+	void* val;
+	gint32 dec[2];
+	guint8 hidden_[8]; // force to be maximum size possible
+} field_value;
+
+struct template_field_type;
 typedef gint (*field_read_func_type)(
 	struct template_field_type*,
 	tvbuff_t*,
 	guint);
-
-typedef union field_value_type
-{
-	void* val;
-	int32 dec[2];
-	guint8 hidden_[8]; // force to be maximum size possible
-} field_value;
 
 struct template_field_type
 {

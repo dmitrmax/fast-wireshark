@@ -7,6 +7,7 @@
 */
 
 #include "template.h"
+#include "decode.h"
 
 struct template_list_node
 {
@@ -128,7 +129,7 @@ gint append_field(
 		return ERR_BADARG;
 	}
 
-	if(def_value)
+	if(def_value.val)
 	{
 		if(FIELD_TYPE(f)>FIELD_TYPE_FIXDEC)
 		{
@@ -325,7 +326,7 @@ gint read_bytes_field(
 	tvbuff_t* buf,
 	guint off)
 {
-	if(f->value.value) g_free(f->value.val);
+	if(f->value.val) g_free(f->value.val);
 	gint ret=decode_utf8(buf,off,(guint8**)&(f->value.val));
 	f->size=ret;
 	return ret;

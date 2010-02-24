@@ -44,7 +44,7 @@ void FAST_dissect(int id, tvbuff_t* tvb, int n, packet_info* pinfo,
 		// right now we are ignoring the PMAP and assuming all fields
 		// are required
 
-		if(ret->read)
+		if(cur->read)
 		{
 			ret=(cur->read)(cur,tvb,off);
 			if(ret<0) return;
