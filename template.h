@@ -50,20 +50,38 @@
 #define FIELD_REQUIRED(f)	((f)->type & FIELD_REQUIRED_BIT)
 #define FIELD_HAS_NULL(f)	((f)->type & FIELD_HAS_NULL_BIT)
 
+typedef gint (*field_read_func_type)(
+	struct template_field_type*,
+	tvbuff_t*,
+	guint);
+
+typedef union field_value_type
+{
+	void* val;
+	int32 dec[2];
+	guint8 hidden_[8]; // force to be maximum size possible
+} field_value;
+
 struct template_field_type
 {
 	char* name;
 
 	guint8 type,op;
 
-	void* def_value;
+	field_value def_value;
 	guint32 def_value_size;
 
-	void* value;
-	void* prev_value;
+	guint wholebits;
+
+	field_value value;
+	field_value prev_value;
 	guint32 size,prev_size;
 
 	guint8 state,prev_state;
+
+	field_read_func_type read;
+
+	struct template_field_type* subfields;
 
 	struct template_field_type* next;
 };
@@ -91,7 +109,7 @@ gint append_field(
 	const char*,
 	guint8,
 	guint8,
-	void*,
+	field_value,
 	guint32,
 	struct template_type*,
 	struct template_field_type**);
@@ -109,5 +127,35 @@ gint find_template_field_byindex(
 	struct template_type*,
 	struct template_field_type**,
 	guint);
+
+gint read_int32_field(
+	struct template_field_type*,
+	tvbuff_t*,guint);
+gint read_uint32_field(
+	struct template_field_type*,
+	tvbuff_t*,guint);
+gint read_int64_field(
+	struct template_field_type*,
+	tvbuff_t*,guint);
+gint read_uint64_field(
+	struct template_field_type*,
+	tvbuff_t*,guint);
+
+gint read_ascii_field(
+	struct template_field_type*,
+	tvbuff_t*,guint);
+gint read_bytes_field(
+	struct template_field_type*,
+	tvbuff_t*,guint);
+gint read_utf8_field(
+	struct template_field_type*,
+	tvbuff_t*,guint);
+
+gint read_flt10_field(
+	struct template_field_type*,
+	tvbuff_t*,guint);
+gint read_fixdec_field(
+	struct template_field_type*,
+	tvbuff_t*,guint);
 
 #endif

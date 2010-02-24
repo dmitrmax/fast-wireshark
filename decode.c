@@ -8,255 +8,244 @@
 
 #include "decode.h"
 
-this should cause a compiler error...
-
 #define STOP_BIT 0x80
 #define SIGN_BIT 0x40
 
-gint count_encoded_bytes(const guint8* in, guint max_in_bytes)
+gint count_encoded_bytes(tvbuff_t* buf, guint off)
 {
-	int i;
-	for(i=0;i<max_in_bytes;i++)
+	if(!buf) return ERR_BADARG;
+
+	int i=0;
+	guint8 b=0;
+	do
 	{
-		if(in[i]&STOP_BIT)
-		{
-			return i+1;
-		}
-	}
-	return -1;
-}
+		// will throw an exception if the data is malformed
+		b=tvb_get_guint8(buf,off+i);
+		i++;
+	} while(!(b&STOP_BIT));
 
-gint decode_int16(
-	const guint8* in,
-	guint max_in_bytes,
-	gint16* out)
-{
-	if(count_encoded_bytes(in,max_in_bytes)!=sizeof(gint16))
-	{
-		return -1;
-	}
-
-	gint16 ret;
-
-	ret= in[0] & ~(STOP_BIT|SIGN_BIT); // drop sign as well
-	ret<<=7;
-	ret |= in[1] & ~STOP_BIT;
-
-	// complement if negative
-	if(in[0] & SIGN_BIT) ret = ~ret;
-
-	*out = g_ntohs(ret);
-
-	return sizeof(gint16);
-}
-
-gint decode_uint16(
-	const guint8* in,
-	guint max_in_bytes,
-	guint16* out)
-{
-	if(count_encoded_bytes(in,max_in_bytes)!=sizeof(guint16))
-	{
-		return -1;
-	}
-
-	guint16 ret;
-
-	ret= in[0] & ~(STOP_BIT);
-	ret<<=7;
-	ret |= in[1] & ~STOP_BIT;
-
-	*out = g_ntohs(ret);
-
-	return sizeof(guint16);
-}
-
-gint decode_int32(
-	const guint8* in,
-	guint max_in_bytes,
-	gint32* out)
-{
-	if(count_encoded_bytes(in,max_in_bytes)!=sizeof(gint32))
-	{
-		return -1;
-	}
-
-	gint32 ret;
-
-	ret= in[0] & ~(STOP_BIT|SIGN_BIT); // drop sign as well
-	ret<<=7;
-	ret |= in[1] & ~STOP_BIT;
-	ret<<=7;
-	ret |= in[2] & ~STOP_BIT;
-	ret<<=7;
-	ret |= in[3] & ~STOP_BIT;
-
-	// complement if negative
-	if(in[0] & SIGN_BIT) ret = ~ret;
-
-	*out = g_ntohl(ret);
-
-	return sizeof(gint32);
+	return i;
 }
 
 gint decode_uint32(
-	const guint8* in,
-	guint max_in_bytes,
-	guint32* out)
+	tvbuff_t* buf,
+	guint off,
+	gint32* out)
 {
-	if(count_encoded_bytes(in,max_in_bytes)!=sizeof(guint32))
+	if(!buf) return ERR_BADARG;
+	if(!out) return ERR_BADARG;
+
+	guint32 ret=0;
+
+	int i=0;
+	guint8 b=0;
+	do
 	{
-		return -1;
+		b=tvb_get_guint8(buf,off+i);
+
+		ret |= b & ~STOP_BIT;
+		ret<<=7;
+
+		i++;
+	} while(!(b&STOP_BIT));
+
+	if(i>sizeof(guint32)) return ERR_BADFMT;
+
+	*out=g_ntohl(ret);
+
+	return i;
+}
+
+gint decode_int32(
+	tvbuff_t* buf,
+	guint off,
+	gint32* out)
+{
+	if(!buf) return ERR_BADARG;
+	if(!out) return ERR_BADARG;
+
+	gint32 ret=0;
+	int i=1;
+
+	guint8 b=tvb_get_guint8(buf,off);
+	int sign=b&SIGN_BIT;
+	ret|=b&~(STOP_BIT|SIGN_BIT);
+
+	if(!(b&STOP_BIT))
+	{
+		ret<<=7;
+
+		do
+		{
+			b=tvb_get_guint8(buf,off+i);
+			ret|=b & ~STOP_BIT;
+			ret<<=7;
+			i++;
+		} while(!(b&STOP_BIT));
 	}
 
-	guint32 ret;
+	if(i>sizeof(gint32)) return ERR_BADFMT;
 
-	ret= in[0] & ~(STOP_BIT);
-	ret<<=7;
-	ret |= in[1] & ~STOP_BIT;
-	ret<<=7;
-	ret |= in[2] & ~STOP_BIT;
-	ret<<=7;
-	ret |= in[3] & ~STOP_BIT;
+	if(sign) *out=g_ntohl(~ret)
+	else *out=g_ntohl(ret);
 
-	*out = g_ntohl(ret);
-
-	return sizeof(guint32);
+	return i;
 }
 
 gint decode_uint64(
-	const guint8* in,
-	guint max_in_bytes,
-	guint64* out)
+	tvbuff_t* buf,
+	guint off,
+	gint64* out)
 {
-	if(count_encoded_bytes(in,max_in_bytes)!=sizeof(guint64))
+	if(!buf) return ERR_BADARG;
+	if(!out) return ERR_BADARG;
+
+	guint64 ret=0;
+
+	int i=0;
+	guint8 b=0;
+	do
 	{
-		return -1;
-	}
+		b=tvb_get_guint8(buf,off+i);
 
-	guint64 ret;
+		ret |= b & ~STOP_BIT;
+		ret<<=7;
 
-	ret = in[0] & ~STOP_BIT;
-	ret<<=7;
-	ret |= in[1] & ~STOP_BIT;
-	ret<<=7;
-	ret |= in[2] & ~STOP_BIT;
-	ret<<=7;
-	ret |= in[3] & ~STOP_BIT;
-	ret<<=7;
-	ret |= in[4] & ~STOP_BIT;
-	ret<<=7;
-	ret |= in[5] & ~STOP_BIT;
-	ret<<=7;
-	ret |= in[6] & ~STOP_BIT;
-	ret<<=7;
-	ret |= in[7] & ~STOP_BIT;
+		i++;
+	} while(!(b&STOP_BIT));
 
-	*out = GUINT64_FROM_BE(ret); // glib has no g_ntoh64()
+	if(i>sizeof(guint64)) return ERR_BADFMT;
 
-	return sizeof(guint64);
+	*out=g_ntohl(ret);
+
+	return i;
 }
 
 gint decode_int64(
-	const guint8* in,
-	guint max_in_bytes,
+	tvbuff_t* buf,
+	guint off,
 	gint64* out)
 {
-	if(count_encoded_bytes(in,max_in_bytes)!=sizeof(gint64))
+	if(!buf) return ERR_BADARG;
+	if(!out) return ERR_BADARG;
+
+	gint64 ret=0;
+	int i=1;
+
+	guint8 b=tvb_get_guint8(buf,off);
+	int sign=b&SIGN_BIT;
+	ret|=b&~(STOP_BIT|SIGN_BIT);
+
+	if(!(b&STOP_BIT))
 	{
-		return -1;
-	}
+		ret<<=7;
 
-	gint64 ret;
-
-	ret = in[0] & ~(STOP_BIT|SIGN_BIT);
-	ret<<=7;
-	ret |= in[1] & ~STOP_BIT;
-	ret<<=7;
-	ret |= in[2] & ~STOP_BIT;
-	ret<<=7;
-	ret |= in[3] & ~STOP_BIT;
-	ret<<=7;
-	ret |= in[4] & ~STOP_BIT;
-	ret<<=7;
-	ret |= in[5] & ~STOP_BIT;
-	ret<<=7;
-	ret |= in[6] & ~STOP_BIT;
-	ret<<=7;
-	ret |= in[7] & ~STOP_BIT;
-
-	if(in[0]&SIGN_BIT) ret=~ret;
-
-	*out = GINT64_FROM_BE(ret); // glib has no g_noth64()
-
-	return sizeof(gint64);
-}
-
-gint decode_ascii(
-	const guint8* in,
-	guint max_in_bytes,
-	gint8* out,
-	guint max_out_size)
-{
-	memset(out,0,max_out_size);
-
-	int i;
-	for(i=0;i<max_in_bytes && i<max_out_size-1;i++)
-	{
-		out[i]=in[i]& ~STOP_BIT;
-		if(in[i]&STOP_BIT)
+		do
 		{
-			return i+1;
-		}
+			b=tvb_get_guint8(buf,off+i);
+			ret|=b & ~STOP_BIT;
+			ret<<=7;
+			i++;
+		} while(!(b&STOP_BIT));
 	}
 
-	return -1;
+	if(i>sizeof(gint64)) return ERR_BADFMT;
+
+	if(sign) *out=g_ntohl(~ret)
+	else *out=g_ntohl(ret);
+
+	return i;
 }
 
-gint decode_bytes(
-	const guint8* in,
-	guint max_in_bytes,
-	guint8* out,
-	guint max_out_size)
+//NOTE this returns memory in out that must be free'd with g_free()
+gint decode_ascii(
+	tvbuff_t* buf,
+	guint off,
+	guint8** out)
 {
-	memset(out,0,max_out_size);
+	gint ret=count_encoded_bytes(buf,off);
+	if(ret<0) return ret;
 
+	guint8* s=tvb_get_string(buf,off,ret);
+	if(!s) return ERR_NOMEM;
+	int i;
+	for(i=0;i<ret;i++) s[i]=s[i] & ~STOP_BIT;
+
+	*out=s;
+
+	return ret;
+}
+
+//NOTE this returns memory that must be free'd with g_free()
+gint decode_bytes(
+	tvbuff_t* buf,
+	guint off,
+	guint8** out)
+{
 	guint32 sz;
-	gint off=decode_uint32(in,max_in_bytes,&sz);
-	if(off==-1) return -1;
+	gint ret=decode_uint32(buf,off,&sz);
+	if(ret<0) return ret;
 
-	memcpy(out,in+off,sz>max_in_bytes?max_in_bytes:sz);
-
+	guint8* p=tvb_memdup(buf,off,sz);
+	if(!p) return ERR_NOMEM;
+	*out=p;
 	return sz;
 }
 
+//NOTE: this returns memory in out that must be free'd with g_free()
 gint decode_utf8(
-	const guint8* in,
-	guint max_in_bytes,
-	guint8* out,
-	guint max_out_size)
+	tvbuff_t* buf,
+	guint off,
+	guint8** out)
 {
-	memset(out,0,max_out_size);
-
-	// drop one byte for null terminator
-	return decode_bytes(in,max_in_bytes,out,max_out_size-1);
+	return decode_bytes(buf,off,out);
 }
 
 gint decode_flt10(
-	const guint8* in,
-	guint max_in_bytes,
-	gint32* out_wholepart,
-	gint32* out_decpart)
+	tvbuff_t* buf,
+	guint off,
+	gint32* wholepart_out,
+	gint32* decpart_out)
 {
-	return -1;
+	return ERR_NOTIMPL;
 }
 
 gint decode_fixdec(
-	const guint8* in,
-	guint max_in_bytes,
-	guint dec_bits,
-	gint32* out_wholepart,
-	gint32* out_decpart)
+	tvbuff_t* buf,
+	guint off,
+	guint wholebits,
+	gint32* wholepart_out,
+	gint32* decpart_out)
 {
-	return -1;
+	return ERR_NOTIMPL;
+}
+
+gint decode_pmap(
+	tvbuff_t* buf,
+	guint off,
+	guint8** outbits)
+{
+	gint sz=count_encoded_bytes(buf,off);
+	if(sz<0) return sz;
+
+	guint8* ret=g_malloc(sz*7);
+	if(!ret) return ERR_NOMEM;
+
+	int i;
+	guint8 b=0;
+	for(i=0;i<sz*7;)
+	{
+		b=tvb_get_guint8(buf,off+i);
+		ret[i++]=b&0x40;
+		ret[i++]=b&0x20;
+		ret[i++]=b&0x10;
+		ret[i++]=b&0x08;
+		ret[i++]=b&0x04;
+		ret[i++]=b&0x02;
+		ret[i++]=b&0x01;
+	}
+
+	*outbits=ret;
+
+	return sz*7;
 }

@@ -26,7 +26,7 @@ gint create_template(
 	guint32 id,
 	struct template_type** out)
 {
-	if(!name) return -1;
+	if(!name) return ERR_BADARG;
 
 	// create entry in our global template list
 
@@ -34,7 +34,7 @@ gint create_template(
 	if(!all_templates)
 	{
 		currnode=all_templates=g_malloc(sizeof(struct template_list_node));
-		if(!currnode) return -2;
+		if(!currnode) return ERR_NOMEM;
 		currnode->next=0;
 		currnode->p=0;
 	}
@@ -42,7 +42,7 @@ gint create_template(
 	{
 		for(currnode=all_templates;currnode->next;currnode=currnode->next);
 		currnode->next = g_malloc(sizeof(struct template_list_node));
-		if(!currnode->next) return -2;
+		if(!currnode->next) return ERR_NOMEM;
 		currnode=currnode->next;
 		currnode->next=0;
 		currnode->p=0;
@@ -54,7 +54,7 @@ gint create_template(
 	if(!p)
 	{
 		g_free(currnode);
-		return -2;
+		return ERR_NOMEM;
 	}
 
 	p->fields=0;
@@ -64,7 +64,7 @@ gint create_template(
 	{
 		g_free(p);
 		g_free(currnode);
-		return -2;
+		return ERR_NOMEM;
 	}
 	memcpy(p->name,name,strlen(name));
 
@@ -80,13 +80,13 @@ gint append_field(
 	const char* name,
 	guint8 type,
 	guint8 op,
-	void* def_value,
+	field_value def_value,
 	guint32 def_value_size,
 	struct template_type* tmpl,
 	struct template_field_type** out)
 {
-	if(!name) return -1;
-	if(!tmpl) return -1;
+	if(!name) return ERR_BADARG;
+	if(!tmpl) return ERR_BADARG;
 
 	// create template field info struct
 
@@ -94,7 +94,7 @@ gint append_field(
 		sizeof(struct template_field_type));
 	if(!f)
 	{
-		return -2;
+		return ERR_NOMEM;
 	}
 	memset(f,0,sizeof(struct template_field_type));
 
@@ -102,23 +102,49 @@ gint append_field(
 	if(!f->name)
 	{
 		g_free(f);
-		return -2;
+		return ERR_NOMEM;
 	}
 	memcpy(f->name,name,strlen(name));
 
 	f->type=type;
 	f->op=op;
 
+	switch(FIELD_TYPE(f))
+	{
+	case FIELD_TYPE_INT32: f->read=read_int32_field; break;
+	case FIELD_TYPE_UINT32: f->read=read_uint32_field; break;
+	case FIELD_TYPE_INT64: f->read=read_int64_field; break;
+	case FIELD_TYPE_UINT64: f->read=read_uint64_field; break;
+	case FIELD_TYPE_FLT10: f->read=read_flt10_field; break;
+	case FIELD_TYPE_FIXDEC: f->read=read_fixdec_field; break;
+	case FIELD_TYPE_UTF8: f->read=read_utf8_field; break;
+	case FIELD_TYPE_ASCII: f->read=read_ascii_field; break;
+	case FIELD_TYPE_BYTES: f->read=read_bytes_field; break;
+	case FIELD_TYPE_SEQ: f->read=0; break;
+	case FIELD_TYPE_GROUP: f->read=0; break;
+	default:
+		g_free(f->name);
+		g_free(f);
+		return ERR_BADARG;
+	}
+
 	if(def_value)
 	{
-		f->def_value=g_malloc(def_value_size);
-		if(!f->def_value)
+		if(FIELD_TYPE(f)>FIELD_TYPE_FIXDEC)
 		{
-			g_free(f->name);
-			g_free(f);
-			return -2;
+			f->def_value.val=g_malloc(def_value_size);
+			if(!(f->def_value.val))
+			{
+				g_free(f->name);
+				g_free(f);
+				return ERR_NOMEM;
+			}
+			memcpy(f->def_value.val,def_value.val,def_value_size);
 		}
-		memcpy(f->def_value,def_value,def_value_size);
+		else
+		{
+			f->def_value.val = def_value.val;
+		}
 	}
 
 	// find place to put field
@@ -140,7 +166,7 @@ gint append_field(
 
 void cleanup_all(void)
 {
-	struct template_list_node* cur=all_templates;
+	/*struct template_list_node* cur=all_templates;
 	while(cur)
 	{
 		if(!cur->p) continue;
@@ -151,8 +177,8 @@ void cleanup_all(void)
 			struct template_field_type* tmp=curf;
 			curf=curf->next;
 			g_free(tmp->name);
-			g_free(tmp->def_value);
-			g_free(tmp->value);
+			//g_free(tmp->def_value);
+			//g_free(tmp->value);
 			g_free(tmp->prev_value);
 			g_free(tmp);
 		}
@@ -161,13 +187,13 @@ void cleanup_all(void)
 		cur=cur->next;
 		g_free(tmp->name);
 		g_free(tmp);
-	}
+	}*/
 }
 
 gint find_template(const char* name, struct template_type** out)
 {
-	if(!name) return -1;
-	if(!out) return -1;
+	if(!name) return ERR_NOMEM;
+	if(!out) return ERR_NOMEM;
 
 	*out=0;
 
@@ -184,12 +210,12 @@ gint find_template(const char* name, struct template_type** out)
 		cur=cur->next;
 	}
 
-	return -2;
+	return ERR_FALSE;
 }
 
 gint find_template_byid(guint8 id, struct template_type** out)
 {
-	if(!out) return -1;
+	if(!out) return ERR_BADARG;
 
 	*out=0;
 	struct template_list_node* cur=all_templates;
@@ -204,7 +230,7 @@ gint find_template_byid(guint8 id, struct template_type** out)
 		}
 		cur=cur->next;
 	}
-	return -2;
+	return ERR_FALSE;
 }
 
 gint find_template_field(
@@ -212,9 +238,9 @@ gint find_template_field(
 	struct template_type* tmpl,
 	struct template_field_type** out)
 {
-	if(!name) return -1;
-	if(!tmpl) return -1;
-	if(!out) return -1;
+	if(!name) return ERR_BADARG;
+	if(!tmpl) return ERR_BADARG;
+	if(!out) return ERR_BADARG;
 
 	*out=0;
 	struct template_field_type* cur=tmpl->fields;
@@ -227,7 +253,7 @@ gint find_template_field(
 		}
 		cur=cur->next;
 	}
-	return -2;
+	return ERR_FALSE;
 }
 
 gint find_template_field_byindex(
@@ -236,8 +262,8 @@ gint find_template_field_byindex(
 	struct template_field_type** out,
 	guint skip_required)
 {
-	if(!tmpl) return -1;
-	if(!out) return -1;
+	if(!tmpl) return ERR_BADARG;
+	if(!out) return ERR_BADARG;
 
 	*out=0;
 	struct template_field_type* cur=tmpl->fields;
@@ -256,5 +282,67 @@ gint find_template_field_byindex(
 
 		cur=cur->next;
 	}
-	return -2;
+	return ERR_FALSE;
+}
+
+gint read_uint32_field(
+	struct template_field_type* f,
+	tvbuff_t* buf,
+	guint off)
+{
+	return decode_uint32(buf,off,(guint32*)&(f->value.val));
+}
+
+gint read_int32_field(
+	struct template_field_type* f,
+	tvbuff_t* buf,
+	guint off)
+{
+	return decode_int32(buf,off,(gint32*)&(f->value.val));
+}
+
+gint read_ascii_field(
+	struct template_field_type* f,
+	tvbuff_t* buf,
+	guint off)
+{
+	if(f->value.val) g_free(f->value.val);
+	gint ret= decode_ascii(buf,off,(guint8**)&(f->value.val));
+	f->size=ret;
+	return ret;
+}
+
+gint read_utf8_field(
+	struct template_field_type* f,
+	tvbuff_t* buf,
+	guint off)
+{
+	return read_bytes_field(f,buf,off);
+}
+
+gint read_bytes_field(
+	struct template_field_type* f,
+	tvbuff_t* buf,
+	guint off)
+{
+	if(f->value.value) g_free(f->value.val);
+	gint ret=decode_utf8(buf,off,(guint8**)&(f->value.val));
+	f->size=ret;
+	return ret;
+}
+
+gint read_flt10_field(
+	struct template_field_type* f,
+	tvbuff_t* buf,
+	guint off)
+{
+	return decode_flt10(buf,off,f->value.dec,f->value.dec+1);
+}
+
+gint read_fixdec_field(
+	struct template_field_type* f,
+	tvbuff_t* buf,
+	guint off)
+{
+	return  decode_fixdec(buf,off,f->wholebits,f->value.dec,f->value.dec+1);
 }
