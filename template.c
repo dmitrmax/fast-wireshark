@@ -302,6 +302,22 @@ gint read_int32_field(
 	return decode_int32(buf,off,(gint32*)&(f->value.val));
 }
 
+gint read_uint64_field(
+	struct template_field_type* f,
+	tvbuff_t* buf,
+	guint off)
+{
+	return decode_uint64(buf,off,(guint64*)&(f->value.val));
+}
+
+gint read_int64_field(
+	struct template_field_type* f,
+	tvbuff_t* buf,
+	guint off)
+{
+	return decode_int64(buf,off,(gint64*)&(f->value.val));
+}
+
 gint read_ascii_field(
 	struct template_field_type* f,
 	tvbuff_t* buf,
