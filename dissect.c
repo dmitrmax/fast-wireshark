@@ -53,4 +53,11 @@ void FAST_dissect(int id, tvbuff_t* tvb, int n, packet_info* pinfo,
 			i++;
 		}
 	}
+
+	proto_item* ti=NULL;
+	ti=proto_tree_add_item(tree,proto_fast,tvb,0,-1,FALSE);
+	tree=proto_item_add_subtree(ti,ett_fast);
+
+	proto_tree_add_int();
+	proto_tree_add_int();
 }

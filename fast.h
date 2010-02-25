@@ -36,4 +36,12 @@ void FAST_setup(int);
 
 void FAST_dissect(int,tvbuff_t*,int,packet_info*,proto_tree*);
 
+// handles to GUI elements
+extern int ett_fast;
+extern int ett_fast_int1;
+extern int ett_fast_int2;
+extern int hf_fast;
+extern int hf_fast_int1;
+extern int hf_fast_int2;
+
 #endif
