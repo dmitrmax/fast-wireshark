@@ -211,7 +211,7 @@ gint find_template(const char* name, struct template_type** out)
 		cur=cur->next;
 	}
 
-	return ERR_FALSE;
+	return 0;
 }
 
 gint find_template_byid(guint8 id, struct template_type** out)
@@ -231,7 +231,7 @@ gint find_template_byid(guint8 id, struct template_type** out)
 		}
 		cur=cur->next;
 	}
-	return ERR_FALSE;
+	return 0;
 }
 
 gint find_template_field(
@@ -254,7 +254,7 @@ gint find_template_field(
 		}
 		cur=cur->next;
 	}
-	return ERR_FALSE;
+	return 0;
 }
 
 gint find_template_field_byindex(
@@ -283,7 +283,7 @@ gint find_template_field_byindex(
 
 		cur=cur->next;
 	}
-	return ERR_FALSE;
+	return 0;
 }
 
 gint read_uint32_field(
