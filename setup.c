@@ -30,6 +30,7 @@ void FAST_setup(int id)
 		0,
 		v,
 		0,
+		0,
 		t,
 		0);
 	append_field(
@@ -37,6 +38,7 @@ void FAST_setup(int id)
 		FIELD_TYPE_UINT32|FIELD_REQUIRED_BIT,
 		0,
 		v,
+		0,
 		0,
 		t,
 		0);

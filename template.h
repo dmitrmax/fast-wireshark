@@ -41,7 +41,7 @@
 
 #define FIELD_STATE_SET		0x01	// assigned
 #define FIELD_STATE_EMPTY	0x02	// empty
-#define FIELD_STATE_UNDEF	0x03	// undefined
+#define FIELD_STATE_UNDEF	0x0		// undefined
 
 #define FIELD_RAW_NULL		0x80
 #define FIELD_NULL			0x0
@@ -52,9 +52,15 @@
 
 typedef union field_value_type
 {
-	void* val;
+	guint32 u32;
+	gint32 i32;
+	guint64 u64;
+	gint64 i64;
+
+	guint8* str;
+
 	gint32 dec[2];
-	guint8 hidden_[8]; // force to be maximum size possible
+
 } field_value;
 
 struct template_field_type;
@@ -84,10 +90,11 @@ struct template_field_type
 
 	struct template_field_type* subfields;
 
+	// gui field index
+	int hf_id;
+
 	struct template_field_type* next;
 };
-
-typedef struct template_field_type proto_field;
 
 struct template_type
 {
@@ -96,8 +103,6 @@ struct template_type
 
 	struct template_field_type* fields;
 };
-
-typedef struct template_type proto_template;
 
 void init_templates(void);
 
@@ -112,8 +117,11 @@ gint append_field(
 	guint8,
 	field_value,
 	guint32,
+	int,
 	struct template_type*,
 	struct template_field_type**);
+
+gint reset_template_state(struct template_type*);
 
 void cleanup_all(void);
 
@@ -128,6 +136,8 @@ gint find_template_field_byindex(
 	struct template_type*,
 	struct template_field_type**,
 	guint);
+
+gint set_field_display(proto_tree*,struct template_field_type*);
 
 gint read_int32_field(
 	struct template_field_type*,

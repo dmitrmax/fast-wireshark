@@ -83,6 +83,7 @@ gint append_field(
 	guint8 op,
 	field_value def_value,
 	guint32 def_value_size,
+	int hf_id,
 	struct template_type* tmpl,
 	struct template_field_type** out)
 {
@@ -109,6 +110,7 @@ gint append_field(
 
 	f->type=type;
 	f->op=op;
+	f->hf_id=hf_id;
 
 	switch(FIELD_TYPE(f))
 	{
@@ -362,4 +364,19 @@ gint read_fixdec_field(
 	guint off)
 {
 	return  decode_fixdec(buf,off,f->wholebits,f->value.dec,f->value.dec+1);
+}
+
+gint reset_template_state(struct template_type* t)
+{
+	return ERR_NOTIMPL;
+}
+
+gint set_field_display(proto_tree* tree, struct template_field_type* f)
+{
+	/*switch(FIELD_TYPE(f))
+	{
+	case FIELD_TYPE_INT32:
+	}
+
+	return 0;*/
 }

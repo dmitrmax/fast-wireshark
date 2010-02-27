@@ -25,8 +25,8 @@
 #define FAST_PROTO "udp.port"
 #define FAST_PORT 1337
 
-#define ERR_TRUE	0
-#define ERR_FALSE	-1
+#define ERR_TRUE	 0
+#define ERR_FAIL	-1
 #define ERR_BADARG	-2
 #define ERR_NOMEM	-3
 #define ERR_BADFMT	-4
