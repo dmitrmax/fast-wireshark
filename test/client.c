@@ -7,6 +7,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <glib.h>
 
 void send_string (int sock, char* init_strOut)
 {
@@ -106,7 +107,19 @@ int main (int argc, char** argv)
     crit.ai_protocol = IPPROTO_UDP;
 
         /* Initialize message */
-    send_string (0, message);
+        /* send_string (0, message); */
+
+    {
+        guint8 msg[3];
+        msg[0] = 0x80 | 0x1;
+        msg[1] = 0x80 | 0x1;
+        msg[2] = 0x80 | 0x3;
+        msg[3] = 0x80 | 0x2;
+        msg[4] = 0;
+
+            /* Initialize message */
+        send_string (0, (char*)msg);
+    }
 
     spawn_senders (&crit, host, service,
                    (void (*) (int)) send_string);

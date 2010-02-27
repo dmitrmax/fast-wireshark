@@ -8,6 +8,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <glib.h>
 
 void chain_func (int s, pid_t p)
 {
@@ -35,11 +36,29 @@ void listener_die (int sig)
     chain_func (0, 0);
 }
 
+char* hex_byte (guint n, guint8* buf)
+{
+    int i, j;
+    guint8 x;
+    char* res;
+    res = malloc ((2*n +1) * sizeof (char));
+    for (i = 0; i < n; ++i)  for (j = 1; j >= 0; --j)
+    {
+        x = (buf[i] >> (4*j)) & 0xf;
+        if (x < 10)
+            res[2*i+1-j] = '0' + x;
+        else
+            res[2*i+1-j] = 'A' + x - 10;
+    }
+    res[2*n] = 0;
+    return res;
+}
+
 void receive_string (int sock)
 {
     struct sockaddr_storage client;
     socklen_t sizeClient = sizeof (struct sockaddr_storage);
-    char buf[BUFSIZ];
+    guint8 buf[BUFSIZ];
         /* ssize_t bytecOut; */
     ssize_t bytecIn;
 
@@ -55,8 +74,13 @@ void receive_string (int sock)
             pause ();
         }
 
-        buf[bytecIn] = 0;
-        fprintf (stderr, "Received: %s\n", buf);
+            /* buf[bytecIn] = 0; */
+            /* fprintf (stderr, "Received: %s\n", buf); */
+        {
+            char* str = hex_byte (bytecIn, buf);
+            fprintf (stderr, "Received: %s\n", str);
+            free (str);
+        }
     }
 }
 
@@ -147,7 +171,7 @@ int main (int argc, char** argv)
 
         /* This is used to recursively kill forked processes */
     signal (SIGTERM, listener_die);
-        /* ... and sometimes I forget that C-c isn't needed */
+        /* ... and sometimes I use C-c */
     signal (SIGINT, listener_die);
 
     memset (&crit, 0, sizeof (struct addrinfo));

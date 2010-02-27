@@ -44,7 +44,7 @@ void FAST_dissect(int proto_fast, tvbuff_t* tvb, int n, packet_info* pinfo,
 		proto_tree_add_string(
 			tree,
 			hf_fast_tid,
-			0,
+			tvb,
 			0,
 			strlen("Unknown"),
 			"Unknown");
@@ -54,7 +54,7 @@ void FAST_dissect(int proto_fast, tvbuff_t* tvb, int n, packet_info* pinfo,
 	proto_tree_add_string(
 		tree,
 		hf_fast_tid,
-		0,
+		tvb,
 		0,
 		strlen(t->name),
 		t->name);

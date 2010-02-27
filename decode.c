@@ -39,19 +39,20 @@ gint decode_uint32(
 
 	int i=0;
 	guint8 b=0;
+
 	do
 	{
+		ret<<=7;
 		b=tvb_get_guint8(buf,off+i);
 
 		ret |= b & ~STOP_BIT;
-		ret<<=7;
 
 		i++;
 	} while(!(b&STOP_BIT));
 
 	if(i>sizeof(guint32)) return ERR_BADFMT;
 
-	*out=g_ntohl(ret);
+	*out = ret;
 
 	return i;
 }
@@ -86,9 +87,13 @@ gint decode_int32(
 
 	if(i>sizeof(gint32)) return ERR_BADFMT;
 
-	if(sign) *out=g_ntohl(~ret);
-	else *out=g_ntohl(ret);
+		/* Changed to not convert from bigendian,
+		 * whole routine is still untested.
+		 * -- grencez Sat Feb 27 16:06:16 EST 2010
+		 */ 
+	if (sign) ret = -ret;
 
+	*out = ret;
 	return i;
 }
 
@@ -247,5 +252,5 @@ gint decode_pmap(
 
 	*outbits=ret;
 
-	return sz*7;
+	return sz;
 }
