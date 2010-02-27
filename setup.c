@@ -22,13 +22,11 @@ void FAST_setup(int id)
 
 	struct template_type* t;
 	create_template("test_template",1,&t);
-	field_value v;
-	v.val=0;
 	append_field(
 		"int1",
 		FIELD_TYPE_INT32|FIELD_REQUIRED_BIT,
 		0,
-		v,
+		NULL_FIELD_VALUE,
 		0,
 		0,
 		t,
@@ -37,7 +35,7 @@ void FAST_setup(int id)
 		"int2",
 		FIELD_TYPE_UINT32|FIELD_REQUIRED_BIT,
 		0,
-		v,
+		NULL_FIELD_VALUE,
 		0,
 		0,
 		t,

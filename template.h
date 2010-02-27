@@ -50,6 +50,10 @@
 #define FIELD_REQUIRED(f)	((f)->type & FIELD_REQUIRED_BIT)
 #define FIELD_HAS_NULL(f)	((f)->type & FIELD_HAS_NULL_BIT)
 
+#define NULL_FIELD_VALUE	((union field_value_type)0)
+
+#define FIELD_VALUE_IS_NULL(f)	((f).u64==0)
+
 typedef union field_value_type
 {
 	guint32 u32;
@@ -75,7 +79,7 @@ struct template_field_type
 
 	guint8 type,op;
 
-	field_value def_value;
+	union field_value_type def_value;
 	guint32 def_value_size;
 
 	guint wholebits;

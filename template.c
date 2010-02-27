@@ -131,22 +131,22 @@ gint append_field(
 		return ERR_BADARG;
 	}
 
-	if(def_value.val)
+	if(FIELD_VALUE_IS_NULL(def_value))
 	{
 		if(FIELD_TYPE(f)>FIELD_TYPE_FIXDEC)
 		{
-			f->def_value.val=g_malloc(def_value_size);
-			if(!(f->def_value.val))
+			f->def_value.str=g_malloc(def_value_size);
+			if(!(f->def_value.str))
 			{
 				g_free(f->name);
 				g_free(f);
 				return ERR_NOMEM;
 			}
-			memcpy(f->def_value.val,def_value.val,def_value_size);
+			memcpy(f->def_value.str,def_value.str,def_value_size);
 		}
 		else
 		{
-			f->def_value.val = def_value.val;
+			f->def_value = def_value;
 		}
 	}
 
@@ -373,10 +373,5 @@ gint reset_template_state(struct template_type* t)
 
 gint set_field_display(proto_tree* tree, struct template_field_type* f)
 {
-	/*switch(FIELD_TYPE(f))
-	{
-	case FIELD_TYPE_INT32:
-	}
-
-	return 0;*/
+	return ERR_NOTIMPL;
 }
