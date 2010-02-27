@@ -293,7 +293,7 @@ gint read_uint32_field(
 	tvbuff_t* buf,
 	guint off)
 {
-	return decode_uint32(buf,off,(guint32*)&(f->value.val));
+	return decode_uint32(buf,off,&(f->value.u32));
 }
 
 gint read_int32_field(
@@ -301,7 +301,7 @@ gint read_int32_field(
 	tvbuff_t* buf,
 	guint off)
 {
-	return decode_int32(buf,off,(gint32*)&(f->value.val));
+	return decode_int32(buf,off,&(f->value.i32));
 }
 
 gint read_uint64_field(
@@ -309,7 +309,7 @@ gint read_uint64_field(
 	tvbuff_t* buf,
 	guint off)
 {
-	return decode_uint64(buf,off,(guint64*)&(f->value.val));
+	return decode_uint64(buf,off,&(f->value.u64));
 }
 
 gint read_int64_field(
@@ -317,7 +317,7 @@ gint read_int64_field(
 	tvbuff_t* buf,
 	guint off)
 {
-	return decode_int64(buf,off,(gint64*)&(f->value.val));
+	return decode_int64(buf,off,&(f->value.i64));
 }
 
 gint read_ascii_field(
@@ -325,8 +325,8 @@ gint read_ascii_field(
 	tvbuff_t* buf,
 	guint off)
 {
-	if(f->value.val) g_free(f->value.val);
-	gint ret= decode_ascii(buf,off,(guint8**)&(f->value.val));
+	if(f->value.str) g_free(f->value.str);
+	gint ret= decode_ascii(buf,off,&(f->value.str));
 	f->size=ret;
 	return ret;
 }
@@ -344,8 +344,8 @@ gint read_bytes_field(
 	tvbuff_t* buf,
 	guint off)
 {
-	if(f->value.val) g_free(f->value.val);
-	gint ret=decode_utf8(buf,off,(guint8**)&(f->value.val));
+	if(f->value.str) g_free(f->value.str);
+	gint ret=decode_utf8(buf,off,&(f->value.str));
 	f->size=ret;
 	return ret;
 }
