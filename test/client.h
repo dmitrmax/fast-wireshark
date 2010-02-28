@@ -17,6 +17,7 @@ typedef struct fast_message_struct
     struct addrinfo crit;
 
     GByteArray* pmap;
+    gboolean tidp;
     guint32 tid;
     GByteArray* msg;
 

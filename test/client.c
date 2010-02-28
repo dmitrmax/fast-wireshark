@@ -4,13 +4,17 @@
     /* Encode and destroy */
 void encode_fast (fast_message_t fmsg)
 {
+        /* Set tidp's placeholder */
+    fmsg->pmap->data[0] = fmsg->tidp;
+
         /* Encode the message */
     fmsg->encoded = g_byte_array_new ();
 
     encode_pmap (fmsg->pmap, &fmsg->encoded);
     g_byte_array_free (fmsg->pmap, 1);
 
-    encode_uint32 (fmsg->tid, fmsg->encoded);
+    if (fmsg->tidp)
+        encode_uint32 (fmsg->tid, &fmsg->encoded);
 
     fmsg->encoded =
         g_byte_array_append (fmsg->encoded,
@@ -85,23 +89,28 @@ Usage: ./client [options]\n\
     -p port\n\
     --tid n\
     Set template id to /n/, default is 1\n\
+    --notid\
+    No template id for this message\n\
     -h host\n\
     --help\n\
 \n\
  Fields\n\
     --help\
     See this message\n\
+    --req | --noreq\
+    Following fields are required (default) or not\n\
     --uint32 n\
     Encode a unsigned 32-bit integer /n/\n\
     --int32 n\
     Encode a signed 32-bit integer /n/\n\
     --nop\
-    Put a zero in the presence map\n\
+    Put a zero in the presence map (even if --req specified)\n\
 ", stderr);
 }
 
 int main (int argc, char** argv)
 {
+    gboolean requiredp = 1;
     fast_message_type fmsg;
 
         /* Die fast if no arguments */
@@ -114,8 +123,11 @@ int main (int argc, char** argv)
     fmsg.host = "localhost";
     fmsg.service = "1337";
     fmsg.pmap = g_byte_array_new ();
+    fmsg.tidp = 1;
     fmsg.tid = 1;
     fmsg.msg = g_byte_array_new ();
+
+    add_pmap (&fmsg, fmsg.tidp);
 
         /* Set default socket values */
     memset (&fmsg.crit, 0, sizeof (struct addrinfo));
@@ -128,12 +140,17 @@ int main (int argc, char** argv)
     {
         enum
         {   optkey_first = 256,
-            optkey_help, optkey_tid,
+            optkey_help,
+            optkey_tid, optkey_notid,
+            optkey_req, optkey_noreq,
             optkey_uint32, optkey_int32, optkey_nop
         };
         const struct option long_options[] =
         {    {"help"  , 0, 0, 0 }
             ,{"tid"   , 1, 0, 0 }
+            ,{"notid" , 0, 0, 0 }
+            ,{"req"   , 0, 0, 0 }
+            ,{"noreq" , 0, 0, 0 }
             ,{"uint32", 1, 0, 0 }
             ,{"int32" , 1, 0, 0 }
             ,{"nop"   , 0, 0, 0 }
@@ -159,18 +176,30 @@ int main (int argc, char** argv)
                 show_usage ();
                 exit (0);
                 break;
+
             case optkey_tid :
                 fmsg.tid = (guint32) g_ascii_strtoull (optarg, 0, 10);
                 break;
+            case optkey_notid :
+                fmsg.tidp = 0;
+                break;
+
+            case optkey_req :
+                requiredp = 1;
+                break;
+            case optkey_noreq :
+                requiredp = 0;
+                break;
+
             case optkey_uint32 :
-                add_pmap (&fmsg, 1);
+                if (! requiredp)  add_pmap (&fmsg, 1);
                 encode_uint32 ((guint32) g_ascii_strtoull (optarg, 0, 10),
-                               fmsg.msg);
+                               &fmsg.msg);
                 break;
             case optkey_int32 :
-                add_pmap (&fmsg, 1);
+                if (! requiredp)  add_pmap (&fmsg, 1);
                 encode_int32 ((gint32) g_ascii_strtoll (optarg, 0, 10),
-                              fmsg.msg);
+                              &fmsg.msg);
                 break;
             case optkey_nop :
                 add_pmap (&fmsg, 0);

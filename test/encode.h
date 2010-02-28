@@ -9,8 +9,8 @@
 #include <glib.h>
 
 void encode_pmap (const GByteArray* pmap, GByteArray** pto_a);
-void encode_uint32 (guint32 x, GByteArray* arr);
-void encode_int32 (gint32 x, GByteArray* arr);
+void encode_uint32 (guint32 x, GByteArray** arr);
+void encode_int32 (gint32 x, GByteArray** arr);
 
 #endif
 
