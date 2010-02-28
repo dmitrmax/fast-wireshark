@@ -9,25 +9,44 @@
 #include <netdb.h>
 #include <glib.h>
 
-void send_string (int sock, char* init_strOut)
+void encode_uint32 (guint32 x, int* offset, guint8* buf)
 {
-    static char*  strOut = 0;
-    static size_t lenOut = 0;
+    size_t maxc = 9;
+    int i = maxc;
+
+    buf += *offset;
+
+    do
+    {
+        --i;
+        buf[i] = x & 0x7f;
+        x >>= 7;
+    } while (0 != x);
+
+    buf[maxc -1] |= 0x80;
+
+    memmove (buf, &buf[i], maxc - i);
+    *offset += (maxc - i);
+}
+
+void send_bytes (int sock, size_t init_len, guint8* init_msg)
+{
+    static guint8*  msg = 0;
+    static size_t len = 0;
 
     ssize_t bytecOut;
 
         /* Sneaky variable initialization */
     if (! sock)
     {
-        strOut = init_strOut;
-        lenOut = strlen (strOut);
+        len = init_len;
+        msg = init_msg;
         return;
     }
 
     fprintf (stderr, "Woot connected to a socket!\n");
 
-
-    bytecOut = send (sock, strOut, lenOut, 0);
+    bytecOut = send (sock, msg, len, 0);
     if (0 > bytecOut)
     {
         perror ("send() failed");
@@ -83,20 +102,19 @@ void
 
 int main (int argc, char** argv)
 {
-    char* message;
+    guint8 msg[BUFSIZ];
     char* host;
     char* service;
     struct addrinfo crit;
 
-    if (3 > argc)
+    if (1 >= argc)
     {
-        fputs ("./client message port [host]\n", stderr);
+        fputs ("./client port [host]\n", stderr);
         exit (EXIT_FAILURE);
     }
-    message = argv[1];
-    service = argv[2];
+    service = argv[1];
 
-    if (4 <= argc)  host = argv[3];
+    if (3 <= argc)  host = argv[2];
     else            host = "localhost";
 
     memset (&crit, 0, sizeof (struct addrinfo));
@@ -106,23 +124,19 @@ int main (int argc, char** argv)
     crit.ai_socktype = SOCK_DGRAM;
     crit.ai_protocol = IPPROTO_UDP;
 
-        /* Initialize message */
-        /* send_string (0, message); */
-
     {
-        guint8 msg[3];
-        msg[0] = 0x80 | 0x1;
-        msg[1] = 0x80 | 0x1;
-        msg[2] = 0x80 | 0x3;
-        msg[3] = 0x80 | 0x2;
-        msg[4] = 0;
+        int off = 0;
+        encode_uint32 (4, &off, msg);
+        encode_uint32 (1, &off, msg);
+        encode_uint32 (3, &off, msg);
+        encode_uint32 (2, &off, msg);
 
             /* Initialize message */
-        send_string (0, (char*)msg);
+        send_bytes (0, off, msg);
     }
 
     spawn_senders (&crit, host, service,
-                   (void (*) (int)) send_string);
+                   (void (*) (int)) send_bytes);
 
     exit (0);
 }

@@ -4,7 +4,7 @@ which_tests_to_run ()
     cat <<EOF
 yes  tshark_installed
 yes  plugin_recognition
-yes  plain_field_recognition
+no  plain_field_recognition
 EOF
 }
 
