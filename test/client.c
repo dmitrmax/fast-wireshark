@@ -1,95 +1,33 @@
 
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <getopt.h>
+#include "client.h"
 
-#include <glib.h>
-
-void encode_uint32 (guint32 x, int* offset, guint8* buf)
+    /* Encode and destroy */
+void encode_fast (fast_message_t fmsg)
 {
-    size_t maxc = 9;
-    int i = maxc;
+        /* Encode the message */
+    fmsg->encoded = g_byte_array_new ();
 
-    buf += *offset;
+    encode_pmap (fmsg->pmap, &fmsg->encoded);
+    g_byte_array_free (fmsg->pmap, 1);
 
-    do
-    {
-        --i;
-        buf[i] = x & 0x7f;
-        x >>= 7;
-    } while (0 != x);
+    encode_uint32 (fmsg->tid, fmsg->encoded);
 
-    buf[maxc -1] |= 0x80;
-
-    memmove (buf, &buf[i], maxc - i);
-    *offset += (maxc - i);
+    fmsg->encoded =
+        g_byte_array_append (fmsg->encoded,
+                             fmsg->msg->data,
+                             fmsg->msg->len);
+    g_byte_array_free (fmsg->msg, 1);
 }
 
-void encode_int32 (gint32 x, int* offset, guint8* buf)
-{
-    size_t maxc = 9;
-    int i = maxc;
-
-    buf += *offset;
-
-    while (1)
-    {
-        --i;
-        buf[i] = x & 0x7f;
-        x >>= 6;
-        if (x == 0 || ~x == 0)  break;
-        x >>= 1;
-    }
-
-    buf[maxc -1] |= 0x80;
-
-    memmove (buf, &buf[i], maxc - i);
-    *offset += (maxc - i);
-}
-
-void send_bytes (int sock, size_t init_len, guint8* init_msg)
-{
-    static guint8*  msg = 0;
-    static size_t len = 0;
-
-    ssize_t bytecOut;
-
-        /* Sneaky variable initialization */
-    if (! sock)
-    {
-        len = init_len;
-        msg = init_msg;
-        return;
-    }
-
-    fprintf (stderr, "Woot connected to a socket!\n");
-
-    bytecOut = send (sock, msg, len, 0);
-    if (0 > bytecOut)
-    {
-        perror ("send() failed");
-    }
-}
-
-void
-    spawn_senders
-(const struct addrinfo* crit,
- const char* host,
- const char* service,
- void (* sender_fn) (int))
+    /* Send and destroy encoded fast message */
+void send_fast (fast_message_t fmsg)
 {
     struct addrinfo* list;
     struct addrinfo* addr;
 
     {
         int rtn;
-        rtn = getaddrinfo (host, service, crit, &list);
+        rtn = getaddrinfo (fmsg->host, fmsg->service, &fmsg->crit, &list);
         if (rtn != 0)
         {
             fprintf (stderr, "getaddrinfo() failed: %s\n",
@@ -101,6 +39,7 @@ void
     for (addr = list; addr; addr = addr->ai_next)
     {
         int sock;
+        ssize_t bytecOut;
         sock = socket (addr->ai_family,
                        addr->ai_socktype,
                        addr->ai_protocol);
@@ -117,11 +56,26 @@ void
             continue;
         }
 
-        sender_fn (sock);
+        fprintf (stderr, "Woot connected to a socket!\n");
+
+        bytecOut = send (sock,
+                         fmsg->encoded->data,
+                         fmsg->encoded->len,
+                         0);
+        if (0 > bytecOut)
+        {
+            perror ("send() failed");
+        }
         close (sock);
     }
 
     freeaddrinfo (list);
+    g_byte_array_free (fmsg->encoded, 1);
+}
+
+void add_pmap (fast_message_t fmsg, guint8 b)
+{
+    fmsg->pmap = g_byte_array_append (fmsg->pmap, &b, 1);
 }
 
 void show_usage ()
@@ -129,41 +83,60 @@ void show_usage ()
     fputs ("\
 Usage: ./client [options]\n\
     -p port\n\
+    --tid n\
+    Set template id to /n/, default is 1\n\
     -h host\n\
     --help\n\
 \n\
  Fields\n\
-    --uint32 n\n\
-    --int32 n\n\
+    --help\
+    See this message\n\
+    --uint32 n\
+    Encode a unsigned 32-bit integer /n/\n\
+    --int32 n\
+    Encode a signed 32-bit integer /n/\n\
+    --nop\
+    Put a zero in the presence map\n\
 ", stderr);
 }
 
-
 int main (int argc, char** argv)
 {
+    fast_message_type fmsg;
 
-    guint8 msg[BUFSIZ];
-    char* host = "localhost";
-    char* service = "1337";
-    struct addrinfo crit;
-    int off = 0;
-
+        /* Die fast if no arguments */
     if (argc == 1)
     {
         show_usage ();
         exit (1);
     }
 
-    encode_uint32 (0x40, &off, msg);
-    encode_uint32 (1, &off, msg);
+    fmsg.host = "localhost";
+    fmsg.service = "1337";
+    fmsg.pmap = g_byte_array_new ();
+    fmsg.tid = 1;
+    fmsg.msg = g_byte_array_new ();
+
+        /* Set default socket values */
+    memset (&fmsg.crit, 0, sizeof (struct addrinfo));
+        /* fmsg->crit.  ai_family = AF_INET6; */
+    fmsg.crit.  ai_family = AF_UNSPEC;
+    fmsg.crit.ai_socktype = SOCK_DGRAM;
+    fmsg.crit.ai_protocol = IPPROTO_UDP;
 
     while (1)
     {
-        enum { optkey_first = 256, optkey_help, optkey_uint32, optkey_int32 };
+        enum
+        {   optkey_first = 256,
+            optkey_help, optkey_tid,
+            optkey_uint32, optkey_int32, optkey_nop
+        };
         const struct option long_options[] =
         {    {"help"  , 0, 0, 0 }
+            ,{"tid"   , 1, 0, 0 }
             ,{"uint32", 1, 0, 0 }
             ,{"int32" , 1, 0, 0 }
+            ,{"nop"   , 0, 0, 0 }
             ,{0,0,0,0}
         };
         int indOpt;
@@ -177,38 +150,36 @@ int main (int argc, char** argv)
         switch (opt)
         {
             case 'h' :
-                host = optarg;
+                fmsg.host = optarg;
                 break;
             case 'p' :
-                service = optarg;
+                fmsg.service = optarg;
                 break;
             case optkey_help :
                 show_usage ();
                 exit (0);
                 break;
+            case optkey_tid :
+                fmsg.tid = (guint32) g_ascii_strtoull (optarg, 0, 10);
+                break;
             case optkey_uint32 :
+                add_pmap (&fmsg, 1);
                 encode_uint32 ((guint32) g_ascii_strtoull (optarg, 0, 10),
-                               &off, msg);
+                               fmsg.msg);
                 break;
             case optkey_int32 :
+                add_pmap (&fmsg, 1);
                 encode_int32 ((gint32) g_ascii_strtoll (optarg, 0, 10),
-                              &off, msg);
+                              fmsg.msg);
+                break;
+            case optkey_nop :
+                add_pmap (&fmsg, 0);
                 break;
         }
     }
 
-    memset (&crit, 0, sizeof (struct addrinfo));
-
-        /* crit.  ai_family = AF_INET6; */
-    crit.  ai_family = AF_UNSPEC;
-    crit.ai_socktype = SOCK_DGRAM;
-    crit.ai_protocol = IPPROTO_UDP;
-
-        /* Initialize message */
-    send_bytes (0, off, msg);
-
-    spawn_senders (&crit, host, service,
-                   (void (*) (int)) send_bytes);
+    encode_fast (&fmsg);
+    send_fast (&fmsg);
 
     exit (0);
 }

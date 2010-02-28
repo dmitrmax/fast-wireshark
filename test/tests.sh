@@ -41,7 +41,7 @@ test_plugin_recognition ()
 
     if [ "$1" = 'generate' ]
     then
-        run_client 'hello there server!'
+        run_client --uint32 1
         return $?
     fi
 
@@ -62,6 +62,7 @@ test_plugin_recognition ()
     return 0
 }
 
+# OBSOLETE
 # See if the plugin can echo a text message
 test_plain_field_recognition ()
 {

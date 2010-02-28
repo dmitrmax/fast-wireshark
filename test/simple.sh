@@ -139,7 +139,7 @@ stop_process ()
 
 run_client ()
 {
-    ./client "$@" $PORT localhost
+    ./client -p $PORT -h localhost "$@" $PORT
 } 2>> "$dir/stderrClient"
 
 process_test_result ()
