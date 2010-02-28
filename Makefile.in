@@ -1,5 +1,5 @@
 INCS=-I<WIRESHARK_SRC_ROOT> -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include
-SRCS = packet-fast.c dissect.c setup.c decode.c template.c
+SRCS = packet-fast.c dissect.c setup.c decode.c template.c debug.c
 
 CC   = gcc
 
