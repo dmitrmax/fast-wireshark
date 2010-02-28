@@ -68,3 +68,20 @@ void encode_int32 (gint32 x, GByteArray** arr)
     *arr = g_byte_array_append (*arr, &buf[i], maxc - i);
 }
 
+void encode_ascii (const guint8* str, GByteArray** arr)
+{
+    guint len = strlen ((char*) str);
+    guint8 b;
+
+    if (0 == len)
+    {
+        fputs ("Zero length string not allowed!\n", stderr);
+        exit (1); /* Die fast */
+    }
+
+    b = str[len -1] | (1 << 7);
+
+    *arr = g_byte_array_append (*arr, str, len-1);
+    *arr = g_byte_array_append (*arr, &b, 1);
+}
+

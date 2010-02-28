@@ -85,26 +85,24 @@ void add_pmap (fast_message_t fmsg, guint8 b)
 void show_usage ()
 {
     fputs ("\
-Usage: ./client [options]\n\
-    -p port\n\
-    --tid n\
-    Set template id to /n/, default is 1\n\
-    --notid\
-    No template id for this message\n\
-    -h host\n\
-    --help\n\
-\n\
+Usage: ./client [flags]\n\n\
+ Options\n\
+    --help      Show this message\n\
+    -p port     Connect to port /port/, default is 1337\n\
+    -h host     Connect to /host/, default is localhost\n\
+", stderr);
+    fputs ("\
+    --tid n     Set template id to /n/, default is 1\n\
+    --notid     No template id for this message\n\
+", stderr);
+    fputs ("\n\
  Fields\n\
-    --help\
-    See this message\n\
-    --req | --noreq\
-    Following fields are required (default) or not\n\
-    --uint32 n\
-    Encode a unsigned 32-bit integer /n/\n\
-    --int32 n\
-    Encode a signed 32-bit integer /n/\n\
-    --nop\
-    Put a zero in the presence map (even if --req specified)\n\
+    --req | --noreq   Following fields are required (default) or not\n\
+                      i.e. they won't appear in the presence map\n\
+    --uint32 n       Encode a unsigned 32-bit integer /n/\n\
+    --int32 n       Encode a signed 32-bit integer /n/\n\
+    --ascii str    Encode /str/ as an ascii string\n\
+    --nop        Put a zero in the presence map (even if --req specified)\n\
 ", stderr);
 }
 
@@ -143,7 +141,9 @@ int main (int argc, char** argv)
             optkey_help,
             optkey_tid, optkey_notid,
             optkey_req, optkey_noreq,
-            optkey_uint32, optkey_int32, optkey_nop
+            optkey_uint32, optkey_int32,
+            optkey_ascii,
+            optkey_nop
         };
         const struct option long_options[] =
         {    {"help"  , 0, 0, 0 }
@@ -153,6 +153,7 @@ int main (int argc, char** argv)
             ,{"noreq" , 0, 0, 0 }
             ,{"uint32", 1, 0, 0 }
             ,{"int32" , 1, 0, 0 }
+            ,{"ascii" , 1, 0, 0 }
             ,{"nop"   , 0, 0, 0 }
             ,{0,0,0,0}
         };
@@ -200,6 +201,10 @@ int main (int argc, char** argv)
                 if (! requiredp)  add_pmap (&fmsg, 1);
                 encode_int32 ((gint32) g_ascii_strtoll (optarg, 0, 10),
                               &fmsg.msg);
+                break;
+            case optkey_ascii :
+                if (! requiredp)  add_pmap (&fmsg, 1);
+                encode_ascii ((guint8*) optarg, &fmsg.msg);
                 break;
             case optkey_nop :
                 add_pmap (&fmsg, 0);
