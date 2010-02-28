@@ -42,4 +42,15 @@ extern int ett_fast_tid;
 extern int hf_fast;
 extern int hf_fast_tid;
 
+/*void debug_out(
+	const char*,
+	const char*,
+	int, const char* fmt,
+	...);
+*/
+
+#define DBG0(s)		0
+#define DBG(s,...)	0
+#define DBG_RET(r)	0
+
 #endif

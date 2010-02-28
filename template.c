@@ -114,21 +114,80 @@ gint append_field(
 
 	switch(FIELD_TYPE(f))
 	{
-	case FIELD_TYPE_INT32: f->read=read_int32_field; break;
-	case FIELD_TYPE_UINT32: f->read=read_uint32_field; break;
-	case FIELD_TYPE_INT64: f->read=read_int64_field; break;
-	case FIELD_TYPE_UINT64: f->read=read_uint64_field; break;
-	case FIELD_TYPE_FLT10: f->read=read_flt10_field; break;
-	case FIELD_TYPE_FIXDEC: f->read=read_fixdec_field; break;
-	case FIELD_TYPE_UTF8: f->read=read_utf8_field; break;
-	case FIELD_TYPE_ASCII: f->read=read_ascii_field; break;
-	case FIELD_TYPE_BYTES: f->read=read_bytes_field; break;
-	case FIELD_TYPE_SEQ: f->read=0; break;
-	case FIELD_TYPE_GROUP: f->read=0; break;
+	case FIELD_TYPE_INT32:
+		f->read=read_int32_field;
+		f->display=display_int32_field;
+		break;
+	case FIELD_TYPE_UINT32:
+		f->read=read_uint32_field;
+		f->display=display_uint32_field;
+		break;
+	case FIELD_TYPE_INT64:
+		f->read=read_int64_field;
+		f->display=display_int64_field;
+		break;
+	case FIELD_TYPE_UINT64:
+		f->read=read_uint64_field;
+		f->display=display_uint64_field;
+		break;
+	case FIELD_TYPE_FLT10:
+		f->read=read_flt10_field;
+		f->display=display_flt10_field;
+		break;
+	case FIELD_TYPE_FIXDEC:
+		f->read=read_fixdec_field;
+		f->display=display_fixdec_field;
+		break;
+	case FIELD_TYPE_UTF8:
+		f->read=read_utf8_field;
+		f->display=display_utf8_field;
+		break;
+	case FIELD_TYPE_ASCII:
+		f->read=read_ascii_field;
+		f->display=display_ascii_field;
+		break;
+	case FIELD_TYPE_BYTES:
+		f->read=read_bytes_field;
+		f->display=display_bytes_field;
+		break;
+	case FIELD_TYPE_SEQ:
+		f->read=0;
+		f->display=0;
+		break;
+	case FIELD_TYPE_GROUP:
+		f->read=0;
+		f->display=0;
+		break;
 	default:
 		g_free(f->name);
 		g_free(f);
 		return ERR_BADARG;
+	}
+
+	f->op_func=0;
+	switch(op)
+	{
+	case FIELD_OP_CONST:
+		f->op_func=field_const_op;
+		break;
+	case FIELD_OP_DEFAULT:
+		f->op_func=field_default_op;
+		break;
+	case FIELD_OP_COPY:
+		f->op_func=field_copy_op;
+		break;
+	case FIELD_OP_INCR:
+		f->op_func=field_incr_op;
+		break;
+	case FIELD_OP_DELTA:
+		f->op_func=field_delta_op;
+		break;
+	case FIELD_OP_TAIL:
+		f->op_func=field_tail_op;
+		break;
+	default:
+		f->op_func=0;
+		break;
 	}
 
 	if(FIELD_VALUE_IS_NULL(def_value))
@@ -371,7 +430,142 @@ gint reset_template_state(struct template_type* t)
 	return ERR_NOTIMPL;
 }
 
-gint set_field_display(proto_tree* tree, struct template_field_type* f)
+gint display_uint32_field(
+	struct template_field_type* f,
+	proto_tree* tree,
+	tvbuff_t* buf)
+{
+	proto_tree_add_uint(
+		tree,
+		f->hf_id,
+		buf,
+		0,
+		sizeof(guint32),
+		f->value.u32);
+	return 0;
+}
+
+gint display_int32_field(
+	struct template_field_type* f,
+	proto_tree* tree,
+	tvbuff_t* buf)
+{
+	proto_tree_add_int(
+		tree,
+		f->hf_id,
+		buf,
+		0,
+		sizeof(gint32),
+		f->value.i32);
+	return 0;
+}
+
+gint display_uint64_field(
+	struct template_field_type* f,
+	proto_tree* tree,
+	tvbuff_t* buf)
+{
+	proto_tree_add_uint64(
+		tree,
+		f->hf_id,
+		buf,
+		0,
+		sizeof(guint64),
+		f->value.u64);
+	return 0;
+}
+
+gint display_int64_field(
+	struct template_field_type* f,
+	proto_tree* tree,
+	tvbuff_t* buf)
+{
+	proto_tree_add_int64(
+		tree,
+		f->hf_id,
+		buf,
+		0,
+		sizeof(gint64),
+		f->value.i64);
+	return 0;
+}
+
+gint display_ascii_field(
+	struct template_field_type* f,
+	proto_tree* tree,
+	tvbuff_t* buf)
+{
+	proto_tree_add_string(
+		tree,
+		f->hf_id,
+		buf,
+		0,
+		strlen((const char*)f->value.str),
+		(const char*)f->value.str);
+	return 0;
+}
+
+gint display_bytes_field(
+	struct template_field_type* f,
+	proto_tree* tree,
+	tvbuff_t* buf)
+{
+	proto_tree_add_bytes(
+		tree,
+		f->hf_id,
+		buf,
+		0,
+		f->size,
+		f->value.str);
+	return 0;
+}
+
+gint display_utf8_field(
+	struct template_field_type* f,
+	proto_tree* tree,
+	tvbuff_t* buf)
+{
+	return ERR_NOTIMPL;
+}
+
+gint display_flt10_field(
+	struct template_field_type* f,
+	proto_tree* tree,
+	tvbuff_t* buf)
+{
+	return ERR_NOTIMPL;
+}
+
+gint display_fixdec_field(
+	struct template_field_type* f,
+	proto_tree* tree,
+	tvbuff_t* buf)
+{
+	return ERR_NOTIMPL;
+}
+
+gint field_const_op(struct template_field_type* f)
+{
+	return ERR_NOTIMPL;
+}
+
+gint field_default_op(struct template_field_type* f)
+{
+	return ERR_NOTIMPL;
+}
+gint field_copy_op(struct template_field_type* f)
+{
+	return ERR_NOTIMPL;
+}
+gint field_incr_op(struct template_field_type* f)
+{
+	return ERR_NOTIMPL;
+}
+gint field_delta_op(struct template_field_type* f)
+{
+	return ERR_NOTIMPL;
+}
+gint field_tail_op(struct template_field_type* f)
 {
 	return ERR_NOTIMPL;
 }

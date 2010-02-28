@@ -32,6 +32,7 @@
 
 #define FIELD_TYPE_MASK		0xf0
 
+#define FIELD_OP_NONE		0x00
 #define FIELD_OP_CONST		0x01	// constant
 #define FIELD_OP_DEFAULT	0x02	// default
 #define FIELD_OP_COPY		0x03	// copy
@@ -60,6 +61,7 @@ typedef union field_value_type
 	gint32 i32;
 	guint64 u64;
 	gint64 i64;
+	double flt;
 
 	guint8* str;
 
@@ -72,6 +74,12 @@ typedef gint (*field_read_func_type)(
 	struct template_field_type*,
 	tvbuff_t*,
 	guint);
+typedef gint (*field_display_func_type)(
+	struct template_field_type*,
+	proto_tree*,
+	tvbuff_t*);
+typedef gint (*field_op_func_type)(
+	struct template_field_type*);
 
 struct template_field_type
 {
@@ -91,11 +99,13 @@ struct template_field_type
 	guint8 state,prev_state;
 
 	field_read_func_type read;
+	field_display_func_type display;
+	field_op_func_type op_func;
 
 	struct template_field_type* subfields;
 
-	// gui field index
-	int hf_id;
+	// gui field ids
+	int hf_id,ett_id;
 
 	struct template_field_type* next;
 };
@@ -141,8 +151,6 @@ gint find_template_field_byindex(
 	struct template_field_type**,
 	guint);
 
-gint set_field_display(proto_tree*,struct template_field_type*);
-
 gint read_int32_field(
 	struct template_field_type*,
 	tvbuff_t*,guint);
@@ -156,6 +164,24 @@ gint read_uint64_field(
 	struct template_field_type*,
 	tvbuff_t*,guint);
 
+gint display_int32_field(
+	struct template_field_type*,
+	proto_tree*,
+	tvbuff_t*);
+gint display_uint32_field(
+	struct template_field_type*,
+	proto_tree*,
+	tvbuff_t*);
+gint display_int64_field(
+	struct template_field_type*,
+	proto_tree*,
+	tvbuff_t*);
+gint display_uint64_field(
+	struct template_field_type*,
+	proto_tree*,
+	tvbuff_t*);
+
+
 gint read_ascii_field(
 	struct template_field_type*,
 	tvbuff_t*,guint);
@@ -166,11 +192,41 @@ gint read_utf8_field(
 	struct template_field_type*,
 	tvbuff_t*,guint);
 
+gint display_ascii_field(
+	struct template_field_type*,
+	proto_tree*,
+	tvbuff_t*);
+gint display_bytes_field(
+	struct template_field_type*,
+	proto_tree*,
+	tvbuff_t*);
+gint display_utf8_field(
+	struct template_field_type*,
+	proto_tree*,
+	tvbuff_t*);
+
 gint read_flt10_field(
 	struct template_field_type*,
 	tvbuff_t*,guint);
 gint read_fixdec_field(
 	struct template_field_type*,
 	tvbuff_t*,guint);
+
+gint display_flt10_field(
+	struct template_field_type*,
+	proto_tree*,
+	tvbuff_t*);
+gint display_fixdec_field(
+	struct template_field_type*,
+	proto_tree*,
+	tvbuff_t*);
+
+// field operators
+gint field_const_op(struct template_field_type*);
+gint field_default_op(struct template_field_type*);
+gint field_copy_op(struct template_field_type*);
+gint field_incr_op(struct template_field_type*);
+gint field_delta_op(struct template_field_type*);
+gint field_tail_op(struct template_field_type*);
 
 #endif
