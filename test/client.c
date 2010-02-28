@@ -7,6 +7,8 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <getopt.h>
+
 #include <glib.h>
 
 void encode_uint32 (guint32 x, int* offset, guint8* buf)
@@ -22,6 +24,28 @@ void encode_uint32 (guint32 x, int* offset, guint8* buf)
         buf[i] = x & 0x7f;
         x >>= 7;
     } while (0 != x);
+
+    buf[maxc -1] |= 0x80;
+
+    memmove (buf, &buf[i], maxc - i);
+    *offset += (maxc - i);
+}
+
+void encode_int32 (gint32 x, int* offset, guint8* buf)
+{
+    size_t maxc = 9;
+    int i = maxc;
+
+    buf += *offset;
+
+    while (1)
+    {
+        --i;
+        buf[i] = x & 0x7f;
+        x >>= 6;
+        if (x == 0 || ~x == 0)  break;
+        x >>= 1;
+    }
 
     buf[maxc -1] |= 0x80;
 
@@ -100,22 +124,78 @@ void
     freeaddrinfo (list);
 }
 
+void show_usage ()
+{
+    fputs ("\
+Usage: ./client [options]\n\
+    -p port\n\
+    -h host\n\
+    --help\n\
+\n\
+ Fields\n\
+    --uint32 n\n\
+    --int32 n\n\
+", stderr);
+}
+
+
 int main (int argc, char** argv)
 {
+
     guint8 msg[BUFSIZ];
-    char* host;
-    char* service;
+    char* host = "localhost";
+    char* service = "1337";
     struct addrinfo crit;
+    int off = 0;
 
-    if (1 >= argc)
+    if (argc == 1)
     {
-        fputs ("./client port [host]\n", stderr);
-        exit (EXIT_FAILURE);
+        show_usage ();
+        exit (1);
     }
-    service = argv[1];
 
-    if (3 <= argc)  host = argv[2];
-    else            host = "localhost";
+    encode_uint32 (4, &off, msg);
+    encode_uint32 (1, &off, msg);
+
+    while (1)
+    {
+        enum { optkey_first = 256, optkey_help, optkey_uint32, optkey_int32 };
+        const struct option long_options[] =
+        {    {"help"  , 0, 0, 0 }
+            ,{"uint32", 1, 0, 0 }
+            ,{"int32" , 1, 0, 0 }
+            ,{0,0,0,0}
+        };
+        int indOpt;
+        int opt = getopt_long
+            (argc, argv, "p:h:",
+             long_options, &indOpt);
+
+        if (0 > opt)  break;
+        if (0 == opt)  opt = indOpt + optkey_first +1;
+
+        switch (opt)
+        {
+            case 'h' :
+                host = optarg;
+                break;
+            case 'p' :
+                service = optarg;
+                break;
+            case optkey_help :
+                show_usage ();
+                exit (0);
+                break;
+            case optkey_uint32 :
+                encode_uint32 ((guint32) g_ascii_strtoull (optarg, 0, 10),
+                               &off, msg);
+                break;
+            case optkey_int32 :
+                encode_int32 ((gint32) g_ascii_strtoll (optarg, 0, 10),
+                              &off, msg);
+                break;
+        }
+    }
 
     memset (&crit, 0, sizeof (struct addrinfo));
 
@@ -124,16 +204,8 @@ int main (int argc, char** argv)
     crit.ai_socktype = SOCK_DGRAM;
     crit.ai_protocol = IPPROTO_UDP;
 
-    {
-        int off = 0;
-        encode_uint32 (4, &off, msg);
-        encode_uint32 (1, &off, msg);
-        encode_uint32 (3, &off, msg);
-        encode_uint32 (2, &off, msg);
-
-            /* Initialize message */
-        send_bytes (0, off, msg);
-    }
+        /* Initialize message */
+    send_bytes (0, off, msg);
 
     spawn_senders (&crit, host, service,
                    (void (*) (int)) send_bytes);

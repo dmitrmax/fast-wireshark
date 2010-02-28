@@ -3,6 +3,7 @@ CC = gcc
 CFLAGS = -g -Wall -ansi -pedantic
 DFLAGS = -D_POSIX_SOURCE
 IFLAGS = -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include
+LFLAGS = -lglib-2.0
 
 EXEC = client server
 
@@ -22,7 +23,7 @@ test-nonetwork:
 $(foreach f, $(EXEC), $(eval $(f): $(f).c))
 
 $(EXEC):
-	$(CC) $(IFLAGS) $(CFLAGS) $(DFLAGS) -o $(@) $(@).c
+	$(CC) $(IFLAGS) $(LFLAGS) $(CFLAGS) $(DFLAGS) -o $(@) $(@).c
 
 .PHONY: clean
 clean:
