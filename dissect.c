@@ -23,19 +23,19 @@ void FAST_dissect(int proto_fast, tvbuff_t* tvb, int n, packet_info* pinfo,
 	ti=proto_tree_add_item(tree,proto_fast,tvb,0,-1,FALSE);
 	tree=proto_item_add_subtree(ti,ett_fast);
 
-	/*guint8* pmap=0;
+	guint8* pmap=0;
 	gint pmap_size=decode_pmap(tvb,off,&pmap);
 	if(pmap_size<0)
 	{
 		DBG_RET(pmap_size);
 		return;
 	}
-	off+=pmap_size;*/
+	off+=pmap_size;
 	off=1;
 
 	struct template_type* t=0;
 
-	if(/*pmap[0]*/ 1) // check to see if TID is present
+	if(pmap[0]) // check to see if TID is present
 	{
 		// figure out current Template ID
 		ret=decode_uint32(tvb,off,&current_tid);
@@ -49,8 +49,6 @@ void FAST_dissect(int proto_fast, tvbuff_t* tvb, int n, packet_info* pinfo,
 			last_tid=current_tid;
 		}
 	}
-
-	DBG0("foo");
 
 	ret=find_template_byid(current_tid,&t);
 	if(ret<0)
@@ -86,7 +84,7 @@ void FAST_dissect(int proto_fast, tvbuff_t* tvb, int n, packet_info* pinfo,
 	int i=1;
 	for(cur=t->fields;cur;cur=cur->next)
 	{
-		if((FIELD_REQUIRED(cur) /*|| pmap[i]*/) && cur->read)
+		if((FIELD_REQUIRED(cur) || pmap[i]) && cur->read)
 		{
 			ret=(cur->read)(cur,tvb,off);
 			if(ret<0)
