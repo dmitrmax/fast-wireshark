@@ -154,7 +154,7 @@ int main (int argc, char** argv)
         exit (1);
     }
 
-    encode_uint32 (4, &off, msg);
+    encode_uint32 (0x40, &off, msg);
     encode_uint32 (1, &off, msg);
 
     while (1)
