@@ -20,7 +20,7 @@ void debug_out(
 {
 	char buf[1024];
 
-	sprintf(buf,"%s(%d) %s: %s\n",file,line,func,fmt);
+	snprintf(buf,1024,"%s(%d) %s: %s\n",file,line,func,fmt);
 
 	va_list args;
 	va_start(args,fmt);

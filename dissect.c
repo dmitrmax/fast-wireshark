@@ -84,7 +84,11 @@ void FAST_dissect(int proto_fast, tvbuff_t* tvb, int n, packet_info* pinfo,
 	int i=1;
 	for(cur=t->fields;cur;cur=cur->next)
 	{
-		if((FIELD_REQUIRED(cur) || pmap[i]) && cur->read)
+		// we need a special case for the Constant operator...
+		if(cur->op == FIELD_OP_CONST)
+		{
+		}
+		else if(cur->read && (FIELD_REQUIRED(cur) || pmap[i]))
 		{
 			ret=(cur->read)(cur,tvb,off);
 			if(ret<0)

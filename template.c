@@ -546,12 +546,56 @@ gint display_fixdec_field(
 
 gint field_const_op(struct template_field_type* f)
 {
+	/*if(FIELD_IS_FIXED(f))
+	{
+		f->value=def_value;
+	}
+	else
+	{
+		if(f->value.str)
+		{
+			g_free(f->value.str);
+			f->value.str=0;
+		}
+
+		if(f->def_value.str && f->def_value_size>0)
+		{
+			f->value.str=g_memdup(f->dev_value.str,f->def_value_size);
+			if(!f->value.str) return ERR_NOMEM;
+		}
+		else return ERR_BADARG;
+	}
+
+	return 0;*/
 	return ERR_NOTIMPL;
 }
 
 gint field_default_op(struct template_field_type* f)
 {
-	return ERR_NOTIMPL;
+	if(FIELD_IS_FIXED(f))
+	{
+		f->value=f->def_value;
+		f->prev_value=f->def_value;
+	}
+	else
+	{
+		if(f->value.str)
+		{
+			g_free(f->value.str);
+			f->value.str=0;
+		}
+
+		if(f->def_value.str && f->def_value_size>0)
+		{
+			f->value.str=g_memdup(f->def_value.str,f->def_value_size);
+			if(!f->value.str) return ERR_NOMEM;
+			f->prev_value.str=g_memdup(f->def_value.str,f->def_value_size);
+			if(!f->prev_value.str) return ERR_NOMEM;
+		}
+		else return ERR_BADARG;
+	}
+
+	return 0;
 }
 gint field_copy_op(struct template_field_type* f)
 {

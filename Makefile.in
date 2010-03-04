@@ -10,7 +10,9 @@ PLUGIN_DIR = <WIRESHARK_OUT>
 PLUGIN      = $(PLUGIN_DIR)/$(PLUGIN_NAME).so
 TEST = test
 
-CFLAGS = -DHAVE_CONFIG_H $(INCS) -DINET6 -D_U_=__attribute__\(\(unused\)\) -Wall -Wpointer-arith -g -DXTHREADS -D_REENTRANT -DXUSE_MTSAFE_API -fPIC -DPIC
+CFLAGS = -DHAVE_CONFIG_H $(INCS) -DINET6 \
+	-D_U_=__attribute__\(\(unused\)\) -Wall -Wpointer-arith -g \
+	-DXTHREADS -D_REENTRANT -DXUSE_MTSAFE_API -fPIC -DPIC
 
 $(PLUGIN) : $(OBJS)
 	mkdir -p $(PLUGIN_DIR)
@@ -33,4 +35,3 @@ test: $(PLUGIN)
 clean:
 	rm -f $(PLUGIN) $(OBJS) Makefile *.tar.gz
 	make -C $(TEST) clean
-

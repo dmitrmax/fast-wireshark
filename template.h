@@ -55,6 +55,8 @@
 
 #define FIELD_VALUE_IS_NULL(f)	((f).u64==0)
 
+#define FIELD_IS_FIXED(f)	(FIELD_TYPE(f) <= FIELD_TYPE_FIXDEC)
+
 typedef union field_value_type
 {
 	guint32 u32;
@@ -180,7 +182,6 @@ gint display_uint64_field(
 	struct template_field_type*,
 	proto_tree*,
 	tvbuff_t*);
-
 
 gint read_ascii_field(
 	struct template_field_type*,
