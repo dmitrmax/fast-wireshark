@@ -48,10 +48,21 @@ void debug_out(
 	int, const char* fmt,
 	...);
 
+#ifdef _WIN32
+
+#define DBG0(s)		debug_out(__FILE__,__FUNCTION__,__LINE__,s)
+#define DBG1(s,a1)	debug_out(__FILE__,__FUNCTION__,__LINE__,s,a1)
+#define DBG2(s,a2)	debug_out(__FILE__,__FUNCTION__,__LINE__,s,a1,a2)
+#define DBG_RET(r)	debug_out(__FILE__,__FUNCTION__,__LINE__,"Returned %d",r)
+
+#else
+
 #define DBG0(s)		debug_out(__FILE__,__func__,__LINE__,s)
 /* #define DBG(s,...)	debug_out(__FILE__,__func__,__LINE__,s,__VA_ARGS__) */
 #define DBG1(s,a1)	debug_out(__FILE__,__func__,__LINE__,s,a1)
 #define DBG2(s,a2)	debug_out(__FILE__,__func__,__LINE__,s,a1,a2)
 #define DBG_RET(r)	debug_out(__FILE__,__func__,__LINE__,"Returned %d",r)
+
+#endif
 
 #endif
