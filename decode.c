@@ -63,36 +63,23 @@ gint decode_int32(
 	gint32* out)
 {
 	gint32 ret=0;
-	int i=1;
-
-	guint8 b;
-	int sign;
+    int i=0;
+    guint8 b;
 
 	if(!buf) return ERR_BADARG;
 	if(!out) return ERR_BADARG;
 
-	b=tvb_get_guint8(buf,off);
-	sign=b&SIGN_BIT;
-	ret|=b&~(STOP_BIT|SIGN_BIT);
+    do
+    {
+        b = tvb_get_guint8 (buf, off +i);
+        ret = (ret << 7) | (b & 0x7F); /* Fill in next 7 bits */
+        ++ i;
+    } while (! (b & STOP_BIT));
 
-	if(!(b&STOP_BIT))
-	{
-		do
-		{
-			b=tvb_get_guint8(buf,off+i);
-			ret<<=7;
-			ret|=b & ~STOP_BIT;
-			i++;
-		} while(!(b&STOP_BIT));
-	}
-
-	if(i>sizeof(gint32)) return ERR_BADFMT;
-
-		/* Changed to not convert from bigendian,
-		 * whole routine is still untested.
-		 * -- grencez Sat Feb 27 16:06:16 EST 2010
-		 */
-	if (sign) ret = -ret;
+    {
+        int shf = 32 - 7*i;
+        ret = (ret << shf) >> shf; /* Sign extend */
+    }
 
 	*out = ret;
 	return i;
