@@ -19,13 +19,14 @@ void debug_out(
 	...)
 {
 	char buf[1024];
-
-	snprintf(buf,1024,"%s(%d) %s: %s\n",file,line,func,fmt);
-
 	va_list args;
+
+	g_snprintf(buf,1024,"%s(%d) %s: %s\n",file,line,func,fmt);
+
 	va_start(args,fmt);
 
 	vprintf(buf,args);
 
 	va_end(args);
 }
+

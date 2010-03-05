@@ -11,7 +11,8 @@ PLUGIN      = $(PLUGIN_DIR)/$(PLUGIN_NAME).so
 TEST = test
 
 CFLAGS = -DHAVE_CONFIG_H $(INCS) -DINET6 \
-	-D_U_=__attribute__\(\(unused\)\) -Wall -Wpointer-arith -g \
+	-D_U_=__attribute__\(\(unused\)\) -Wpointer-arith \
+	-g -Wall -ansi -pedantic \
 	-DXTHREADS -D_REENTRANT -DXUSE_MTSAFE_API -fPIC -DPIC
 
 $(PLUGIN) : $(OBJS)

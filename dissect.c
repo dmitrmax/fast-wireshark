@@ -18,13 +18,17 @@ void FAST_dissect(int proto_fast, tvbuff_t* tvb, int n, packet_info* pinfo,
 {
 	gint ret=0;
 	guint off=0;
+	guint8* pmap=0;
+	gint pmap_size;
+	struct template_type* t=0;
+	struct template_field_type* cur=0;
+	int i=1;
 
 	proto_item* ti=NULL;
 	ti=proto_tree_add_item(tree,proto_fast,tvb,0,-1,FALSE);
 	tree=proto_item_add_subtree(ti,ett_fast);
 
-	guint8* pmap=0;
-	gint pmap_size=decode_pmap(tvb,off,&pmap);
+	pmap_size=decode_pmap(tvb,off,&pmap);
 	if(pmap_size<0)
 	{
 		DBG_RET(pmap_size);
@@ -33,11 +37,9 @@ void FAST_dissect(int proto_fast, tvbuff_t* tvb, int n, packet_info* pinfo,
 	off+=pmap_size;
 	off=1;
 
-	struct template_type* t=0;
-
-	if(pmap[0]) // check to see if TID is present
+	if(pmap[0]) /*  check to see if TID is present */
 	{
-		// figure out current Template ID
+		/*  figure out current Template ID */
 		ret=decode_uint32(tvb,off,&current_tid);
 		if(ret<0) return;
 		off+=ret;
@@ -59,7 +61,7 @@ void FAST_dissect(int proto_fast, tvbuff_t* tvb, int n, packet_info* pinfo,
 
 	if(!t)
 	{
-		// unknown template, or no template specified
+		/*  unknown template, or no template specified */
 		proto_tree_add_string(
 			tree,
 			hf_fast_tid,
@@ -68,7 +70,7 @@ void FAST_dissect(int proto_fast, tvbuff_t* tvb, int n, packet_info* pinfo,
 			strlen("Unknown"),
 			"Unknown");
 
-		DBG("Unknown or invalid template ID %d",current_tid);
+		DBG1("Unknown or invalid template ID %d",current_tid);
 		return;
 	}
 
@@ -80,11 +82,13 @@ void FAST_dissect(int proto_fast, tvbuff_t* tvb, int n, packet_info* pinfo,
 		strlen(t->name),
 		t->name);
 
-	struct template_field_type* cur=0;
-	int i=1;
+	/* Consider making this a function -- grencez */
+	/* V redef'd up top V */
+	/* struct template_field_type* cur=0; */
+	/* int i=1; */
 	for(cur=t->fields;cur;cur=cur->next)
 	{
-		// we need a special case for the Constant operator...
+		/*  we need a special case for the Constant operator... */
 		if(cur->op == FIELD_OP_CONST)
 		{
 		}

@@ -40,6 +40,8 @@ void FAST_setup(int id)
 				NULL,0x0,"int2",HFILL}}
 	};
 
+	struct template_type* t;
+
 	proto_register_field_array(id,hf,array_length(hf));
 	proto_register_subtree_array(ett,array_length(ett));
 
@@ -47,7 +49,6 @@ void FAST_setup(int id)
 
 	init_templates();
 
-	struct template_type* t;
 	create_template("test_template",1,&t);
 	append_field(
 		"int1",

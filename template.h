@@ -14,35 +14,35 @@
 
 #include "fast.h"
 
-#define FIELD_TYPE_INT32	0x01	// 32-bit int
-#define FIELD_TYPE_UINT32	0x02	// unsigned 32-bit int
-#define FIELD_TYPE_INT64	0x03	// 64-bit int
-#define FIELD_TYPE_UINT64	0x04	// unsigned 64-bit int
-#define FIELD_TYPE_FLT10	0x05	// base-10 floating point
-//#define FIELD_TYPE_FLT754	0x05	// IEEE-754 encoded float
-#define FIELD_TYPE_FIXDEC	0x06	// fixed-point decimal
-#define FIELD_TYPE_UTF8		0x07	// UNICODE-8 text
-#define FIELD_TYPE_ASCII	0x08	// ASCII text
-#define FIELD_TYPE_BYTES	0x09	// byte vector
-#define FIELD_TYPE_SEQ		0x0a	// sequence
-#define FIELD_TYPE_GROUP	0x0b	// group
+#define FIELD_TYPE_INT32	0x01	/*  32-bit int */
+#define FIELD_TYPE_UINT32	0x02	/*  unsigned 32-bit int */
+#define FIELD_TYPE_INT64	0x03	/*  64-bit int */
+#define FIELD_TYPE_UINT64	0x04	/*  unsigned 64-bit int */
+#define FIELD_TYPE_FLT10	0x05	/*  base-10 floating point */
+/* #define FIELD_TYPE_FLT754	0x05 */   /* IEEE-754 encoded float */
+#define FIELD_TYPE_FIXDEC	0x06	/*  fixed-point decimal */
+#define FIELD_TYPE_UTF8		0x07	/*  UNICODE-8 text */
+#define FIELD_TYPE_ASCII	0x08	/*  ASCII text */
+#define FIELD_TYPE_BYTES	0x09	/*  byte vector */
+#define FIELD_TYPE_SEQ		0x0a	/*  sequence */
+#define FIELD_TYPE_GROUP	0x0b	/*  group */
 
-#define FIELD_REQUIRED_BIT	0x80	// is the field required
-#define FIELD_HAS_NULL_BIT	0x40	// is the field nullable
+#define FIELD_REQUIRED_BIT	0x80	/*  is the field required */
+#define FIELD_HAS_NULL_BIT	0x40	/*  is the field nullable */
 
 #define FIELD_TYPE_MASK		0xf0
 
 #define FIELD_OP_NONE		0x00
-#define FIELD_OP_CONST		0x01	// constant
-#define FIELD_OP_DEFAULT	0x02	// default
-#define FIELD_OP_COPY		0x03	// copy
-#define FIELD_OP_INCR		0x04	// increment
-#define FIELD_OP_DELTA		0x05	// delta
-#define FIELD_OP_TAIL		0x06	// tail
+#define FIELD_OP_CONST		0x01	/*  constant */
+#define FIELD_OP_DEFAULT	0x02	/*  default */
+#define FIELD_OP_COPY		0x03	/*  copy */
+#define FIELD_OP_INCR		0x04	/*  increment */
+#define FIELD_OP_DELTA		0x05	/*  delta */
+#define FIELD_OP_TAIL		0x06	/*  tail */
 
-#define FIELD_STATE_SET		0x01	// assigned
-#define FIELD_STATE_EMPTY	0x02	// empty
-#define FIELD_STATE_UNDEF	0x0		// undefined
+#define FIELD_STATE_SET		0x01	/*  assigned */
+#define FIELD_STATE_EMPTY	0x02	/*  empty */
+#define FIELD_STATE_UNDEF	0x0		/*  undefined */
 
 #define FIELD_RAW_NULL		0x80
 #define FIELD_NULL			0x0
@@ -51,9 +51,11 @@
 #define FIELD_REQUIRED(f)	((f)->type & FIELD_REQUIRED_BIT)
 #define FIELD_HAS_NULL(f)	((f)->type & FIELD_HAS_NULL_BIT)
 
-#define NULL_FIELD_VALUE	((union field_value_type)0)
+/* #define NULL_FIELD_VALUE	((union field_value_type)0) */
+#define NULL_FIELD_VALUE	((union field_value_type*)0)
 
-#define FIELD_VALUE_IS_NULL(f)	((f).u64==0)
+/* #define FIELD_VALUE_IS_NULL(f)	((f).u64==0) */
+#define FIELD_VALUE_IS_NULL(f)	(f==NULL)
 
 #define FIELD_IS_FIXED(f)	(FIELD_TYPE(f) <= FIELD_TYPE_FIXDEC)
 
@@ -106,7 +108,7 @@ struct template_field_type
 
 	struct template_field_type* subfields;
 
-	// gui field ids
+	/*  gui field ids */
 	int hf_id,ett_id;
 
 	struct template_field_type* next;
@@ -131,7 +133,7 @@ gint append_field(
 	const char*,
 	guint8,
 	guint8,
-	field_value,
+	field_value*,
 	guint32,
 	int,
 	struct template_type*,
@@ -222,7 +224,7 @@ gint display_fixdec_field(
 	proto_tree*,
 	tvbuff_t*);
 
-// field operators
+/*  field operators */
 gint field_const_op(struct template_field_type*);
 gint field_default_op(struct template_field_type*);
 gint field_copy_op(struct template_field_type*);

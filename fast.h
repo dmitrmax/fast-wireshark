@@ -36,7 +36,7 @@ void FAST_setup(int);
 
 void FAST_dissect(int,tvbuff_t*,int,packet_info*,proto_tree*);
 
-// handles to GUI elements
+/* handles to GUI elements */
 extern int ett_fast;
 extern int ett_fast_tid;
 extern int hf_fast;
@@ -49,7 +49,9 @@ void debug_out(
 	...);
 
 #define DBG0(s)		debug_out(__FILE__,__func__,__LINE__,s)
-#define DBG(s,...)	debug_out(__FILE__,__func__,__LINE__,s,__VA_ARGS__)
+/* #define DBG(s,...)	debug_out(__FILE__,__func__,__LINE__,s,__VA_ARGS__) */
+#define DBG1(s,a1)	debug_out(__FILE__,__func__,__LINE__,s,a1)
+#define DBG2(s,a2)	debug_out(__FILE__,__func__,__LINE__,s,a1,a2)
 #define DBG_RET(r)	debug_out(__FILE__,__func__,__LINE__,"Returned %d",r)
 
 #endif
