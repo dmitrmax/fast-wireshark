@@ -48,14 +48,9 @@ void debug_out(
 	int, const char* fmt,
 	...);
 
-#ifdef _WIN32
-
-#define DBG0(s)		debug_out(__FILE__,__FUNCTION__,__LINE__,s)
-#define DBG1(s,a1)	debug_out(__FILE__,__FUNCTION__,__LINE__,s,a1)
-#define DBG2(s,a2)	debug_out(__FILE__,__FUNCTION__,__LINE__,s,a1,a2)
-#define DBG_RET(r)	debug_out(__FILE__,__FUNCTION__,__LINE__,"Returned %d",r)
-
-#else
+#ifdef _MSC_VER
+#define __func__ __FUNCTION__
+#endif
 
 #define DBG0(s)		debug_out(__FILE__,__func__,__LINE__,s)
 /* #define DBG(s,...)	debug_out(__FILE__,__func__,__LINE__,s,__VA_ARGS__) */
@@ -63,6 +58,6 @@ void debug_out(
 #define DBG2(s,a2)	debug_out(__FILE__,__func__,__LINE__,s,a1,a2)
 #define DBG_RET(r)	debug_out(__FILE__,__func__,__LINE__,"Returned %d",r)
 
-#endif
 
 #endif
+

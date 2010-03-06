@@ -83,6 +83,14 @@ alert_global_failure ()
 
 start_tshark ()
 {
+    (
+        # Load into cache, better success rate
+        ping localhost &
+        pingpid=$!
+        $TSHARK -i lo -w "$capturedTshark" -c 1 2>> "$stderrTshark"
+        kill $pingpid
+    ) >/dev/null 2>/dev/null
+
     $TSHARK -i lo -w "$capturedTshark" 2>> "$stderrTshark" &
 
     # Grab TShark's pid

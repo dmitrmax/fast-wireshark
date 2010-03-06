@@ -1,5 +1,11 @@
+
+# You are best to run nmake on this only if /our/ source directory
+# is located in
+#     [wireshark source]/plugins/
+#
+# The hard-coded paths came with the makefile.
+
 include ..\..\config.nmake
-#include moduleinfo.nmake
 
 include Makefile.common
 
@@ -21,40 +27,16 @@ DISSECTOR_SUPPORT_OBJECTS = $(DISSECTOR_SUPPORT_SRC:.c=.obj)
 
 OBJECTS = $(DISSECTOR_OBJECTS) $(DISSECTOR_SUPPORT_OBJECTS) 
 
-RESOURCE=$(PLUGIN_NAME).res
-
 all: $(PLUGIN_NAME).dll
 
-$(PLUGIN_NAME).rc : moduleinfo.nmake
-	sed -e s/@PLUGIN_NAME@/$(PLUGIN_NAME)/ \
-	-e s/@RC_MODULE_VERSION@/$(RC_MODULE_VERSION)/ \
-	-e s/@RC_VERSION@/$(RC_VERSION)/ \
-	-e s/@MODULE_VERSION@/$(MODULE_VERSION)/ \
-	-e s/@PACKAGE@/$(PACKAGE)/ \
-	-e s/@VERSION@/$(VERSION)/ \
-	-e s/@MSVC_VARIANT@/$(MSVC_VARIANT)/ \
-	< plugin.rc.in > $@
-
 $(PLUGIN_NAME).dll $(PLUGIN_NAME).exp $(PLUGIN_NAME).lib : $(OBJECTS) $(LINK_PLUGIN_WITH) $(DISSECTOR_INCLUDES)
-	link -dll /out:$(PLUGIN_NAME).dll $(LDFLAGS) $(OBJECTS) $(LINK_PLUGIN_WITH) \
-	$(GLIB_LIBS) 
-
-!IFDEF PYTHON
-plugin.c: $(DISSECTOR_SRC) "../../tools/make-dissector-reg.py"
-	@echo Making plugin.c (using python)
-	@$(PYTHON) "../../tools/make-dissector-reg.py" . plugin $(DISSECTOR_SRC)
-!ELSE
-plugin.c: $(DISSECTOR_SRC) "../../tools/make-dissector-reg"
-	@echo Making plugin.c (using sh)
-	@$(SH) "../../make-dissector-reg" . plugin $(DISSECTOR_SRC)
-!ENDIF
-
-!ENDIF
+	link -dll /out:$(PLUGIN_NAME).dll \
+		$(LDFLAGS) $(OBJECTS) $(LINK_PLUGIN_WITH) $(GLIB_LIBS) 
 
 clean:
 	rm -f $(OBJECTS) plugin.c *.pdb \
-	    $(PLUGIN_NAME).dll $(PLUGIN_NAME).dll.manifest $(PLUGIN_NAME).lib \
-	    $(PLUGIN_NAME).exp $(PLUGIN_NAME).rc
+		$(PLUGIN_NAME).dll $(PLUGIN_NAME).dll.manifest \
+		$(PLUGIN_NAME).lib  $(PLUGIN_NAME).exp
 
 distclean: clean
 
@@ -62,65 +44,4 @@ maintainer-clean: distclean
 
 checkapi:
 	$(PERL) "../../tools/checkAPIs.pl" -g abort -g termoutput $(DISSECTOR_SRC) $(DISSECTOR_INCLUDES)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-###INCS=-I<WIRESHARK_SRC_ROOT> -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include
-###SRCS = packet-fast.c dissect.c setup.c decode.c template.c debug.c
-
-###CC   = cl
-###LINK= link
-###BSCMAKE= bscmake
-
-###OBJS = $(foreach src, $(SRCS), $(src:.c=.o))
-
-###PLUGIN_NAME = packet-fast
-###PLUGIN_DIR = "..\Wireshark Soure\wireshark-gtk2\plugins"
-###PLUGIN      = $(PLUGIN_DIR)/$(PLUGIN_NAME).so
-###TEST = test
-
-###CFLAGS = #-DHAVE_CONFIG_H $(INCS) -DINET6 -D_U_=__attribute__\(\(unused\)\) -Wall -Wpointer-arith -g -DXTHREADS -D_REENTRANT -DXUSE_MTSAFE_API -fPIC -DPIC
-
-
-###CVARSDLL=-DWIN32 -DNULL=0 -D_MT -D_DLL
-
-###packet-fast : packet-fast.c dissect.c setup.c decode.c template.c debug.c
-	
-
-
-
-###$(PLUGIN) : $(OBJS)
-###	$(CC)  -Fd.\ -c $<
-###$(PLUGIN) : $(OBJS)
-###	mkdir -p $(PLUGIN_DIR)
-###	$(CC) -shared $(OBJS) -o $@
-
-###%.o : %.c
-###	$(CC) -c $(CFLAGS) $< -o $@
-
-# Run this rule on Makefile.in
-###fast-wireshark-%.tar.gz:
-###	find . -name .svn -prune -o -type f -not -name "$(@)" -print0 \
-###	| tar -cvzf "$(@)" --null -T - --transform="s:^\.:fast-wireshark-$(*):"
-
-
-###.PHONY: test
-###test: $(PLUGIN)
-###	make -C $(TEST) test
-
-###.PHONY: clean
-###clean:
-###	rm -f $(PLUGIN) $(OBJS) Makefile *.tar.gz
-###	make -C $(TEST) clean
 

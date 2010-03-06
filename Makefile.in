@@ -1,11 +1,14 @@
+
+include Makefile.common
+
 INCS=-I<WIRESHARK_SRC_ROOT> -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include
-SRCS = packet-fast.c dissect.c setup.c decode.c template.c debug.c
+
+SRCS = $(DISSECTOR_SRC)
 
 CC   = gcc
 
 OBJS = $(foreach src, $(SRCS), $(src:.c=.o))
 
-PLUGIN_NAME = packet-fast
 PLUGIN_DIR = <WIRESHARK_OUT>
 PLUGIN      = $(PLUGIN_DIR)/$(PLUGIN_NAME).so
 TEST = test
