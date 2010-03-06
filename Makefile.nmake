@@ -33,6 +33,8 @@ $(PLUGIN_NAME).dll $(PLUGIN_NAME).exp $(PLUGIN_NAME).lib : $(OBJECTS) $(LINK_PLU
 	link -dll /out:$(PLUGIN_NAME).dll \
 		$(LDFLAGS) $(OBJECTS) $(LINK_PLUGIN_WITH) $(GLIB_LIBS) 
 
+!ENDIF
+
 clean:
 	rm -f $(OBJECTS) plugin.c *.pdb \
 		$(PLUGIN_NAME).dll $(PLUGIN_NAME).dll.manifest \
