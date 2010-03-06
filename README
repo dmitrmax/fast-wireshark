@@ -1,3 +1,59 @@
+
+
+-------------
+- Key Variables
+-------------
+
+ARCH - Your architecture, something like x86 or x86_64
+WS_VERSION - Wireshark version, something like 1.2.6
+
+-------------
+- Windows Install
+-------------
+
+Move dist\fast-ARCH.dll to C:\Program Files\Wireshark\plugins\WS_VERSION
+
+-------------
+- Linux Install
+-------------
+
+- local install
+
+Place dist/fast-ARCH.so into $HOME/wireshark/plugins
+
+See "Linux Capture Permissions" for how to run Wireshark as a user if you
+can't already. If Wireshark is invoked with 'sudo', this install method will
+not work.
+
+
+- global install
+
+Place dist/fast-ARCH.so into /usr/lib/wireshark/plugins/WS_VERSION
+
+-------------
+- Seeing Something Happen
+-------------
+
+At present, the plugin decodes a fixed template.
+You can generate that fixed template with the test client program.
+This only works on POSIX platforms.
+
+   cd test
+   make
+  ./client -h localhost --int32 X --uint32 Y
+
+Where X and Y are integers. Wireshark will see traffic on the loopback
+interface (lo).
+
+With the -h flag, you can shoot packets at a different host. Obviously
+Wireshark must be listening on something other than loopback on the other
+host. This is particularly useful for seeing the mock FAST traffic dissected
+on a Windows machine.
+
+-------------
+- Building
+-------------
+
 Before you can build the plugin, you will need a built version of the
 Wireshark source tree somewhere.  You can get it from:
 http://www.wireshark.org/download.html
@@ -41,8 +97,8 @@ and remove the generated Makefile, so you will have to run configure to be
 able to build again.
 
 -------------
-
-A note about capture permissions on Linux:
+- Linux Capture Permissions
+-------------
 
 I couldn't seem to get wireshark to recognize user-added plugins when it
 was running as root, which is a bad idea anyway...
@@ -53,3 +109,4 @@ sudo setcap 'CAP_NET_RAW+eip CAP_NET_ADMIN+eip' `which dumpcap`
 However this is also not the most secure thing in the world.  A good summary
 of different approaches is on wiresharks wiki here:
 http://wiki.wireshark.org/CaptureSetup/CapturePrivileges
+

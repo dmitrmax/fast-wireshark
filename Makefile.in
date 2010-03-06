@@ -30,6 +30,11 @@ fast-wireshark-%.tar.gz:
 	find . -name .svn -prune -o -type f -not -name "$(@)" -print0 \
 	| tar -cvzf "$(@)" --null -T - --transform="s:^\.:fast-wireshark-$(*):"
 
+fast-wireshark-%.zip: fast-wireshark-%.tar.gz
+	tar xf fast-wireshark-$(*).tar.gz
+	zip -r $(@) fast-wireshark-$(*)
+	rm -r fast-wireshark-$(*) fast-wireshark-$(*).tar.gz
+
 
 .PHONY: test
 test: $(PLUGIN)
@@ -37,5 +42,6 @@ test: $(PLUGIN)
 
 .PHONY: clean
 clean:
-	rm -f $(PLUGIN) $(OBJS) Makefile *.tar.gz
+	rm -f $(PLUGIN) $(OBJS) Makefile fast-wireshark-*
 	make -C $(TEST) clean
+
