@@ -13,6 +13,54 @@
 static guint32 current_tid=0;
 static guint32 last_tid=0;
 
+static void process_fields(
+	struct template_field_type* fields,
+	tvbuff_t* tvb,
+	proto_tree* tree,
+	guint8* pmap,
+	guint off)
+{
+	struct template_field_type* cur;
+	int i;
+	int ret;
+
+	for(cur=fields,i=0;cur;cur=cur->next)
+	{
+		if(cur->read && (FIELD_REQUIRED(cur) || pmap[i]))
+		{
+			ret=(cur->read)(cur,tvb,off);
+			if(ret<0)
+			{
+				DBG_RET(ret);
+				return;
+			}
+
+			off+=ret;
+		}
+		else if(cur->op_func)
+		{
+			ret=(cur->op_func)(cur);
+			if(ret<0)
+			{
+				DBG_RET(ret);
+				return;
+			}
+		}
+
+		if(cur->display)
+		{
+			ret = (cur->display)(cur,tree,tvb);
+			if(ret<0)
+			{
+				DBG_RET(ret);
+				return;
+			}
+		}
+
+		if(FIELD_REQUIRED(cur)) i++;
+	}
+}
+
 void FAST_dissect(int proto_fast, tvbuff_t* tvb, int n, packet_info* pinfo,
 	proto_tree* tree)
 {
@@ -21,8 +69,8 @@ void FAST_dissect(int proto_fast, tvbuff_t* tvb, int n, packet_info* pinfo,
 	guint8* pmap=0;
 	gint pmap_size;
 	struct template_type* t=0;
-	struct template_field_type* cur=0;
-	int i=1;
+	/*struct template_field_type* cur=0;*/
+	/*int i=1;*/
 
 	proto_item* ti=NULL;
 	ti=proto_tree_add_item(tree,proto_fast,tvb,0,-1,FALSE);
@@ -35,7 +83,7 @@ void FAST_dissect(int proto_fast, tvbuff_t* tvb, int n, packet_info* pinfo,
 		return;
 	}
 	off+=pmap_size;
-	off=1;
+	/*off=1;*/
 
 	if(pmap[0]) /*  check to see if TID is present */
 	{
@@ -82,14 +130,21 @@ void FAST_dissect(int proto_fast, tvbuff_t* tvb, int n, packet_info* pinfo,
 		strlen(t->name),
 		t->name);
 
+	process_fields(
+		t->fields,
+		tvb,
+		tree,
+		pmap+1,
+		off);
+
 	/* Consider making this a function -- grencez */
 	/* V redef'd up top V */
 	/* struct template_field_type* cur=0; */
 	/* int i=1; */
-	for(cur=t->fields;cur;cur=cur->next)
-	{
+	/*for(cur=t->fields;cur;cur=cur->next)
+	{*/
 		/*  we need a special case for the Constant operator... */
-		if(cur->op == FIELD_OP_CONST)
+		/*if(cur->op == FIELD_OP_CONST)
 		{
 		}
 		else if(cur->read && (FIELD_REQUIRED(cur) || pmap[i]))
@@ -123,5 +178,5 @@ void FAST_dissect(int proto_fast, tvbuff_t* tvb, int n, packet_info* pinfo,
 				return;
 			}
 		}
-	}
+	}*/
 }
