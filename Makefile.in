@@ -23,7 +23,11 @@ $(PLUGIN) : $(OBJS)
 	$(CC) -shared $(OBJS) -o $@
 
 %.o : %.c
+	$(CC) -MM $(CFLAGS) -o $*.d $<
 	$(CC) -c $(CFLAGS) $< -o $@
+
+# build dependencies
+-include ${SRC:.c=.d}
 
 # Run this rule on Makefile.in
 fast-wireshark-%.tar.gz:
@@ -42,6 +46,11 @@ test: $(PLUGIN)
 
 .PHONY: clean
 clean:
-	rm -f $(PLUGIN) $(OBJS) Makefile fast-wireshark-*
+	rm -f $(OBJS) *.d fast-wireshark-*
 	make -C $(TEST) clean
+
+.PHONY: distclean
+distclean: clean
+	rm -f $(PLUGIN) Makefile
+
 
