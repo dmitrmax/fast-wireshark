@@ -45,19 +45,25 @@ extern int hf_fast_tid;
 void debug_out(
 	const char*,
 	const char*,
-	int, const char* fmt,
+	int,
+	const char* fmt,
 	...);
 
 #ifdef _MSC_VER
-#define __func__ __FUNCTION__
+#	define __func__ __FUNCTION__
 #endif
 
-#define DBG0(s)		debug_out(__FILE__,__func__,__LINE__,s)
-/* #define DBG(s,...)	debug_out(__FILE__,__func__,__LINE__,s,__VA_ARGS__) */
-#define DBG1(s,a1)	debug_out(__FILE__,__func__,__LINE__,s,a1)
-#define DBG2(s,a2)	debug_out(__FILE__,__func__,__LINE__,s,a1,a2)
-#define DBG_RET(r)	debug_out(__FILE__,__func__,__LINE__,"Returned %d",r)
+#define DBG0(s)			debug_out(__FILE__,__func__,__LINE__,s)
+#define DBG1(s,a)		debug_out(__FILE__,__func__,__LINE__,s,a)
+#define DBG2(s,a,b)		debug_out(__FILE__,__func__,__LINE__,s,a,b)
+#define DBG3(s,a,b,c)	debug_out(__FILE__,__func__,__LINE__,s,a,b,c)
+#define DBG4(s,a,b,c,d)	debug_out(__FILE__,__func__,__LINE__,s,a,b,c,d)
 
+#define DBG_RET(r)	DBG1("Returned %d",r)
+
+/*
+#define DBG(...)		debug_out(__FILE__,__func__,__LINE__,## __VA_ARGS__)
+*/
 
 #endif
 
