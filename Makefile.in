@@ -6,12 +6,24 @@ INCS=-I<WIRESHARK_SRC_ROOT> -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include
 SRCS = $(DISSECTOR_SRC)
 
 CC   = gcc
+CPP  = cpp
 
-OBJS = $(foreach src, $(SRCS), $(src:.c=.o))
+OBJS = $(SRCS:.c=.o)
+
+# Remove implicit suffix rules
+#.SUFFIXES:
+# At present we don't need to
 
 PLUGIN_DIR = <WIRESHARK_OUT>
 PLUGIN      = $(PLUGIN_DIR)/$(PLUGIN_NAME).so
 TEST = test
+
+# Make it so the included rules below do not become default.
+.PHONY: all
+all: $(PLUGIN)
+
+# build dependencies
+-include $(SRCS:.c=.d)
 
 CFLAGS = -DHAVE_CONFIG_H $(INCS) -DINET6 \
 	-D_U_=__attribute__\(\(unused\)\) -Wpointer-arith \
@@ -22,12 +34,15 @@ $(PLUGIN) : $(OBJS)
 	mkdir -p $(PLUGIN_DIR)
 	$(CC) -shared $(OBJS) -o $@
 
-%.o : %.c
-	$(CC) -MM $(CFLAGS) -o $*.d $<
-	$(CC) -c $(CFLAGS) $< -o $@
+# Do this if we wanna be cool
+#%.o: %.d
+#%.d: %.c
+#	$(CPP) -MM $(CFLAGS) $*.c \
+#	| sed -e '1s:^:$(@) :' > $(@)
 
-# build dependencies
--include ${SRC:.c=.d}
+%.o: %.c
+	$(CC) -c $(CFLAGS) $*.c -o $@
+	$(CPP) -MM $(CFLAGS) $*.c -o $*.d
 
 # Run this rule on Makefile.in
 fast-wireshark-%.tar.gz:
@@ -46,11 +61,11 @@ test: $(PLUGIN)
 
 .PHONY: clean
 clean:
-	rm -f $(OBJS) *.d fast-wireshark-*
+	rm -f $(OBJS) *.d
 	make -C $(TEST) clean
 
 .PHONY: distclean
 distclean: clean
-	rm -f $(PLUGIN) Makefile
+	rm -f $(PLUGIN) Makefile fast-wireshark-*
 
 
