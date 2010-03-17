@@ -104,6 +104,13 @@ Usage: ./client [flags]\n\n\
     --ascii str    Encode /str/ as an ascii string\n\
     --nop        Put a zero in the presence map (even if --req specified)\n\
 ", stderr);
+    fputs ("\n\
+ Faux Fields\n\
+    --hex hexstring    Directly encode a field, specified with a hex string\n\
+                       (length is a multiple of 2, spaces are ignored)\n\
+    --bit bitstring    Directly encode a field, specified by a bit string\n\
+                       (length is a multiple of 8, spaces are ignored)\n\
+", stderr);
 }
 
 int main (int argc, char** argv)
@@ -143,7 +150,8 @@ int main (int argc, char** argv)
             optkey_req, optkey_noreq,
             optkey_uint32, optkey_int32,
             optkey_ascii,
-            optkey_nop
+            optkey_nop,
+            optkey_hex, optkey_bit
         };
         const struct option long_options[] =
         {    {"help"  , 0, 0, 0 }
@@ -155,6 +163,8 @@ int main (int argc, char** argv)
             ,{"int32" , 1, 0, 0 }
             ,{"ascii" , 1, 0, 0 }
             ,{"nop"   , 0, 0, 0 }
+            ,{"hex"   , 1, 0, 0 }
+            ,{"bit"   , 1, 0, 0 }
             ,{0,0,0,0}
         };
         int indOpt;
@@ -208,6 +218,14 @@ int main (int argc, char** argv)
                 break;
             case optkey_nop :
                 add_pmap (&fmsg, 0);
+                break;
+            case optkey_hex :
+                if (! requiredp)  add_pmap (&fmsg, 1);
+                encode_hex ((guint8*) optarg, &fmsg.msg);
+                break;
+            case optkey_bit :
+                if (! requiredp)  add_pmap (&fmsg, 1);
+                encode_bit ((guint8*) optarg, &fmsg.msg);
                 break;
         }
     }

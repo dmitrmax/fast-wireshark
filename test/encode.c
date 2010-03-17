@@ -85,3 +85,68 @@ void encode_ascii (const guint8* str, GByteArray** arr)
     *arr = g_byte_array_append (*arr, &b, 1);
 }
 
+void encode_hex (const guint8* str, GByteArray** arr)
+{
+    guint len = strlen ((char*) str);
+    guint8 b = 0;
+    guint shf = 8;
+    guint i;
+
+    for (i = 0; i < len; ++i)
+    {
+        guint8 c = toupper (str[i]);
+
+        if      ('0' <= c && c <= '9')  c -= '0';
+        else if ('A' <= c && c <= 'F')  c -= ('A' - 10);
+        else continue; /* Skip garbage */
+
+        shf -= 4;
+        b |= (c << shf);
+
+        if (0 == shf)
+        {
+            *arr = g_byte_array_append (*arr, &b, 1);
+            shf = 8;
+            b = 0;
+        }
+    }
+
+    if (8 != shf)
+    {
+        fprintf (stderr, "WARNING uneven hex count: %s\n", str);
+        *arr = g_byte_array_append (*arr, &b, 1);
+    }
+}
+
+void encode_bit (const guint8* str, GByteArray** arr)
+{
+    guint len = strlen ((char*) str);
+    guint8 b = 0;
+    guint shf = 8;
+    guint i;
+
+    for (i = 0; i < len; ++i)
+    {
+        guint8 c = toupper (str[i]);
+
+        if ('0' == c || '1' == c)  c -= '0';
+        else continue; /* Skip garbage */
+
+        shf -= 1;
+        b |= (c << shf);
+
+        if (0 == shf)
+        {
+            *arr = g_byte_array_append (*arr, &b, 1);
+            shf = 8;
+            b = 0;
+        }
+    }
+
+    if (8 != shf)
+    {
+        fprintf (stderr, "WARNING uneven bit count: %s\n", str);
+        *arr = g_byte_array_append (*arr, &b, 1);
+    }
+}
+
