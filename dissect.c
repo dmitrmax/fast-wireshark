@@ -36,6 +36,9 @@ static void process_fields(
 			}
 
 			off+=ret;
+
+			/* make sure we mark it as set */
+			cur->state=FIELD_STATE_SET;
 		}
 		else if(cur->op_func)
 		{

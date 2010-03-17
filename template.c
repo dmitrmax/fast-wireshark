@@ -189,7 +189,7 @@ gint append_field(
 		f->op_func=field_tail_op;
 		break;
 	default:
-		f->op_func=0;
+		f->op_func=field_noop;
 		break;
 	}
 
@@ -560,6 +560,15 @@ gint display_fixdec_field(
 	return ERR_NOTIMPL;
 }
 
+gint field_noop(struct template_field_type* f)
+{
+	if(!f) return ERR_BADARG;
+
+	/* field was not specified so just set it as empty */
+	f->state=FIELD_STATE_EMPTY;
+	return 0;
+}
+
 gint field_const_op(struct template_field_type* f)
 {
 	/*if(FIELD_IS_FIXED(f))
@@ -590,13 +599,15 @@ gint field_default_op(struct template_field_type* f)
 {
 	if(FIELD_IS_FIXED(f))
 	{
+		f->prev_value=f->value;
 		f->value=f->def_value;
-		f->prev_value=f->def_value;
 	}
 	else
 	{
 		if(f->value.str)
 		{
+			f->prev_value.str=g_memdup(f->value.str,f->size);
+			if(!f->prev_value.str) return ERR_NOMEM;
 			g_free(f->value.str);
 			f->value.str=0;
 		}
@@ -605,8 +616,6 @@ gint field_default_op(struct template_field_type* f)
 		{
 			f->value.str=g_memdup(f->def_value.str,f->def_value_size);
 			if(!f->value.str) return ERR_NOMEM;
-			f->prev_value.str=g_memdup(f->def_value.str,f->def_value_size);
-			if(!f->prev_value.str) return ERR_NOMEM;
 		}
 		else return ERR_BADARG;
 	}
@@ -615,15 +624,75 @@ gint field_default_op(struct template_field_type* f)
 }
 gint field_copy_op(struct template_field_type* f)
 {
-	return ERR_NOTIMPL;
+	if(FIELD_IS_FIXED(f))
+	{
+		f->prev_value=f->value;
+	}
+	else
+	{
+		if(f->prev_value.str)
+		{
+			g_free(f->prev_value.str);
+			f->prev_value.str=0;
+		}
+		if(f->value.str)
+		{
+			f->prev_value.str=g_memdup(f->value.str,f->size);
+			if(!f->prev_value.str) return ERR_NOMEM;
+		}
+	}
+
+	return 0;
 }
 gint field_incr_op(struct template_field_type* f)
 {
-	return ERR_NOTIMPL;
+	if(!FIELD_IS_FIXED(f)) return ERR_BADARG;
+
+	f->prev_value=f->value;
+
+	switch(FIELD_TYPE(f))
+	{
+	case FIELD_TYPE_UINT32:
+		f->value.u32=f->value.u32 +1;
+		break;
+	case FIELD_TYPE_INT32:
+		f->value.i32=f->value.i32+1;
+		break;
+	case FIELD_TYPE_INT64:
+		f->value.i64=f->value.i64+1;
+		break;
+	case FIELD_TYPE_UINT64:
+		f->value.u64=f->value.u64+1;
+		break;
+	default: return ERR_BADARG;
+	}
+
+	return 0;
 }
 gint field_delta_op(struct template_field_type* f)
 {
-	return ERR_NOTIMPL;
+	if(!FIELD_IS_FIXED(f)) return ERR_BADARG;
+
+	f->prev_value=f->value;
+
+	switch(FIELD_TYPE(f))
+	{
+	case FIELD_TYPE_UINT32:
+		f->value.u32=f->value.u32 +f->op_delta.u32;
+		break;
+	case FIELD_TYPE_INT32:
+		f->value.i32=f->value.i32+f->op_delta.i32;
+		break;
+	case FIELD_TYPE_INT64:
+		f->value.i64=f->value.i64+f->op_delta.i64;
+		break;
+	case FIELD_TYPE_UINT64:
+		f->value.u64=f->value.u64+f->op_delta.u64;
+		break;
+	default: return ERR_BADARG;
+	}
+
+	return 0;
 }
 gint field_tail_op(struct template_field_type* f)
 {

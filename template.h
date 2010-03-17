@@ -94,6 +94,8 @@ struct template_field_type
 	union field_value_type def_value;
 	guint32 def_value_size;
 
+	field_value op_delta;
+
 	guint wholebits;
 
 	field_value value;
@@ -225,6 +227,7 @@ gint display_fixdec_field(
 	tvbuff_t*);
 
 /*  field operators */
+gint field_noop(struct template_field_type*);
 gint field_const_op(struct template_field_type*);
 gint field_default_op(struct template_field_type*);
 gint field_copy_op(struct template_field_type*);

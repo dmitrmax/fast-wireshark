@@ -18,6 +18,9 @@ int hf_fast_tid=-1;
 int hf_fast_int1=-1;
 int hf_fast_int2=-1;
 
+int ett_fast_str1=-1;
+int hf_fast_str1=-1;
+
 void FAST_setup(int id)
 {
 	/* create gui tree */
@@ -26,7 +29,8 @@ void FAST_setup(int id)
 		&ett_fast,
 		&ett_fast_tid,
 		&ett_fast_int1,
-		&ett_fast_int2};
+		&ett_fast_int2,
+		&ett_fast_str1};
 
 	static hf_register_info hf[]={
 		{&hf_fast_tid,
@@ -37,7 +41,10 @@ void FAST_setup(int id)
 				NULL,0x0,"int1",HFILL}},
 		{&hf_fast_int2,
 			{"int2","fast.int2",FT_UINT32,BASE_DEC,
-				NULL,0x0,"int2",HFILL}}
+				NULL,0x0,"int2",HFILL}},
+		{&hf_fast_str1,
+			{"str1","fast.str1",FT_STRING,BASE_NONE,
+				NULL,0x0,"str1",HFILL}}
 	};
 
 	struct template_type* t;
@@ -61,11 +68,20 @@ void FAST_setup(int id)
 		0);
 	append_field(
 		"int2",
+		FIELD_TYPE_UINT32,
+		FIELD_OP_INCR,
+		NULL_FIELD_VALUE,
+		0,
+		hf_fast_int2,
+		t,
+		0);
+	append_field(
+		"str1",
 		FIELD_TYPE_UINT32|FIELD_REQUIRED_BIT,
 		FIELD_OP_NONE,
 		NULL_FIELD_VALUE,
 		0,
-		hf_fast_int2,
+		hf_fast_str1,
 		t,
 		0);
 }
