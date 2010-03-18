@@ -29,19 +29,42 @@ void listener_die (int sig)
 
 char* hex_byte (guint n, guint8* buf)
 {
-    int i, j;
-    guint8 x;
+    unsigned i;
+    unsigned len = 2*n;
     char* res;
-    res = malloc ((2*n +1) * sizeof (char));
-    for (i = 0; i < n; ++i)  for (j = 1; j >= 0; --j)
+    res = malloc ((len +1) * sizeof (char));
+    for (i = 0; i < n; ++i)
     {
-        x = (buf[i] >> (4*j)) & 0xf;
-        if (x < 10)
-            res[2*i+1-j] = '0' + x;
-        else
-            res[2*i+1-j] = 'A' + x - 10;
+        unsigned j;
+        for (j = 0; j < 2; ++j)
+        {
+            const guint8 x = ((buf[i] << j
+                              ) & 0xf0
+                             ) >> 4;
+            res[2*i+j] = x + (x < 10 ? '0' : 'A'-10);
+        }
     }
-    res[2*n] = 0;
+    res[len] = 0;
+    return res;
+}
+
+char* bit_byte (guint n, guint8* buf)
+{
+    unsigned len = 9*n-1;
+    unsigned i;
+    char* res;
+    res = malloc ((len+1) * sizeof (char));
+    for (i = 0; i < n; ++i)
+    {
+        unsigned j;
+        for (j = 0; j < 8; ++j)
+            res[9*i+j] = '0' + (((1 << 7
+                                 ) & (buf[i] << j)
+                                ) >> 7
+                               );
+        res[9*i+8] = i % 4 == 3 ? '\n' : ' ';
+    }
+    res[len] = 0;
     return res;
 }
 
@@ -65,11 +88,10 @@ void receive_string (int sock)
             pause ();
         }
 
-            /* buf[bytecIn] = 0; */
-            /* fprintf (stderr, "Received: %s\n", buf); */
         {
-            char* str = hex_byte (bytecIn, buf);
-            fprintf (stderr, "Received: %s\n", str);
+                /* char* str = hex_byte (bytecIn, buf); */
+            char* str = bit_byte (bytecIn, buf);
+            fprintf (stderr, "Received:\n%s\n", str);
             free (str);
         }
     }
