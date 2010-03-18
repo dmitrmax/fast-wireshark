@@ -40,10 +40,14 @@ This only works on POSIX platforms.
 
    cd test
    make
-  ./client -h localhost --int32 X --uint32 Y
+   ./cur-tshark.sh  # This is how to use TShark listening on localhost
+                    # The GUI Wireshark can also be used of course
+   ./cur-client.sh  # This sends some simple packets, look inside to see how
 
-Where X and Y are integers. Wireshark will see traffic on the loopback
-interface (lo).
+Wireshark will see traffic on the loopback interface (lo).
+
+Try constructing your own packets with ./client, using commands in
+./cur-client.sh as a reference.
 
 With the -h flag, you can shoot packets at a different host. Obviously
 Wireshark must be listening on something other than loopback on the other
