@@ -77,7 +77,7 @@ void FAST_setup(int id)
 		0);
 	append_field(
 		"str1",
-		FIELD_TYPE_UINT32|FIELD_REQUIRED_BIT,
+		FIELD_TYPE_ASCII|FIELD_REQUIRED_BIT,
 		FIELD_OP_NONE,
 		NULL_FIELD_VALUE,
 		0,

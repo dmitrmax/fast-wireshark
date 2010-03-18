@@ -62,14 +62,13 @@ gint create_template(
 
 	p->fields=0;
 
-	p->name = g_malloc(strlen(name));
+	p->name = g_strdup(name);
 	if(!p->name)
 	{
 		g_free(p);
 		g_free(currnode);
 		return ERR_NOMEM;
 	}
-	memcpy(p->name,name,strlen(name));
 
 	p->id=id;
 
@@ -197,11 +196,22 @@ gint append_field(
 	{
 		if(FIELD_TYPE(f)>FIELD_TYPE_FIXDEC)
 		{
+			field_value stupid_ascii_default;
+			if (!def_value)
+			{
+				/* Make it a zero length string by default */
+				stupid_ascii_default.str = (guint8*) "";
+				def_value_size=1;
+				def_value=&stupid_ascii_default;
+			}
+			/*^ TODO make this elegant ^*/
+
 			f->def_value.str=g_malloc(def_value_size);
 			if(!(f->def_value.str))
 			{
 				g_free(f->name);
 				g_free(f);
+				DBG_RET(ERR_NOMEM);
 				return ERR_NOMEM;
 			}
 			memcpy(f->def_value.str,def_value->str,def_value_size);

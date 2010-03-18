@@ -26,6 +26,14 @@ static void process_fields(
 
 	for(cur=fields,i=0;cur;cur=cur->next)
 	{
+			/* printf ("offset is: %d\n", off); */
+
+		/* I moved some artifacts of the original block of code
+		 * to here, the differences are commented.
+		 */
+		/* if(cur->op == FIELD_OP_CONST)
+		{
+		} else */
 		if(cur->read && (FIELD_REQUIRED(cur) || pmap[i]))
 		{
 			ret=(cur->read)(cur,tvb,off);
@@ -39,6 +47,7 @@ static void process_fields(
 
 			/* make sure we mark it as set */
 			cur->state=FIELD_STATE_SET;
+			/* i++; */
 		}
 		else if(cur->op_func)
 		{
@@ -62,6 +71,7 @@ static void process_fields(
 
 		if(FIELD_REQUIRED(cur)) i++;
 	}
+		/* printf ("offset is: %d\n", off); */
 }
 
 void FAST_dissect(int proto_fast, tvbuff_t* tvb, int n, packet_info* pinfo,
@@ -72,8 +82,6 @@ void FAST_dissect(int proto_fast, tvbuff_t* tvb, int n, packet_info* pinfo,
 	guint8* pmap=0;
 	gint pmap_size;
 	struct template_type* t=0;
-	/*struct template_field_type* cur=0;*/
-	/*int i=1;*/
 
 	proto_item* ti=NULL;
 	ti=proto_tree_add_item(tree,proto_fast,tvb,0,-1,FALSE);
@@ -86,7 +94,6 @@ void FAST_dissect(int proto_fast, tvbuff_t* tvb, int n, packet_info* pinfo,
 		return;
 	}
 	off+=pmap_size;
-	/*off=1;*/
 
 	if(pmap[0]) /*  check to see if TID is present */
 	{
@@ -139,47 +146,4 @@ void FAST_dissect(int proto_fast, tvbuff_t* tvb, int n, packet_info* pinfo,
 		tree,
 		pmap+1,
 		off);
-
-	/* Consider making this a function -- grencez */
-	/* V redef'd up top V */
-	/* struct template_field_type* cur=0; */
-	/* int i=1; */
-	/*for(cur=t->fields;cur;cur=cur->next)
-	{*/
-		/*  we need a special case for the Constant operator... */
-		/*if(cur->op == FIELD_OP_CONST)
-		{
-		}
-		else if(cur->read && (FIELD_REQUIRED(cur) || pmap[i]))
-		{
-			ret=(cur->read)(cur,tvb,off);
-			if(ret<0)
-			{
-				DBG_RET(ret);
-				return;
-			}
-			off+=ret;
-
-			i++;
-		}
-		else if(cur->op_func)
-		{
-			ret=(cur->op_func)(cur);
-			if(ret<0)
-			{
-				DBG_RET(ret);
-				return;
-			}
-		}
-
-		if(cur->display)
-		{
-			ret=(cur->display)(cur,tree,tvb);
-			if(ret<0)
-			{
-				DBG_RET(ret);
-				return;
-			}
-		}
-	}*/
 }
