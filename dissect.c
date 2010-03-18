@@ -69,7 +69,7 @@ static void process_fields(
 			}
 		}
 
-		if(FIELD_REQUIRED(cur)) i++;
+		if(!FIELD_REQUIRED(cur)) i++;
 	}
 		/* printf ("offset is: %d\n", off); */
 }
