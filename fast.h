@@ -42,6 +42,10 @@ extern int ett_fast_tid;
 extern int hf_fast;
 extern int hf_fast_tid;
 
+/* configuration variables */
+extern guint config_port_number;
+extern const char* config_template_xml_path;
+
 void debug_out(
 	const char*,
 	const char*,

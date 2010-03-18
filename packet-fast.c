@@ -40,6 +40,10 @@ static int proto_fast=-1;
 /* handle to our dissector */
 static dissector_handle_t fast_handle;
 
+/* configuration variables */
+guint config_port_number;
+const char* config_template_xml_path;
+
 /* forward declarations */
 void proto_register_fast(void);
 void proto_reg_handoff_fast(void);
@@ -98,6 +102,20 @@ void proto_register_fast(void)
 		/* registers our module's dissector registration hook */
 		mod=prefs_register_protocol(
 			proto_fast,proto_reg_handoff_fast);
+
+		prefs_register_uint_preference(
+			mod,
+			"port",
+			"FAST listen port",
+			"Enter a valid port number (1024-65535)",
+			10,
+			&config_port_number);
+		prefs_register_string_preference(
+			mod,
+			"template_file_path",
+			"FAST XML Template file",
+			"Enter a valid filesystem path",
+			&config_template_xml_path);
 
         /* registers our field array */
 		/* proto_register_field_array (proto_fast, hf, array_length (hf)); */
