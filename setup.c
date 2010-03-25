@@ -9,15 +9,10 @@
 #include "template.h"
 
 /* used for setting up gui tree */
-int ett_fast=-1;
-int ett_fast_tid=-1;
 int ett_fast_int1=-1;
 int ett_fast_int2=-1;
-int hf_fast=-1;
-int hf_fast_tid=-1;
 int hf_fast_int1=-1;
 int hf_fast_int2=-1;
-
 int ett_fast_str1=-1;
 int hf_fast_str1=-1;
 
@@ -48,6 +43,9 @@ void FAST_setup(int id)
 	};
 
 	struct template_type* t;
+	struct template_field_type f;
+
+	gint ret;
 
 	proto_register_field_array(id,hf,array_length(hf));
 	proto_register_subtree_array(ett,array_length(ett));
@@ -56,32 +54,46 @@ void FAST_setup(int id)
 
 	init_templates();
 
-	create_template("test_template",1,&t);
-	append_field(
-		"int1",
-		FIELD_TYPE_INT32|FIELD_REQUIRED_BIT,
-		FIELD_OP_NONE,
-		NULL_FIELD_VALUE,
-		0,
-		hf_fast_int1,
-		t,
-		0);
-	append_field(
-		"int2",
-		FIELD_TYPE_UINT32,
-		FIELD_OP_INCR,
-		NULL_FIELD_VALUE,
-		0,
-		hf_fast_int2,
-		t,
-		0);
-	append_field(
-		"str1",
-		FIELD_TYPE_ASCII|FIELD_REQUIRED_BIT,
-		FIELD_OP_NONE,
-		NULL_FIELD_VALUE,
-		0,
-		hf_fast_str1,
-		t,
-		0);
+	ret=create_template("test_template",1,&t);
+	if(ret<0)
+	{
+		DBG_RET(ret);
+		return;
+	}
+
+	f.type=FIELD_TYPE_INT32|FIELD_OP_NONE;
+	f.mandatory=1;
+	f.name="int1";
+	f.hf_id=hf_fast_int1;
+	f.ett_id=ett_fast_int1;
+	ret=create_field(t,&f,0);
+	if(ret<0)
+	{
+		DBG_RET(ret);
+		return;
+	}
+
+	f.type=FIELD_TYPE_UINT32|FIELD_OP_INCR;
+	f.mandatory=0;
+	f.name="int2";
+	f.hf_id=hf_fast_int2;
+	f.ett_id=ett_fast_int2;
+	ret=create_field(t,&f,0);
+	if(ret<0)
+	{
+		DBG_RET(ret);
+		return;
+	}
+
+	f.type=FIELD_TYPE_ASCII|FIELD_OP_NONE;
+	f.mandatory=1;
+	f.name="str1";
+	f.hf_id=hf_fast_str1;
+	f.ett_id=ett_fast_str1;
+	ret=create_field(t,&f,0);
+	if(ret<0)
+	{
+		DBG_RET(ret);
+		return;
+	}
 }

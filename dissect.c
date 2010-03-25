@@ -14,64 +14,43 @@ static guint32 current_tid=0;
 static guint32 last_tid=0;
 
 static void process_fields(
-	struct template_field_type* fields,
+	struct template_field_type* cur,
 	tvbuff_t* tvb,
+	guint off,
 	proto_tree* tree,
 	guint8* pmap,
-	guint off)
+	guint pmap_len)
 {
-	struct template_field_type* cur;
-	int i;
 	int ret;
+	TRACE();
 
-	for(cur=fields,i=0;cur;cur=cur->next)
+	for(;cur;cur=cur->next)
 	{
-			/* printf ("offset is: %d\n", off); */
+		DBG1("current field %s",cur->name);
+		if(!(cur->op))
+		{
+			DBG0("no operator function");
+			return;
+		}
 
-		/* I moved some artifacts of the original block of code
-		 * to here, the differences are commented.
-		 */
-		/* if(cur->op == FIELD_OP_CONST)
+		ret=(cur->op)(cur,&pmap,tvb,&off);
+		if(ret<0)
 		{
-		} else */
-		if(cur->read && (FIELD_REQUIRED(cur) || pmap[i]))
+			DBG_RET(ret);
+			return;
+		}
+
+		if(FIELD_DISPLAY_ON(cur))
 		{
-			ret=(cur->read)(cur,tvb,off);
-			if(ret<0)
+			if(!(cur->display))
 			{
-				DBG_RET(ret);
+				DBG0("no display function");
 				return;
 			}
 
-			off+=ret;
-
-			/* make sure we mark it as set */
-			cur->state=FIELD_STATE_SET;
-			/* i++; */
+			(cur->display)(cur,tree,tvb);
 		}
-		else if(cur->op_func)
-		{
-			ret=(cur->op_func)(cur);
-			if(ret<0)
-			{
-				DBG_RET(ret);
-				return;
-			}
-		}
-
-		if(cur->display)
-		{
-			ret = (cur->display)(cur,tree,tvb);
-			if(ret<0)
-			{
-				DBG_RET(ret);
-				return;
-			}
-		}
-
-		if(!FIELD_REQUIRED(cur)) i++;
 	}
-		/* printf ("offset is: %d\n", off); */
 }
 
 void FAST_dissect(int proto_fast, tvbuff_t* tvb, int n, packet_info* pinfo,
@@ -129,6 +108,7 @@ void FAST_dissect(int proto_fast, tvbuff_t* tvb, int n, packet_info* pinfo,
 			"Unknown");
 
 		DBG1("Unknown or invalid template ID %d",current_tid);
+		g_free(pmap);
 		return;
 	}
 
@@ -143,7 +123,10 @@ void FAST_dissect(int proto_fast, tvbuff_t* tvb, int n, packet_info* pinfo,
 	process_fields(
 		t->fields,
 		tvb,
+		off,
 		tree,
 		pmap+1,
-		off);
+		pmap_size-1);
+
+	g_free(pmap);
 }

@@ -36,7 +36,7 @@ void FAST_setup(int);
 
 void FAST_dissect(int,tvbuff_t*,int,packet_info*,proto_tree*);
 
-/* handles to GUI elements */
+/* handles to common packet field tree elements */
 extern int ett_fast;
 extern int ett_fast_tid;
 extern int hf_fast;
@@ -64,6 +64,8 @@ void debug_out(
 #define DBG4(s,a,b,c,d)	debug_out(__FILE__,__func__,__LINE__,s,a,b,c,d)
 
 #define DBG_RET(r)	DBG1("Returned %d",r)
+
+#define TRACE() DBG0("trace")
 
 /*
 #define DBG(...)		debug_out(__FILE__,__func__,__LINE__,## __VA_ARGS__)

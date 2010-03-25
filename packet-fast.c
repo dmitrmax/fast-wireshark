@@ -49,6 +49,12 @@ void proto_register_fast(void);
 void proto_reg_handoff_fast(void);
 void dissect_fast(tvbuff_t*, packet_info*, proto_tree*);
 
+/* common elements of packet field tree */
+int ett_fast=-1;
+int ett_fast_tid=-1;
+int hf_fast=-1;
+int hf_fast_tid=-1;
+
 /* these are hooks that have to be here if this plugin is being
 dynamically linked to */
 #ifndef ENABLE_STATIC

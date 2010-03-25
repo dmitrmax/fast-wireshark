@@ -27,4 +27,6 @@ gint decode_fixdec(tvbuff_t*,guint,guint,gint32*,gint32*);
 
 gint decode_pmap(tvbuff_t*,guint,guint8**);
 
+gint decode_check_null(tvbuff_t*,guint);
+
 #endif

@@ -15,7 +15,11 @@ gint count_encoded_bytes(tvbuff_t* buf, guint off)
 {
 	int i=0;
 	guint8 b=0;
-	if(!buf) return ERR_BADARG;
+	if(!buf)
+	{
+		DBG0("null argument");
+		return ERR_BADARG;
+	}
 
 	do
 	{
@@ -37,8 +41,10 @@ gint decode_uint32(
 	int i=0;
 	guint8 b=0;
 
-	if(!buf) return ERR_BADARG;
-	if(!out) return ERR_BADARG;
+	if(!buf || !out)
+	{
+		DBG0("null argument");
+	}
 
 	do
 	{
@@ -50,7 +56,11 @@ gint decode_uint32(
 		i++;
 	} while(!(b&STOP_BIT));
 
-	if(i>sizeof(guint32)) return ERR_BADFMT;
+	if(i>sizeof(guint32))
+	{
+		DBG0("bad input data format");
+		return ERR_BADFMT;
+	}
 
 	*out = ret;
 
@@ -66,8 +76,11 @@ gint decode_int32(
     int i=0;
     guint8 b;
 
-	if(!buf) return ERR_BADARG;
-	if(!out) return ERR_BADARG;
+    if(!buf || !out)
+    {
+    	DBG0("null argument");
+    	return ERR_BADARG;
+    }
 
     do
     {
@@ -95,8 +108,11 @@ gint decode_uint64(
 	int i=0;
 	guint8 b=0;
 
-	if(!buf) return ERR_BADARG;
-	if(!out) return ERR_BADARG;
+	if(!buf || !out)
+	{
+		DBG0("null argument");
+		return ERR_BADARG;
+	}
 
 	do
 	{
@@ -126,8 +142,11 @@ gint decode_int64(
 	guint8 b;
 	int sign;
 
-	if(!buf) return ERR_BADARG;
-	if(!out) return ERR_BADARG;
+	if(!buf || !out)
+	{
+		DBG0("null argument");
+		return ERR_BADARG;
+	}
 
 	b=tvb_get_guint8(buf,off);
 	sign=b&SIGN_BIT;
@@ -166,7 +185,11 @@ gint decode_ascii(
 	if(ret<0) return ret;
 
 	s=tvb_get_string(buf,off,ret);
-	if(!s) return ERR_NOMEM;
+	if(!s)
+	{
+		DBG0("out of memory");
+		return ERR_NOMEM;
+	}
 	for(i=0;i<ret;i++) s[i]=s[i] & ~STOP_BIT;
 
 	*out=s;
@@ -188,7 +211,11 @@ gint decode_bytes(
 	if(ret<0) return ret;
 
 	p=tvb_memdup(buf,off,sz);
-	if(!p) return ERR_NOMEM;
+	if(!p)
+	{
+		DBG0("out of memory");
+		return ERR_NOMEM;
+	}
 	*out=p;
 	return sz;
 }
@@ -208,6 +235,7 @@ gint decode_flt10(
 	gint32* wholepart_out,
 	gint32* decpart_out)
 {
+	DBG0("not implemented");
 	return ERR_NOTIMPL;
 }
 
@@ -218,6 +246,7 @@ gint decode_fixdec(
 	gint32* wholepart_out,
 	gint32* decpart_out)
 {
+	DBG0("not implemented");
 	return ERR_NOTIMPL;
 }
 
@@ -234,7 +263,11 @@ gint decode_pmap(
 	if(sz<0) return sz;
 
 	ret=g_malloc(sz*7);
-	if(!ret) return ERR_NOMEM;
+	if(!ret)
+	{
+		DBG0("out of memory");
+		return ERR_NOMEM;
+	}
 
 	/* Is there a reason this was being set to zero? -- grn */
 	/* guint8 b=0; */
@@ -257,3 +290,11 @@ gint decode_pmap(
 	return sz;
 }
 
+gint decode_check_null(
+	tvbuff_t* buf,
+	guint off)
+{
+	guint8 b=tvb_get_guint8(buf,off);
+	if(b==0x80) return 1;
+	return 0;
+}

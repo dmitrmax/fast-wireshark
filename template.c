@@ -9,13 +9,15 @@
 #include "template.h"
 #include "decode.h"
 
-struct template_list_node
+/*struct template_list_node
 {
 	struct template_type* p;
 	struct template_list_node* next;
-};
+};*/
 
-static struct template_list_node* all_templates;
+/*static struct template_list_node* all_templates;*/
+
+static struct template_type* all_templates=0;
 
 void init_templates(void)
 {
@@ -27,28 +29,15 @@ gint create_template(
 	guint32 id,
 	struct template_type** out)
 {
-	struct template_list_node* currnode=0;
 	struct template_type* p;
 
 	if(!name) return ERR_BADARG;
 
-	/*  create entry in our global template list */
-
-	if(!all_templates)
+	/* make sure our name or id does not already exist */
+	if(find_template(name,&p)==1 || find_template_byid(id,&p)==1)
 	{
-		currnode=all_templates=g_malloc(sizeof(struct template_list_node));
-		if(!currnode) return ERR_NOMEM;
-		currnode->next=0;
-		currnode->p=0;
-	}
-	else
-	{
-		for(currnode=all_templates;currnode->next;currnode=currnode->next);
-		currnode->next = g_malloc(sizeof(struct template_list_node));
-		if(!currnode->next) return ERR_NOMEM;
-		currnode=currnode->next;
-		currnode->next=0;
-		currnode->p=0;
+		DBG0("duplicate template id");
+		return ERR_BADARG;
 	}
 
 	/*  create template information struct */
@@ -56,187 +45,267 @@ gint create_template(
 	p = g_malloc(sizeof(struct template_type));
 	if(!p)
 	{
-		g_free(currnode);
+		DBG0("out of memory");
 		return ERR_NOMEM;
 	}
 
 	p->fields=0;
+	p->next=0;
 
 	p->name = g_strdup(name);
 	if(!p->name)
 	{
 		g_free(p);
-		g_free(currnode);
+		DBG0("out of memory");
 		return ERR_NOMEM;
 	}
 
 	p->id=id;
 
+	/* add to list */
+	if(!all_templates)
+	{
+		all_templates=p;
+	}
+	else
+	{
+		struct template_type* cur;
+		for(cur=all_templates;cur->next;cur=cur->next);
+
+		cur->next=p;
+	}
+
 	if(out) *out=p;
-	currnode->p=p;
 
 	return 0;
 }
 
-gint append_field(
-	const char* name,
-	guint8 type,
-	guint8 op,
-	field_value* def_value,
-	guint32 def_value_size,
-	int hf_id,
-	struct template_type* tmpl,
-	struct template_field_type** out)
+gint create_field(
+	struct template_type* in_template,
+	struct template_field_type* params,
+	struct template_field_type** outptr)
 {
-	struct template_field_type* f;
+	struct template_field_type* field;
 
-	if(!name) return ERR_BADARG;
-	if(!tmpl) return ERR_BADARG;
-
-	/*  create template field info struct */
-
-	f=g_malloc(sizeof(struct template_field_type));
-	if(!f)
+	if(!in_template || !params || !params->name)
 	{
-		return ERR_NOMEM;
-	}
-	memset(f,0,sizeof(struct template_field_type));
-
-	f->name=g_malloc(strlen(name));
-	if(!f->name)
-	{
-		g_free(f);
-		return ERR_NOMEM;
-	}
-	memcpy(f->name,name,strlen(name));
-
-	f->type=type;
-	f->op=op;
-	f->hf_id=hf_id;
-
-	switch(FIELD_TYPE(f))
-	{
-	case FIELD_TYPE_INT32:
-		f->read=read_int32_field;
-		f->display=display_int32_field;
-		break;
-	case FIELD_TYPE_UINT32:
-		f->read=read_uint32_field;
-		f->display=display_uint32_field;
-		break;
-	case FIELD_TYPE_INT64:
-		f->read=read_int64_field;
-		f->display=display_int64_field;
-		break;
-	case FIELD_TYPE_UINT64:
-		f->read=read_uint64_field;
-		f->display=display_uint64_field;
-		break;
-	case FIELD_TYPE_FLT10:
-		f->read=read_flt10_field;
-		f->display=display_flt10_field;
-		break;
-	case FIELD_TYPE_FIXDEC:
-		f->read=read_fixdec_field;
-		f->display=display_fixdec_field;
-		break;
-	case FIELD_TYPE_UTF8:
-		f->read=read_utf8_field;
-		f->display=display_utf8_field;
-		break;
-	case FIELD_TYPE_ASCII:
-		f->read=read_ascii_field;
-		f->display=display_ascii_field;
-		break;
-	case FIELD_TYPE_BYTES:
-		f->read=read_bytes_field;
-		f->display=display_bytes_field;
-		break;
-	case FIELD_TYPE_SEQ:
-		f->read=0;
-		f->display=0;
-		break;
-	case FIELD_TYPE_GROUP:
-		f->read=0;
-		f->display=0;
-		break;
-	default:
-		g_free(f->name);
-		g_free(f);
+		DBG0("null argument");
 		return ERR_BADARG;
 	}
 
-	f->op_func=0;
-	switch(op)
+	DBG3("field %s type: %d op: %d",
+		params->name,
+		FIELD_TYPE(params),
+		FIELD_OP(params));
+
+	/* create space for our field */
+	field = g_malloc(sizeof(struct template_field_type));
+	if(!field)
 	{
-	case FIELD_OP_CONST:
-		f->op_func=field_const_op;
-		break;
-	case FIELD_OP_DEFAULT:
-		f->op_func=field_default_op;
-		break;
-	case FIELD_OP_COPY:
-		f->op_func=field_copy_op;
-		break;
-	case FIELD_OP_INCR:
-		f->op_func=field_incr_op;
-		break;
-	case FIELD_OP_DELTA:
-		f->op_func=field_delta_op;
-		break;
-	case FIELD_OP_TAIL:
-		f->op_func=field_tail_op;
-		break;
-	default:
-		f->op_func=field_noop;
-		break;
+		DBG0("out of memory");
+		return ERR_NOMEM;
+	}
+	memset(field,0,sizeof(struct template_field_type));
+
+	/* copy name */
+	field->name = g_strdup(params->name);
+	if(!field->name)
+	{
+		g_free(field);
+		DBG0("out of memory");
+		return ERR_NOMEM;
 	}
 
-	if(FIELD_VALUE_IS_NULL(def_value))
-	{
-		if(FIELD_TYPE(f)>FIELD_TYPE_FIXDEC)
-		{
-			field_value stupid_ascii_default;
-			if (!def_value)
-			{
-				/* Make it a zero length string by default */
-				stupid_ascii_default.str = (guint8*) "";
-				def_value_size=1;
-				def_value=&stupid_ascii_default;
-			}
-			/*^ TODO make this elegant ^*/
+	/************************************************************************/
 
-			f->def_value.str=g_malloc(def_value_size);
-			if(!(f->def_value.str))
-			{
-				g_free(f->name);
-				g_free(f);
-				DBG_RET(ERR_NOMEM);
-				return ERR_NOMEM;
-			}
-			memcpy(f->def_value.str,def_value->str,def_value_size);
+	/* operator state setup */
+	switch(FIELD_OP(params))
+	{
+	case FIELD_OP_CONST:
+
+		/* set current value to always be input */
+		if(copy_field_value(
+			FIELD_TYPE(params),
+			&(params->cfg_value),
+			&(field->value))<0)
+		{
+			g_free(field->name);
+			g_free(field);
+			DBG0("invalid field type");
+			return ERR_BADARG;
+		}
+
+		field->op = field_op_noop;
+
+		break;
+
+	case FIELD_OP_DEFAULT:
+
+		if(copy_field_value(
+			FIELD_TYPE(params),
+			&(params->cfg_value),
+			&(field->cfg_value))<0)
+		{
+			g_free(field->name);
+			g_free(field);
+			DBG0("invalid field type");
+			return ERR_BADARG;
+		}
+
+		field->op = field_op_default;
+
+		break;
+
+	case FIELD_OP_COPY:
+		field->op = field_op_copy;
+		break;
+
+	case FIELD_OP_INCR:
+
+		if(FIELD_IS_COMPLEX(params))
+		{
+			g_free(field->name);
+			g_free(field);
+			DBG0("invalid field type");
+			return ERR_BADARG;
+		}
+
+		field->op = field_op_incr;
+		break;
+
+	case FIELD_OP_DELTA:
+
+		/* delta is complicated enough we need two versions, for strings
+			and integers */
+		if(FIELD_IS_INTEGER(params) || FIELD_IS_DECIMAL(params))
+		{
+			field->op = field_op_delta_num;
+		}
+		else if(FIELD_IS_BYTESTR(params))
+		{
+			field->op = field_op_delta_str;
 		}
 		else
 		{
-			memset (&f->def_value, 0, sizeof(field_value));
-			/* Why was it not just being set to 0? */
-			/* f->def_value = def_value; */
+			g_free(field->name);
+			g_free(field);
+			DBG0("invalid field type");
+			return ERR_BADARG;
 		}
+
+		break;
+
+	case FIELD_OP_TAIL:
+
+		if(!FIELD_IS_BYTESTR(params))
+		{
+			g_free(field->name);
+			g_free(field);
+			DBG0("invalid field type");
+			return ERR_BADARG;
+		}
+
+		field->op=field_op_tail;
+		break;
+
+	case FIELD_OP_NONE:
+		field->op=field_op_noop;
+		break;
+
+	default:
+		g_free(field->name);
+		g_free(field);
+		DBG0("invalid field operator");
+		return ERR_BADARG;
 	}
 
-	/*  find place to put field */
-	if(!tmpl->fields)
+	/************************************************************************/
+
+	/* decode and display setup */
+	switch(FIELD_TYPE(params))
 	{
-		tmpl->fields=f;
+	case FIELD_TYPE_UINT32:
+		field->decode=	field_decode_uint32;
+		field->display=	field_display_uint32;
+		break;
+	case FIELD_TYPE_INT32:
+		field->decode=	field_decode_int32;
+		field->display=	field_display_int32;
+		break;
+
+	case FIELD_TYPE_UINT64:
+		field->decode=	field_decode_uint64;
+		field->display=	field_display_uint64;
+		break;
+	case FIELD_TYPE_INT64:
+		field->decode=	field_decode_int64;
+		field->display=	field_display_int64;
+		break;
+
+	case FIELD_TYPE_FLT10:
+		field->decode=	field_decode_flt10;
+		field->display=	field_display_flt10;
+		break;
+	case FIELD_TYPE_FIXDEC:
+		field->decode=	field_decode_fixdec;
+		field->display=	field_display_fixdec;
+		break;
+
+	case FIELD_TYPE_ASCII:
+		field->decode=	field_decode_ascii;
+		field->display=	field_display_ascii;
+		break;
+	case FIELD_TYPE_UTF8:
+		field->decode=	field_decode_utf8;
+		field->display=	field_display_utf8;
+		break;
+
+	case FIELD_TYPE_BYTES:
+		field->decode=	field_decode_bytes;
+		field->display=	field_display_bytes;
+		break;
+
+	case FIELD_TYPE_SEQ:
+	case FIELD_TYPE_GROUP:
+		DBG0("field type implemented");
+		return ERR_NOTIMPL;
+
+	default:
+		g_free(field->name);
+		g_free(field);
+		DBG0("invalid field type");
+		return ERR_BADARG;
+	}
+
+	/************************************************************************/
+
+	field->type=params->type;
+	field->mandatory=params->mandatory;
+
+	field->state=FIELD_STATE_UNDEF;
+
+	/* we are ignoring subfields for now */
+	field->subfields=0;
+
+	field->hf_id=params->hf_id;
+	field->ett_id=params->ett_id;
+
+	field->next=0;
+
+	/************************************************************************/
+
+	if(!in_template->fields)
+	{
+		in_template->fields=field;
 	}
 	else
 	{
-		struct template_field_type* cur=0;
-		for(cur=tmpl->fields;cur->next;cur=cur->next);
-		cur->next=f;
+		struct template_field_type* cur;
+		for(cur=in_template->fields;cur->next;cur=cur->next);
+		cur->next=field;
 	}
 
-	if(out) *out=f;
+	if(outptr) *outptr=field;
 
 	return 0;
 }
@@ -272,23 +341,21 @@ void cleanup_all(void)
 
 gint find_template(const char* name, struct template_type** out)
 {
-	struct template_list_node* cur;
-	if(!name) return ERR_NOMEM;
-	if(!out) return ERR_NOMEM;
+	struct template_type* cur;
 
-	*out=0;
-
-	cur=all_templates;
-	while(cur)
+	if(!name || !out)
 	{
-		if(!cur->p) continue;
+		DBG0("null argument");
+		return ERR_BADARG;
+	}
 
-		if(strcmp(name,cur->p->name)==0)
+	for(cur=all_templates;cur;cur=cur->next)
+	{
+		if(strcmp(name,cur->name)==0)
 		{
-			*out=cur->p;
-			return 0;
+			*out=cur;
+			return 1;
 		}
-		cur=cur->next;
 	}
 
 	return 0;
@@ -296,22 +363,23 @@ gint find_template(const char* name, struct template_type** out)
 
 gint find_template_byid(guint8 id, struct template_type** out)
 {
-	struct template_list_node* cur;
-	if(!out) return ERR_BADARG;
+	struct template_type* cur;
 
-	*out=0;
-	cur=all_templates;
-	while(cur)
+	if(!out)
 	{
-		if(!cur->p) continue;
-
-		if(cur->p->id==id)
-		{
-			*out=cur->p;
-			return 0;
-		}
-		cur=cur->next;
+		DBG0("null argument");
+		return ERR_BADARG;
 	}
+
+	for(cur=all_templates;cur;cur=cur->next)
+	{
+		if(cur->id==id)
+		{
+			*out=cur;
+			return 1;
+		}
+	}
+
 	return 0;
 }
 
@@ -321,391 +389,78 @@ gint find_template_field(
 	struct template_field_type** out)
 {
 	struct template_field_type* cur;
-	if(!name) return ERR_BADARG;
-	if(!tmpl) return ERR_BADARG;
-	if(!out) return ERR_BADARG;
 
-	*out=0;
+	if(!name || !tmpl || !out)
+	{
+		DBG0("null argument");
+		return ERR_BADARG;
+	}
+
 	cur=tmpl->fields;
-	while(cur)
+	for(cur=tmpl->fields;cur;cur=cur->next)
 	{
 		if(strcmp(name,cur->name)==0)
 		{
 			*out=cur;
-			return 0;
+			return 1;
 		}
-		cur=cur->next;
 	}
+
 	return 0;
 }
 
-gint find_template_field_byindex(
-	guint index,
-	struct template_type* tmpl,
-	struct template_field_type** out,
-	guint skip_required)
+gint copy_field_value(
+	guint type,
+	field_value* src,
+	field_value* dest)
 {
-	struct template_field_type* cur;
-	int i=0;
-
-	if(!tmpl) return ERR_BADARG;
-	if(!out) return ERR_BADARG;
-
-	*out=0;
-	cur=tmpl->fields;
-
-	while(cur)
+	switch(type)
 	{
-		if(!skip_required || !FIELD_REQUIRED(cur))
+	case FIELD_TYPE_UINT32:
+		dest->u32=src->u32;
+		break;
+	case FIELD_TYPE_INT32:
+		dest->i32=src->i32;
+		break;
+	case FIELD_TYPE_UINT64:
+		dest->u64=src->u64;
+		break;
+	case FIELD_TYPE_INT64:
+		dest->i64=src->i64;
+		break;
+	case FIELD_TYPE_FLT10:
+		dest->flt10=src->flt10;
+		break;
+	case FIELD_TYPE_FIXDEC:
+		dest->fixdec=src->fixdec;
+		break;
+	case FIELD_TYPE_ASCII:
+		dest->str.p=(guint8*)g_strdup((gchar*)src->str.p);
+		if(!dest->str.p)
 		{
-			if(i==index)
-			{
-				*out=cur;
-				return 0;
-			}
-			index++;
+			DBG0("out of memory");
+			return ERR_NOMEM;
 		}
-
-		cur=cur->next;
+		break;
+	case FIELD_TYPE_UTF8:
+	case FIELD_TYPE_BYTES:
+		dest->str.p=g_memdup(src->str.p,src->str.len);
+		if(!dest->str.p)
+		{
+			DBG0("out of memory");
+			return ERR_NOMEM;
+		}
+		dest->str.len=src->str.len;
+		break;
+	default:
+		DBG0("invalid field type");
+		return ERR_BADARG;
 	}
 	return 0;
-}
-
-gint read_uint32_field(
-	struct template_field_type* f,
-	tvbuff_t* buf,
-	guint off)
-{
-	return decode_uint32(buf,off,&(f->value.u32));
-}
-
-gint read_int32_field(
-	struct template_field_type* f,
-	tvbuff_t* buf,
-	guint off)
-{
-	return decode_int32(buf,off,&(f->value.i32));
-}
-
-gint read_uint64_field(
-	struct template_field_type* f,
-	tvbuff_t* buf,
-	guint off)
-{
-	return decode_uint64(buf,off,&(f->value.u64));
-}
-
-gint read_int64_field(
-	struct template_field_type* f,
-	tvbuff_t* buf,
-	guint off)
-{
-	return decode_int64(buf,off,&(f->value.i64));
-}
-
-gint read_ascii_field(
-	struct template_field_type* f,
-	tvbuff_t* buf,
-	guint off)
-{
-	gint ret;
-	if(f->value.str) g_free(f->value.str);
-	ret = decode_ascii(buf,off,&(f->value.str));
-	f->size=ret;
-	return ret;
-}
-
-gint read_utf8_field(
-	struct template_field_type* f,
-	tvbuff_t* buf,
-	guint off)
-{
-	return read_bytes_field(f,buf,off);
-}
-
-gint read_bytes_field(
-	struct template_field_type* f,
-	tvbuff_t* buf,
-	guint off)
-{
-	gint ret;
-	if(f->value.str) g_free(f->value.str);
-	ret=decode_utf8(buf,off,&(f->value.str));
-	f->size=ret;
-	return ret;
-}
-
-gint read_flt10_field(
-	struct template_field_type* f,
-	tvbuff_t* buf,
-	guint off)
-{
-	return decode_flt10(buf,off,f->value.dec,f->value.dec+1);
-}
-
-gint read_fixdec_field(
-	struct template_field_type* f,
-	tvbuff_t* buf,
-	guint off)
-{
-	return  decode_fixdec(buf,off,f->wholebits,f->value.dec,f->value.dec+1);
 }
 
 gint reset_template_state(struct template_type* t)
 {
+	DBG0("not implemented");
 	return ERR_NOTIMPL;
 }
-
-gint display_uint32_field(
-	struct template_field_type* f,
-	proto_tree* tree,
-	tvbuff_t* buf)
-{
-	proto_tree_add_uint(
-		tree,
-		f->hf_id,
-		buf,
-		0,
-		sizeof(guint32),
-		f->value.u32);
-	return 0;
-}
-
-gint display_int32_field(
-	struct template_field_type* f,
-	proto_tree* tree,
-	tvbuff_t* buf)
-{
-	proto_tree_add_int(
-		tree,
-		f->hf_id,
-		buf,
-		0,
-		sizeof(gint32),
-		f->value.i32);
-	return 0;
-}
-
-gint display_uint64_field(
-	struct template_field_type* f,
-	proto_tree* tree,
-	tvbuff_t* buf)
-{
-	proto_tree_add_uint64(
-		tree,
-		f->hf_id,
-		buf,
-		0,
-		sizeof(guint64),
-		f->value.u64);
-	return 0;
-}
-
-gint display_int64_field(
-	struct template_field_type* f,
-	proto_tree* tree,
-	tvbuff_t* buf)
-{
-	proto_tree_add_int64(
-		tree,
-		f->hf_id,
-		buf,
-		0,
-		sizeof(gint64),
-		f->value.i64);
-	return 0;
-}
-
-gint display_ascii_field(
-	struct template_field_type* f,
-	proto_tree* tree,
-	tvbuff_t* buf)
-{
-	proto_tree_add_string(
-		tree,
-		f->hf_id,
-		buf,
-		0,
-		strlen((const char*)f->value.str),
-		(const char*)f->value.str);
-	return 0;
-}
-
-gint display_bytes_field(
-	struct template_field_type* f,
-	proto_tree* tree,
-	tvbuff_t* buf)
-{
-	proto_tree_add_bytes(
-		tree,
-		f->hf_id,
-		buf,
-		0,
-		f->size,
-		f->value.str);
-	return 0;
-}
-
-gint display_utf8_field(
-	struct template_field_type* f,
-	proto_tree* tree,
-	tvbuff_t* buf)
-{
-	return ERR_NOTIMPL;
-}
-
-gint display_flt10_field(
-	struct template_field_type* f,
-	proto_tree* tree,
-	tvbuff_t* buf)
-{
-	return ERR_NOTIMPL;
-}
-
-gint display_fixdec_field(
-	struct template_field_type* f,
-	proto_tree* tree,
-	tvbuff_t* buf)
-{
-	return ERR_NOTIMPL;
-}
-
-gint field_noop(struct template_field_type* f)
-{
-	if(!f) return ERR_BADARG;
-
-	/* field was not specified so just set it as empty */
-	f->state=FIELD_STATE_EMPTY;
-	return 0;
-}
-
-gint field_const_op(struct template_field_type* f)
-{
-	/*if(FIELD_IS_FIXED(f))
-	{
-		f->value=def_value;
-	}
-	else
-	{
-		if(f->value.str)
-		{
-			g_free(f->value.str);
-			f->value.str=0;
-		}
-
-		if(f->def_value.str && f->def_value_size>0)
-		{
-			f->value.str=g_memdup(f->dev_value.str,f->def_value_size);
-			if(!f->value.str) return ERR_NOMEM;
-		}
-		else return ERR_BADARG;
-	}
-
-	return 0;*/
-	return ERR_NOTIMPL;
-}
-
-gint field_default_op(struct template_field_type* f)
-{
-	if(FIELD_IS_FIXED(f))
-	{
-		f->prev_value=f->value;
-		f->value=f->def_value;
-	}
-	else
-	{
-		if(f->value.str)
-		{
-			f->prev_value.str=g_memdup(f->value.str,f->size);
-			if(!f->prev_value.str) return ERR_NOMEM;
-			g_free(f->value.str);
-			f->value.str=0;
-		}
-
-		if(f->def_value.str && f->def_value_size>0)
-		{
-			f->value.str=g_memdup(f->def_value.str,f->def_value_size);
-			if(!f->value.str) return ERR_NOMEM;
-		}
-		else return ERR_BADARG;
-	}
-
-	return 0;
-}
-gint field_copy_op(struct template_field_type* f)
-{
-	if(FIELD_IS_FIXED(f))
-	{
-		f->prev_value=f->value;
-	}
-	else
-	{
-		if(f->prev_value.str)
-		{
-			g_free(f->prev_value.str);
-			f->prev_value.str=0;
-		}
-		if(f->value.str)
-		{
-			f->prev_value.str=g_memdup(f->value.str,f->size);
-			if(!f->prev_value.str) return ERR_NOMEM;
-		}
-	}
-
-	return 0;
-}
-gint field_incr_op(struct template_field_type* f)
-{
-	if(!FIELD_IS_FIXED(f)) return ERR_BADARG;
-
-	f->prev_value=f->value;
-
-	switch(FIELD_TYPE(f))
-	{
-	case FIELD_TYPE_UINT32:
-		f->value.u32=f->value.u32 +1;
-		break;
-	case FIELD_TYPE_INT32:
-		f->value.i32=f->value.i32+1;
-		break;
-	case FIELD_TYPE_INT64:
-		f->value.i64=f->value.i64+1;
-		break;
-	case FIELD_TYPE_UINT64:
-		f->value.u64=f->value.u64+1;
-		break;
-	default: return ERR_BADARG;
-	}
-
-	return 0;
-}
-gint field_delta_op(struct template_field_type* f)
-{
-	if(!FIELD_IS_FIXED(f)) return ERR_BADARG;
-
-	f->prev_value=f->value;
-
-	switch(FIELD_TYPE(f))
-	{
-	case FIELD_TYPE_UINT32:
-		f->value.u32=f->value.u32 +f->op_delta.u32;
-		break;
-	case FIELD_TYPE_INT32:
-		f->value.i32=f->value.i32+f->op_delta.i32;
-		break;
-	case FIELD_TYPE_INT64:
-		f->value.i64=f->value.i64+f->op_delta.i64;
-		break;
-	case FIELD_TYPE_UINT64:
-		f->value.u64=f->value.u64+f->op_delta.u64;
-		break;
-	default: return ERR_BADARG;
-	}
-
-	return 0;
-}
-gint field_tail_op(struct template_field_type* f)
-{
-	return ERR_NOTIMPL;
-}
-
