@@ -144,6 +144,9 @@ gint field_op_incr(
 {
 	gint ret;
 
+		/* We can increment decimals right?
+		 * ifso, TODO --grencez
+		 */
 	if(!FIELD_IS_INTEGER(f))
 	{
 		DBG0("increment operator must have an integer field type");
@@ -152,7 +155,7 @@ gint field_op_incr(
 
 	if(f->mandatory)
 	{
-		/* ya what do we do here? */
+			/* ya what do we do here? */
 	}
 	else
 	{
@@ -162,8 +165,13 @@ gint field_op_incr(
 		}
 		else
 		{
-				/* TODO: handle different types */
-			++ f->value.u32;
+			switch (FIELD_TYPE(f))
+			{
+				case FIELD_TYPE_INT32 : ++ f->value.i32; break;
+				case FIELD_TYPE_UINT32: ++ f->value.u32; break;
+				case FIELD_TYPE_INT64 : ++ f->value.i64; break;
+				case FIELD_TYPE_UINT64: ++ f->value.u64; break;
+			}
 		}
 	}
 
