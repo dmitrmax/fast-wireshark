@@ -54,6 +54,8 @@ fast-wireshark-%.zip: fast-wireshark-%.tar.gz
 	zip -r $(@) fast-wireshark-$(*)
 	rm -r fast-wireshark-$(*) fast-wireshark-$(*).tar.gz
 
+tags: *.c
+	ctags *.c
 
 .PHONY: test
 test: $(PLUGIN)
@@ -61,7 +63,7 @@ test: $(PLUGIN)
 
 .PHONY: clean
 clean:
-	rm -f $(OBJS) *.d
+	rm -f $(OBJS) *.d tags
 	make -C $(TEST) clean
 
 .PHONY: distclean
