@@ -152,10 +152,19 @@ gint field_op_incr(
 
 	if(f->mandatory)
 	{
-		/* */
+		/* ya what do we do here? */
 	}
 	else
 	{
+		if ((*pmap)[0])
+		{
+			field_op_noop (f, pmap, buf, off);
+		}
+		else
+		{
+				/* TODO: handle different types */
+			++ f->value.u32;
+		}
 	}
 
 	return 0;

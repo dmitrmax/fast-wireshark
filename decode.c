@@ -73,26 +73,26 @@ gint decode_int32(
 	gint32* out)
 {
 	gint32 ret=0;
-    int i=0;
-    guint8 b;
+	int i=0;
+	guint8 b;
 
-    if(!buf || !out)
-    {
-    	DBG0("null argument");
-    	return ERR_BADARG;
-    }
+	if(!buf || !out)
+	{
+		DBG0("null argument");
+		return ERR_BADARG;
+	}
 
-    do
-    {
-        b = tvb_get_guint8 (buf, off +i);
-        ret = (ret << 7) | (b & 0x7F); /* Fill in next 7 bits */
-        ++ i;
-    } while (! (b & STOP_BIT));
+	do
+	{
+		b = tvb_get_guint8 (buf, off +i);
+		ret = (ret << 7) | (b & 0x7F); /* Fill in next 7 bits */
+		++ i;
+	} while (! (b & STOP_BIT));
 
-    {
-        int shf = 32 - 7*i;
-        ret = (ret << shf) >> shf; /* Sign extend */
-    }
+	{
+		int shf = 32 - 7*i;
+		ret = (ret << shf) >> shf; /* Sign extend */
+	}
 
 	*out = ret;
 	return i;
