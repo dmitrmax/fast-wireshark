@@ -1,9 +1,13 @@
 
 include Makefile.common
 
-INCS=-I<WIRESHARK_SRC_ROOT> -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include
+INCS=-I<WIRESHARK_SRC_ROOT> -I/usr/include/glib-2.0 \
+	-I/usr/lib/glib-2.0/include \
+	-I/usr/include/libxml2
 
 SRCS = $(DISSECTOR_SRC)
+
+LIBS = -lm -lz -lxml2
 
 CC   = gcc
 CPP  = cpp
@@ -32,7 +36,7 @@ CFLAGS = -DHAVE_CONFIG_H $(INCS) -DINET6 \
 
 $(PLUGIN) : $(OBJS)
 	mkdir -p $(PLUGIN_DIR)
-	$(CC) -shared $(OBJS) -o $@
+	$(CC) -shared $(OBJS) $(LIBS) -static -o $@
 
 # Do this if we wanna be cool
 #%.o: %.d
