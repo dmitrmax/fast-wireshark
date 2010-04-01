@@ -29,7 +29,10 @@ void FAST_setup(int id)
 		&ett_fast_tid,
 		&ett_fast_int1,
 		&ett_fast_int2,
-		&ett_fast_str1};
+		&ett_fast_str1,
+		&ett_fast_int3,
+		&ett_fast_int4
+    };
 
 	static hf_register_info hf[]={
 		{&hf_fast_tid,

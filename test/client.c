@@ -1,5 +1,7 @@
 
+#define CLIENT_C_
 #include "client.h"
+#undef CLIENT_C_
 
     /* Encode and destroy */
 void encode_fast (fast_message_t fmsg)
@@ -82,41 +84,10 @@ void add_pmap (fast_message_t fmsg, guint8 b)
     fmsg->pmap = g_byte_array_append (fmsg->pmap, &b, 1);
 }
 
-void show_usage ()
-{
-    fputs ("\
-Usage: ./client [flags]\n\n\
- Options\n\
-    --help      Show this message\n\
-    -p port     Connect to port /port/, default is 1337\n\
-    -h host     Connect to /host/, default is localhost\n\
-", stderr);
-    fputs ("\
-    --tid n     Set template id to /n/, default is 1\n\
-    --notid     No template id for this message\n\
-", stderr);
-    fputs ("\n\
- Fields\n\
-    --req | --noreq   Following fields are required (default) or not\n\
-                      i.e. they won't appear in the presence map\n\
-    --uint32 n       Encode a unsigned 32-bit integer /n/\n\
-    --int32 n       Encode a signed 32-bit integer /n/\n\
-    (--uint64 | --int64) n\n\
-    --ascii str    Encode /str/ as an ascii string\n\
-    --nop        Put a zero in the presence map (even if --req specified)\n\
-", stderr);
-    fputs ("\n\
- Faux Fields\n\
-    --hex hexstring    Directly encode a field, specified with a hex string\n\
-                       (length is a multiple of 2, spaces are ignored)\n\
-    --bit bitstring    Directly encode a field, specified by a bit string\n\
-                       (length is a multiple of 8, spaces are ignored)\n\
-", stderr);
-}
-
 int main (int argc, char** argv)
 {
     gboolean requiredp = 1;
+    gboolean genp_c = 0; /* True if generating setup.c */
     fast_message_type fmsg;
 
         /* Die fast if no arguments */
@@ -144,52 +115,23 @@ int main (int argc, char** argv)
 
     while (1)
     {
-        enum
-        {   optkey_first = 256,
-            optkey_help,
-            optkey_tid, optkey_notid,
-            optkey_req, optkey_noreq,
-            optkey_uint32, optkey_int32,
-            optkey_uint64, optkey_int64,
-            optkey_ascii,
-            optkey_nop,
-            optkey_hex, optkey_bit
-        };
-        const struct option long_options[] =
-        {    {"help"  , 0, 0, 0 }
-            ,{"tid"   , 1, 0, 0 }
-            ,{"notid" , 0, 0, 0 }
-            ,{"req"   , 0, 0, 0 }
-            ,{"noreq" , 0, 0, 0 }
-            ,{"uint32", 1, 0, 0 }
-            ,{"int32" , 1, 0, 0 }
-            ,{"uint64", 1, 0, 0 }
-            ,{"int64" , 1, 0, 0 }
-            ,{"ascii" , 1, 0, 0 }
-            ,{"nop"   , 0, 0, 0 }
-            ,{"hex"   , 1, 0, 0 }
-            ,{"bit"   , 1, 0, 0 }
-            ,{0,0,0,0}
-        };
-        int indOpt;
-        int opt = getopt_long
-            (argc, argv, "p:h:",
-             long_options, &indOpt);
-
-        if (0 > opt)  break;
-        if (0 == opt)  opt = indOpt + optkey_first +1;
+        int opt = prog_getopt (argc, argv);
+        if (!opt) break;
 
         switch (opt)
         {
-            case 'h' :
-                fmsg.host = optarg;
-                break;
-            case 'p' :
-                fmsg.service = optarg;
-                break;
             case optkey_help :
                 show_usage ();
                 exit (0);
+                break;
+            case optkey_host :
+                fmsg.host = optarg;
+                break;
+            case optkey_port :
+                fmsg.service = optarg;
+                break;
+            case optkey_gen_c :
+                genp_c = 1;
                 break;
 
             case optkey_tid :
@@ -219,12 +161,12 @@ int main (int argc, char** argv)
             case optkey_uint64 :
                 if (! requiredp)  add_pmap (&fmsg, 1);
                 encode_uint64 ((guint64) g_ascii_strtoull (optarg, 0, 10),
-                              &fmsg.msg);
+                               &fmsg.msg);
                 break;
             case optkey_int64 :
                 if (! requiredp)  add_pmap (&fmsg, 1);
                 encode_uint64 ((gint64) g_ascii_strtoll (optarg, 0, 10),
-                              &fmsg.msg);
+                               &fmsg.msg);
                 break;
             case optkey_ascii :
                 if (! requiredp)  add_pmap (&fmsg, 1);

@@ -204,14 +204,14 @@ gint decode_bytes(
 	ret = decode_uint32(buf,off,&sz);
 	if(ret<0) return ret;
 
-	p=tvb_memdup(buf,off,sz);
+	p=tvb_memdup(buf,off+ret,sz);
 	if(!p)
 	{
 		DBG0("out of memory");
 		return ERR_NOMEM;
 	}
 	*out=p;
-	return sz;
+	return sz+ret;
 }
 
 /* NOTE: this returns memory in out that must be free'd with g_free() */
