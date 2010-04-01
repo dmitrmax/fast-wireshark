@@ -2,9 +2,14 @@
 
 ./client --int32 -5 \
          --noreq --uint32 2600 \
-         --req --ascii "why hello there"
+         --req --ascii "why hello there" \
+         --int64 -52584205 \
+         --uint64 55555555555
+
 
 ./client --int32 -5 \
          --nop \
-         --ascii "that should have incremented"
+         --ascii "that should have incremented" \
+         --int64 -52584205 \
+         --uint64 55555555555
 

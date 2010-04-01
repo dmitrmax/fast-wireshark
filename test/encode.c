@@ -32,7 +32,17 @@ void encode_pmap (const GByteArray* pmap, GByteArray** pto_a)
 
 void encode_uint32 (guint32 x, GByteArray** arr)
 {
-    guint8 buf[9];
+    encode_uint64 (x, arr);
+}
+
+void encode_int32 (gint32 x, GByteArray** arr)
+{
+    encode_int64 (x, arr);
+}
+
+void encode_uint64 (guint64 x, GByteArray** arr)
+{
+    guint8 buf[17];
     size_t maxc = 9;
     int i = maxc;
 
@@ -48,9 +58,9 @@ void encode_uint32 (guint32 x, GByteArray** arr)
     *arr = g_byte_array_append (*arr, &buf[i], maxc - i);
 }
 
-void encode_int32 (gint32 x, GByteArray** arr)
+void encode_int64 (gint64 x, GByteArray** arr)
 {
-    guint8 buf[9];
+    guint8 buf[17];
     size_t maxc = 9;
     int i = maxc;
 

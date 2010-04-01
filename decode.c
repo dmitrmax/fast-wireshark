@@ -111,22 +111,25 @@ gint decode_uint64(
 	if(!buf || !out)
 	{
 		DBG0("null argument");
-		return ERR_BADARG;
 	}
 
 	do
 	{
+		ret<<=7;
 		b=tvb_get_guint8(buf,off+i);
 
-		ret<<=7;
 		ret |= b & ~STOP_BIT;
 
 		i++;
 	} while(!(b&STOP_BIT));
 
-	if(i>sizeof(guint64)) return ERR_BADFMT;
+	if(i>sizeof(guint64))
+	{
+		DBG0("bad input data format");
+		return ERR_BADFMT;
+	}
 
-	*out=ret;
+	*out = ret;
 
 	return i;
 }
@@ -137,10 +140,8 @@ gint decode_int64(
 	gint64* out)
 {
 	gint64 ret=0;
-	int i=1;
-
+	int i=0;
 	guint8 b;
-	int sign;
 
 	if(!buf || !out)
 	{
@@ -148,26 +149,19 @@ gint decode_int64(
 		return ERR_BADARG;
 	}
 
-	b=tvb_get_guint8(buf,off);
-	sign=b&SIGN_BIT;
-	ret|=b&~(STOP_BIT|SIGN_BIT);
-
-	if(!(b&STOP_BIT))
+	do
 	{
-		do
-		{
-			b=tvb_get_guint8(buf,off+i);
-			ret<<=7;
-			ret|=b & ~STOP_BIT;
-			i++;
-		} while(!(b&STOP_BIT));
+		b = tvb_get_guint8 (buf, off +i);
+		ret = (ret << 7) | (b & 0x7F); /* Fill in next 7 bits */
+		++ i;
+	} while (! (b & STOP_BIT));
+
+	{
+		int shf = 32 - 7*i;
+		ret = (ret << shf) >> shf; /* Sign extend */
 	}
 
-	if(i>sizeof(gint64)) return ERR_BADFMT;
-
-	if(sign) ret=-ret;
-	*out=-ret;
-
+	*out = ret;
 	return i;
 }
 

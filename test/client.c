@@ -101,6 +101,7 @@ Usage: ./client [flags]\n\n\
                       i.e. they won't appear in the presence map\n\
     --uint32 n       Encode a unsigned 32-bit integer /n/\n\
     --int32 n       Encode a signed 32-bit integer /n/\n\
+    (--uint64 | --int64) n\n\
     --ascii str    Encode /str/ as an ascii string\n\
     --nop        Put a zero in the presence map (even if --req specified)\n\
 ", stderr);
@@ -149,6 +150,7 @@ int main (int argc, char** argv)
             optkey_tid, optkey_notid,
             optkey_req, optkey_noreq,
             optkey_uint32, optkey_int32,
+            optkey_uint64, optkey_int64,
             optkey_ascii,
             optkey_nop,
             optkey_hex, optkey_bit
@@ -161,6 +163,8 @@ int main (int argc, char** argv)
             ,{"noreq" , 0, 0, 0 }
             ,{"uint32", 1, 0, 0 }
             ,{"int32" , 1, 0, 0 }
+            ,{"uint64", 1, 0, 0 }
+            ,{"int64" , 1, 0, 0 }
             ,{"ascii" , 1, 0, 0 }
             ,{"nop"   , 0, 0, 0 }
             ,{"hex"   , 1, 0, 0 }
@@ -210,6 +214,16 @@ int main (int argc, char** argv)
             case optkey_int32 :
                 if (! requiredp)  add_pmap (&fmsg, 1);
                 encode_int32 ((gint32) g_ascii_strtoll (optarg, 0, 10),
+                              &fmsg.msg);
+                break;
+            case optkey_uint64 :
+                if (! requiredp)  add_pmap (&fmsg, 1);
+                encode_uint64 ((guint64) g_ascii_strtoull (optarg, 0, 10),
+                              &fmsg.msg);
+                break;
+            case optkey_int64 :
+                if (! requiredp)  add_pmap (&fmsg, 1);
+                encode_uint64 ((gint64) g_ascii_strtoll (optarg, 0, 10),
                               &fmsg.msg);
                 break;
             case optkey_ascii :
