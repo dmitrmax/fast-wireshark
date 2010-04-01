@@ -246,10 +246,10 @@ gint create_field(
 		field->decode=	field_decode_flt10;
 		field->display=	field_display_flt10;
 		break;
-	case FIELD_TYPE_FIXDEC:
+	/*case FIELD_TYPE_FIXDEC:
 		field->decode=	field_decode_fixdec;
 		field->display=	field_display_fixdec;
-		break;
+		break;*/
 
 	case FIELD_TYPE_ASCII:
 		field->decode=	field_decode_ascii;
@@ -431,9 +431,9 @@ gint copy_field_value(
 	case FIELD_TYPE_FLT10:
 		dest->flt10=src->flt10;
 		break;
-	case FIELD_TYPE_FIXDEC:
+	/*case FIELD_TYPE_FIXDEC:
 		dest->fixdec=src->fixdec;
-		break;
+		break;*/
 	case FIELD_TYPE_ASCII:
 		dest->str.p=(guint8*)g_strdup((gchar*)src->str.p);
 		if(!dest->str.p)

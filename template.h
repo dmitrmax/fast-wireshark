@@ -53,11 +53,11 @@ typedef union field_value_type
 		guint8* p;
 	} str;
 
-	struct fixdecimal_value_type_
+	/*struct fixdecimal_value_type_
 	{
 		gint32 whole;
 		guint32 frac;
-	} fixdec;
+	} fixdec;*/
 
 	struct base10_float_value_type_
 	{
@@ -76,7 +76,7 @@ gint copy_field_value(guint type, field_value* src, field_value* dest);
 #define FIELD_TYPE_INT64	0x03	/*  64-bit int */
 #define FIELD_TYPE_UINT64	0x04	/*  unsigned 64-bit int */
 #define FIELD_TYPE_FLT10	0x05	/*  base-10 floating point */
-#define FIELD_TYPE_FIXDEC	0x06	/*  fixed-point decimal */
+/*#define FIELD_TYPE_FIXDEC	0x06*/	/*  fixed-point decimal */
 #define FIELD_TYPE_UTF8		0x07	/*  UNICODE-8 text */
 #define FIELD_TYPE_ASCII	0x08	/*  ASCII text */
 #define FIELD_TYPE_BYTES	0x09	/*  byte vector */
@@ -159,7 +159,7 @@ struct template_field_type
 		t==FIELD_TYPE_INT64 || t==FIELD_TYPE_UINT64)
 #define FIELD_IS_INTEGER(f) (TYPE_IS_INTEGER(FIELD_TYPE(f)))
 
-#define TYPE_IS_DECIMAL(t) (t==FIELD_TYPE_FLT10 || t==FIELD_TYPE_FIXDEC)
+#define TYPE_IS_DECIMAL(t) (t==FIELD_TYPE_FLT10)
 #define FIELD_IS_DECIMAL(f) (TYPE_IS_DECIMAL(FIELD_TYPE(f)))
 
 #define TYPE_IS_BYTESTR(t) \
