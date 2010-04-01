@@ -90,6 +90,8 @@ gint field_op_default(
 			if(ret<0) return ret;
 
 			*off = *off + ret;
+
+			f->state=FIELD_STATE_SET|FIELD_DISPLAY_BIT;
 		}
 		else
 		{
@@ -112,6 +114,7 @@ gint field_op_default(
 				ret=(f->decode)(&(f->value),buf,*off);
 				if(ret<0) return ret;
 				*off=*off+ret;
+				f->state=FIELD_STATE_SET|FIELD_DISPLAY_BIT;
 			}
 		}
 		else
@@ -132,8 +135,51 @@ gint field_op_copy(
 	tvbuff_t* buf,
 	guint* off)
 {
-	DBG0("not implemented");
-	return ERR_NOTIMPL;
+	gint ret;
+
+	if(f->mandatory)
+	{
+		if(**pmap)
+		{
+			ret=(f->decode)(&(f->value),buf,*off);
+			if(ret<0) return ret;
+			*off=*off+ret;
+		}
+
+		/* if bit is not set, simply use the previous value */
+
+		f->state=FIELD_STATE_SET|FIELD_DISPLAY_BIT;
+	}
+	else
+	{
+		if(**pmap)
+		{
+			ret=decode_check_null(buf,*off);
+			if(ret<0) return ret;
+
+			if(ret==0)
+			{
+				ret=(f->decode)(&(f->value),buf,*off);
+				if(ret<0) return ret;
+
+				*off=*off+ret;
+				f->state=FIELD_STATE_SET|FIELD_DISPLAY_BIT;
+			}
+			else
+			{
+				*off=*off+1;
+				f->state=FIELD_STATE_EMPTY;
+			}
+		}
+		else
+		{
+			f->state=FIELD_STATE_SET|FIELD_DISPLAY_BIT;
+		}
+	}
+
+	*pmap=*pmap+1;
+
+	return 0;
 }
 
 gint field_op_incr(
@@ -144,9 +190,6 @@ gint field_op_incr(
 {
 	gint ret;
 
-		/* We can increment decimals right?
-		 * ifso, TODO --grencez
-		 */
 	if(!FIELD_IS_INTEGER(f))
 	{
 		DBG0("increment operator must have an integer field type");
@@ -155,25 +198,61 @@ gint field_op_incr(
 
 	if(f->mandatory)
 	{
-			/* ya what do we do here? */
-	}
-	else
-	{
-		if ((*pmap)[0])
+		if(**pmap)
 		{
-			field_op_noop (f, pmap, buf, off);
+			ret=(f->decode)(&(f->value),buf,*off);
+			if(ret<0) return ret;
+			*off=*off+ret;
 		}
 		else
 		{
-			switch (FIELD_TYPE(f))
+			switch(FIELD_TYPE(f))
 			{
-				case FIELD_TYPE_INT32 : ++ f->value.i32; break;
-				case FIELD_TYPE_UINT32: ++ f->value.u32; break;
-				case FIELD_TYPE_INT64 : ++ f->value.i64; break;
-				case FIELD_TYPE_UINT64: ++ f->value.u64; break;
+			case FIELD_TYPE_INT32:	++f->value.i32; break;
+			case FIELD_TYPE_UINT32:	++f->value.u32; break;
+			case FIELD_TYPE_INT64:	++f->value.i64; break;
+			case FIELD_TYPE_UINT64:	++f->value.u64; break;
+			default: return ERR_BADARG;
+			}
+		}
+
+		f->state=FIELD_STATE_SET|FIELD_DISPLAY_BIT;
+	}
+	else
+	{
+		if(**pmap)
+		{
+			ret=decode_check_null(buf,*off);
+			if(ret<0) return ret;
+
+			if(ret==0)
+			{
+				ret=(f->decode)(&(f->value),buf,*off);
+				if(ret<0) return ret;
+				*off=*off+ret;
+				f->state=FIELD_STATE_SET|FIELD_DISPLAY_BIT;
+			}
+			else
+			{
+				f->state=FIELD_STATE_EMPTY;
+				*off=*off+1;
+			}
+		}
+		else
+		{
+			f->state=FIELD_STATE_SET|FIELD_DISPLAY_BIT;
+			switch(FIELD_TYPE(f))
+			{
+			case FIELD_TYPE_INT32:	++f->value.i32; break;
+			case FIELD_TYPE_UINT32:	++f->value.u32; break;
+			case FIELD_TYPE_INT64:	++f->value.i64; break;
+			case FIELD_TYPE_UINT64:	++f->value.u64; break;
+			default: return ERR_BADARG;
 			}
 		}
 	}
+
+	*pmap=*pmap+1;
 
 	return 0;
 }
