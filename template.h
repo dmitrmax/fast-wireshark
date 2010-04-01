@@ -130,6 +130,9 @@ struct template_field_type
 	/* configuration value used for const,default, etc. operators */
 	field_value cfg_value;
 
+	/* used to store operators if this is a decimal field */
+	guint8 dec_ops;
+
 	/***** Ignore these fields when calling add_field() *****/
 
 	field_value value;
@@ -150,6 +153,12 @@ struct template_field_type
 
 #define FIELD_TYPE(f) 		((f)->type & ~FIELD_TYPE_MASK)
 #define FIELD_OP(f)			((f)->type & FIELD_TYPE_MASK)
+
+/* added to support decimal fields */
+#define FIELD_DEC_EXP_OP(f)			((f)->dec_op & 0x0f)
+#define FIELD_DEC_MNT_OP(f)			((f)->dec_op & 0xf0)
+#define FIELD_SET_DEC_EXP_OP(f,op)	((f)->dec_op = (op))
+#define FIELD_SET_DEC_MNT_OP(f,op)	((f)->dec_op = (op<<4))
 
 #define FIELD_STATE(f)		((f)->state & ~FIELD_DISPLAY_BIT)
 #define FIELD_DISPLAY_ON(f)	((f)->state & FIELD_DISPLAY_BIT)
