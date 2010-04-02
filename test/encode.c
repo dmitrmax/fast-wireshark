@@ -95,6 +95,13 @@ void encode_ascii (const guint8* str, GByteArray** arr)
     *arr = g_byte_array_append (*arr, &b, 1);
 }
 
+void encode_bytevec (const guint8* str, GByteArray** arr)
+{
+    guint len = (strlen ((char*) str) +1)/2; /* ceil(length/2) */
+    encode_uint32 (len, arr);
+    encode_hex (str, arr);
+}
+
 void encode_hex (const guint8* str, GByteArray** arr)
 {
     guint len = strlen ((char*) str);

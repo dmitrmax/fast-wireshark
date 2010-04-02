@@ -45,6 +45,7 @@ enum optkey
     optkey_uint32, optkey_int32,
     optkey_uint64, optkey_int64,
     optkey_ascii,
+    optkey_bytevec,
     optkey_nop,
     optkey_hex, optkey_bit
 };
@@ -62,6 +63,7 @@ static const struct option long_options[] =
     ,{"uint64", 1, 0, 0 }
     ,{"int64" , 1, 0, 0 }
     ,{"ascii" , 1, 0, 0 }
+    ,{"bytevec",1, 0, 0 }
     ,{"nop"   , 0, 0, 0 }
     ,{"hex"   , 1, 0, 0 }
     ,{"bit"   , 1, 0, 0 }
@@ -91,28 +93,29 @@ void show_usage ()
 Usage: ./client [flags]\n\n\
  Options\n\
     --help      Show this message\n\
-    -p port     Connect to port /port/, default is 1337\n\
-    -h host     Connect to /host/, default is localhost\n\
+    -p <port>     Connect to port /port/, default is 1337\n\
+    -h <host>     Connect to /host/, default is localhost\n\
 ", stderr);
     fputs ("\
-    --tid n     Set template id to /n/, default is 1\n\
+    --tid <n>     Set template id to /n/, default is 1\n\
     --notid     No template id for this message\n\
 ", stderr);
     fputs ("\n\
  Fields\n\
     --req | --noreq   Following fields are mandatory (default) or not\n\
                       i.e. they won't appear in the presence map\n\
-    --uint32 n       Encode a unsigned 32-bit integer /n/\n\
-    --int32 n       Encode a signed 32-bit integer /n/\n\
+    --uint32 <n>       Encode a unsigned 32-bit integer /n/\n\
+    --int32 <n>       Encode a signed 32-bit integer /n/\n\
     (--uint64 | --int64) n\n\
-    --ascii str    Encode /str/ as an ascii string\n\
+    --ascii <str>    Encode /str/ as an ascii string\n\
+    --bytevec <hexstring>\n\
     --nop        Put a zero in the presence map (even if --req specified)\n\
 ", stderr);
     fputs ("\n\
  Faux Fields\n\
-    --hex hexstring    Directly encode a field, specified with a hex string\n\
+    --hex <hexstring>  Directly encode a field, specified with a hex string\n\
                        (length is a multiple of 2, spaces are ignored)\n\
-    --bit bitstring    Directly encode a field, specified by a bit string\n\
+    --bit <bitstring>   Directly encode a field, specified by a bit string\n\
                        (length is a multiple of 8, spaces are ignored)\n\
 ", stderr);
 }

@@ -172,6 +172,11 @@ int main (int argc, char** argv)
                 if (! requiredp)  add_pmap (&fmsg, 1);
                 encode_ascii ((guint8*) optarg, &fmsg.msg);
                 break;
+            case optkey_bytevec :
+                if (! requiredp)  add_pmap (&fmsg, 1);
+                encode_bytevec ((guint8*) optarg, &fmsg.msg);
+                break;
+
             case optkey_nop :
                 add_pmap (&fmsg, 0);
                 break;

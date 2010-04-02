@@ -19,6 +19,8 @@ int hf_fast_int3=-1;
 int hf_fast_int4=-1;
 int ett_fast_str1=-1;
 int hf_fast_str1=-1;
+int hf_fast_byte1=-1;
+int ett_fast_byte1=-1;
 
 void FAST_setup(int id)
 {
@@ -31,7 +33,8 @@ void FAST_setup(int id)
 		&ett_fast_int2,
 		&ett_fast_str1,
 		&ett_fast_int3,
-		&ett_fast_int4
+		&ett_fast_int4,
+        &ett_fast_byte1
     };
 
 	static hf_register_info hf[]={
@@ -44,15 +47,18 @@ void FAST_setup(int id)
 		{&hf_fast_int2,
 			{"int2","fast.int2",FT_UINT32,BASE_DEC,
 				NULL,0x0,"int2",HFILL}},
+		{&hf_fast_str1,
+			{"str1","fast.str1",FT_STRING,BASE_NONE,
+				NULL,0x0,"str1",HFILL}},
 		{&hf_fast_int3,
 			{"int3","fast.int3",FT_INT64,BASE_DEC,
 				NULL,0x0,"int3",HFILL}},
 		{&hf_fast_int4,
 			{"int4","fast.int4",FT_UINT64,BASE_DEC,
 				NULL,0x0,"int4",HFILL}},
-		{&hf_fast_str1,
-			{"str1","fast.str1",FT_STRING,BASE_NONE,
-				NULL,0x0,"str1",HFILL}}
+		{&hf_fast_byte1,
+			{"byte1","fast.byte1",FT_STRING,BASE_NONE,
+				NULL,0x0,"byte1",HFILL}}
 	};
 
 	struct template_type* t;
@@ -127,6 +133,18 @@ void FAST_setup(int id)
 	f.name="int4";
 	f.hf_id=hf_fast_int4;
 	f.ett_id=ett_fast_int4;
+	ret=create_field(t,&f,0);
+	if(ret<0)
+	{
+		DBG_RET(ret);
+		return;
+	}
+
+	f.type=FIELD_TYPE_BYTES|FIELD_OP_NONE;
+	f.mandatory=1;
+	f.name="byte1";
+	f.hf_id=hf_fast_byte1;
+	f.ett_id=ett_fast_byte1;
 	ret=create_field(t,&f,0);
 	if(ret<0)
 	{
