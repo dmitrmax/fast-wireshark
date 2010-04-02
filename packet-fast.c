@@ -139,6 +139,8 @@ void proto_register_fast(void)
 /* setup related to our dissector */
 void proto_reg_handoff_fast(void)
 {
+	
+	
 	static int initialized=FALSE;
 	if(!initialized)
 	{
@@ -148,6 +150,9 @@ void proto_reg_handoff_fast(void)
 		/* tell wireshark what underlying protocol and port we use */
 		dissector_add(FAST_PROTO,FAST_PORT,fast_handle);
 	}
+	
+	parse_xml(config_template_xml_path);
+
 }
 
 /* this is the actual hook to the dissection function */
