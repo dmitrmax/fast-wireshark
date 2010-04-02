@@ -150,7 +150,7 @@ void proto_reg_handoff_fast(void)
 		/* tell wireshark what underlying protocol and port we use */
 		dissector_add(FAST_PROTO,FAST_PORT,fast_handle);
 	}
-	
+	/* send our XML file to be parsed. Validity checked within, see parse_template.c for details */
 	parse_xml(config_template_xml_path);
 
 }
