@@ -144,6 +144,16 @@ gint field_display_bytes(
 	proto_tree* tree,
 	tvbuff_t* buf)
 {
+    /* int i; */
+    /* DBG0("printing go!"); */
+	/*
+	printf ("%d\n", f->value.str.len);
+	for (i = 0; i < f->value.str.len; ++i)
+	{
+		printf ("%2x", * ((guint8*) (&f->value.str.p[2*i])));
+	}
+	*/
+    /* fputs ("\n", stdout); */
 	proto_tree_add_bytes(
 		tree,
 		f->hf_id,
@@ -151,6 +161,8 @@ gint field_display_bytes(
 		0,
 		f->value.str.len,
 		f->value.str.p);
+	/* This doesn't return! */
+	/* DBG0("printing done!"); */
 	return 0;
 }
 

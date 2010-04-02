@@ -1,0 +1,12 @@
+
+0.3 -
+Planned features:
+* All types
+* Operators: tail, delta (for numbers), copy, constant, default
+* XML parsing 
+
+Completed:
+* All integer types, ascii strings
+* Increment operator, others untested
+* Some XML parsing. Fast templates not recognized dynamically.
+

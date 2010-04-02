@@ -57,7 +57,7 @@ void FAST_setup(int id)
 			{"int4","fast.int4",FT_UINT64,BASE_DEC,
 				NULL,0x0,"int4",HFILL}},
 		{&hf_fast_byte1,
-			{"byte1","fast.byte1",FT_STRING,BASE_NONE,
+			{"byte1","fast.byte1",FT_STRING,BASE_HEX,
 				NULL,0x0,"byte1",HFILL}}
 	};
 
