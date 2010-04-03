@@ -136,6 +136,8 @@ struct template_field_type
 	/***** Ignore these fields when calling add_field() *****/
 
 	field_value value;
+    guint offset; /* Offset and length in bytes */
+    guint length;
 
 	guint8 state;
 

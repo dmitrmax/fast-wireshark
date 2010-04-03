@@ -58,8 +58,8 @@ fast-wireshark-%.zip: fast-wireshark-%.tar.gz
 	zip -r $(@) fast-wireshark-$(*)
 	rm -r fast-wireshark-$(*) fast-wireshark-$(*).tar.gz
 
-tags: *.c
-	ctags *.c
+tags: *.c *.h
+	ctags *.c *.h
 
 .PHONY: test
 test: $(PLUGIN)

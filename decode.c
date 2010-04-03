@@ -211,7 +211,7 @@ gint decode_bytes(
 		return ERR_NOMEM;
 	}
 	*out=p;
-	return sz+ret;
+	return sz;
 }
 
 /* NOTE: this returns memory in out that must be free'd with g_free() */

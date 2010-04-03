@@ -73,8 +73,8 @@ gint field_display_uint32(
 		tree,
 		f->hf_id,
 		buf,
-		0,
-		sizeof(guint32),
+		f->offset,
+		f->length,
 		f->value.u32);
 	return 0;
 }
@@ -88,8 +88,8 @@ gint field_display_int32(
 		tree,
 		f->hf_id,
 		buf,
-		0,
-		sizeof(gint32),
+		f->offset,
+		f->length,
 		f->value.i32);
 	return 0;
 }
@@ -103,8 +103,8 @@ gint field_display_uint64(
 		tree,
 		f->hf_id,
 		buf,
-		0,
-		sizeof(guint64),
+		f->offset,
+		f->length,
 		f->value.u64);
 	return 0;
 }
@@ -133,8 +133,8 @@ gint field_display_ascii(
 		tree,
 		f->hf_id,
 		buf,
-		0,
-		strlen((const char*)f->value.str.p),
+		f->offset,
+		f->length,
 		(const char*)f->value.str.p);
 	return 0;
 }
@@ -144,25 +144,25 @@ gint field_display_bytes(
 	proto_tree* tree,
 	tvbuff_t* buf)
 {
-    /* int i; */
-    /* DBG0("printing go!"); */
-	/*
-	printf ("%d\n", f->value.str.len);
+	int i;
+	char* hexstring = (char*) ep_alloc 
+		((2*f->value.str.len + 1) * sizeof (char));
+
 	for (i = 0; i < f->value.str.len; ++i)
 	{
-		printf ("%2x", * ((guint8*) (&f->value.str.p[2*i])));
+		sprintf (hexstring + 2*i,
+                 "%2x",
+                 * ((guint8*) (&f->value.str.p[i])));
 	}
-	*/
-    /* fputs ("\n", stdout); */
-	proto_tree_add_bytes(
+	hexstring[2*i] = 0;
+
+	proto_tree_add_string(
 		tree,
 		f->hf_id,
 		buf,
-		0,
-		f->value.str.len,
-		f->value.str.p);
-	/* This doesn't return! */
-	/* DBG0("printing done!"); */
+		f->offset,
+		f->length,
+		hexstring);
 	return 0;
 }
 

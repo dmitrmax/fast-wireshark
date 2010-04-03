@@ -33,7 +33,10 @@ static void process_fields(
 			return;
 		}
 
+		cur->offset = off;
 		ret=(cur->op)(cur,&pmap,tvb,&off);
+		cur->length = off - cur->offset;
+
 		if(ret<0)
 		{
 			DBG_RET(ret);
