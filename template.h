@@ -18,11 +18,13 @@ struct template_field_type;
 
 struct template_type
 {
-	char* name;
-	guint8 id;
+	char* name; /* name of this template */
+	guint8 id; /* numeric ID of this template sent in packets */
 
+	/* list of fields in this template */
 	struct template_field_type* fields;
 
+	/* next entry in template list */
 	struct template_type* next;
 };
 
@@ -42,14 +44,16 @@ gint find_template_byid(guint8,struct template_type**);
 
 typedef union field_value_type
 {
+	/* integral types */
 	guint32 u32;
 	gint32 i32;
 	guint64 u64;
 	gint64 i64;
 
+	/* ascii, utf8, and byte vector fields */
 	struct string_value_type_
 	{
-		guint32 len;
+		guint32 len; /* ignored for ascii fields */
 		guint8* p;
 	} str;
 
@@ -61,8 +65,8 @@ typedef union field_value_type
 
 	struct base10_float_value_type_
 	{
-		gint32 mant;
-		guint32 exp;
+		gint32 mant; /* decimal mantissa */
+		guint32 exp; /* base-10 exponent */
 	} flt10;
 
 } field_value;
@@ -133,23 +137,31 @@ struct template_field_type
 	/* used to store operators if this is a decimal field */
 	guint8 dec_ops;
 
+	/* used to store initial field value, or constant value
+		for const op fields */
+	field_value value;
+
 	/***** Ignore these fields when calling add_field() *****/
 
-	field_value value;
-    guint offset; /* Offset and length in bytes */
+	/* offset into current tvbuff and length of corresponding
+		data in tvbuff */
+    guint offset;
     guint length;
 
+    /* current state of this field and whether to display */
 	guint8 state;
 
-	field_read_func_type decode;
-	field_display_func_type display;
-	field_op_func_type op;
+	field_read_func_type decode; /* incoming data decode function */
+	field_display_func_type display; /* data display function */
+	field_op_func_type op; /* field operator function */
 
+	/* used to store subfields for sequences and groups */
 	struct template_field_type* subfields;
 
 	/*  gui field ids */
 	int hf_id,ett_id;
 
+	/* next field in list */
 	struct template_field_type* next;
 };
 
@@ -159,8 +171,8 @@ struct template_field_type
 /* added to support decimal fields */
 #define FIELD_DEC_EXP_OP(f)			((f)->dec_op & 0x0f)
 #define FIELD_DEC_MNT_OP(f)			((f)->dec_op & 0xf0)
-#define FIELD_SET_DEC_EXP_OP(f,op)	((f)->dec_op = (op))
-#define FIELD_SET_DEC_MNT_OP(f,op)	((f)->dec_op = (op<<4))
+#define FIELD_SET_DEC_EXP_OP(f,op)	((f)->dec_op |= (op))
+#define FIELD_SET_DEC_MNT_OP(f,op)	((f)->dec_op |= (op<<4))
 
 #define FIELD_STATE(f)		((f)->state & ~FIELD_DISPLAY_BIT)
 #define FIELD_DISPLAY_ON(f)	((f)->state & FIELD_DISPLAY_BIT)
