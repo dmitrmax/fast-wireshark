@@ -26,7 +26,7 @@ gint setup_template_fields(
 	gint field_count;
 	char buf[256];
 	gint type,base;
-	header_field_info tmpinfo;
+	/*header_field_info tmpinfo;*/
 
 	if(!t)
 	{
@@ -45,6 +45,7 @@ gint setup_template_fields(
 	{
 		return ERR_NOMEM;
 	}
+	memset(hfreginfo,0,sizeof(hf_register_info)*(field_count+1));
 
 	/* add an entry for the base node and TID */
 	ettreginfo=g_malloc(sizeof(int*)*(field_count+2));
@@ -52,26 +53,23 @@ gint setup_template_fields(
 	{
 		return ERR_NOMEM;
 	}
+	memset(ettreginfo,0,sizeof(int*)*(field_count+2));
 
 	/***** fill out our registration arrays *****/
 
 	hfreginfo[0].p_id=&hf_fast_tid;
-	tmpinfo.name="TID";
-	tmpinfo.abbrev="fast.tid";
-	tmpinfo.type=FT_STRING;
-	tmpinfo.display=BASE_NONE;
-	tmpinfo.strings=NULL;
-	tmpinfo.bitmask=0x0;
-	tmpinfo.blurb="TID";
-	hfreginfo[0].hfinfo=tmpinfo;
-	proto_register_field_array(global_fast_id,&(hfreginfo[0]),1);
+	hfreginfo[0].hfinfo.name="TID";
+	hfreginfo[0].hfinfo.abbrev="fast.tid";
+	hfreginfo[0].hfinfo.type=FT_STRING;
+	hfreginfo[0].hfinfo.display=BASE_NONE;
+	hfreginfo[0].hfinfo.blurb="TID";
 
 	ettreginfo[0]=&ett_fast;
 	ettreginfo[1]=&ett_fast_tid;
 
 	for(i=0,cur=t->fields;cur;cur=cur->next,i++)
 	{
-		DBG2("current field %s:%d",cur->name,i);
+		/*DBG2("current field %s:%d",cur->name,i);*/
 
 		switch(FIELD_TYPE(cur))
 		{
@@ -113,20 +111,20 @@ gint setup_template_fields(
 
 		g_snprintf(buf,sizeof(buf),"fast.%s",cur->name);
 		hfreginfo[i+1].p_id=&(cur->hf_id);
-		tmpinfo.name=cur->name;
-		tmpinfo.abbrev=g_strdup(buf);
-		tmpinfo.type=type;
-		tmpinfo.display=base;
-		tmpinfo.abbrev=cur->name;
-		hfreginfo[i+1].hfinfo=tmpinfo;
+		hfreginfo[i+1].hfinfo.name=cur->name;
+		hfreginfo[i+1].hfinfo.abbrev=g_strdup(buf);
+		hfreginfo[i+1].hfinfo.type=type;
+		hfreginfo[i+1].hfinfo.display=base;
+		hfreginfo[i+1].hfinfo.abbrev=cur->name;
 		ettreginfo[i+2]=&(cur->ett_id);
-
-		proto_register_field_array(global_fast_id,&(hfreginfo[i+1]),1);
 	}
 
 	/* now we can register our arrays */
-	/*proto_register_field_array(global_fast_id,hfreginfo,field_count+1);*/
+	proto_register_field_array(global_fast_id,hfreginfo,field_count+1);
 	proto_register_subtree_array(ettreginfo,field_count+2);
+
+	/*for(i=0;i<field_count+1;i++) DBG2("hf%d: %d",i,*(hfreginfo[i].p_id));
+	for(i=0;i<field_count+2;i++) DBG2("ett%d: %d",i,*(ettreginfo[i]));*/
 
 	return 0;
 }
@@ -144,10 +142,10 @@ static void process_fields(
 
 	for(;cur;cur=cur->next)
 	{
-		DBG1("current field %s",cur->name);
+		/*DBG1("current field %s",cur->name);*/
 		if(!(cur->op))
 		{
-			DBG0("no operator function");
+			DBG1("no operator function for %s",cur->name);
 			return;
 		}
 
@@ -165,7 +163,7 @@ static void process_fields(
 		{
 			if(!(cur->display))
 			{
-				DBG0("no display function");
+				DBG1("no display function for %s",cur->name);
 				return;
 			}
 
@@ -198,18 +196,11 @@ void FAST_dissect(int proto_fast, tvbuff_t* tvb, int n, packet_info* pinfo,
 		ret=decode_uint32(tvb,off,&current_tid);
 		if(ret<0) return;
 		off+=ret;
-
-		if(last_tid!=current_tid)
-		{
-			find_template_byid(current_tid,&t);
-			if(t)
-			{
-				reset_template_state(t);
-				/*setup_template_fields(t,proto_fast);*/
-			}
-
-			last_tid=current_tid;
-		}
+	}
+	else
+	{
+		DBG0("TID not present");
+		current_tid=last_tid;
 	}
 
 	ret=find_template_byid(current_tid,&t);
@@ -218,13 +209,25 @@ void FAST_dissect(int proto_fast, tvbuff_t* tvb, int n, packet_info* pinfo,
 		DBG_RET(ret);
 		return;
 	}
+	if(!t)
+	{
+		DBG1("No template found for TID %d",current_tid);
+		return;
+	}
+
+	if(last_tid!=current_tid)
+	{
+		reset_template_state(t);
+		setup_template_fields(t,proto_fast);
+
+		last_tid=current_tid;
+	}
 
 	ti=proto_tree_add_item(tree,proto_fast,tvb,0,-1,FALSE);
 	tree=proto_item_add_subtree(ti,ett_fast);
 
-	if(!t)
+	/*if(!t)
 	{
-		/*  unknown template, or no template specified */
 		proto_tree_add_string(
 			tree,
 			hf_fast_tid,
@@ -236,7 +239,7 @@ void FAST_dissect(int proto_fast, tvbuff_t* tvb, int n, packet_info* pinfo,
 		DBG1("Unknown or invalid template ID %d",current_tid);
 		g_free(pmap);
 		return;
-	}
+	}*/
 
 	proto_tree_add_string(
 		tree,
