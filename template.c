@@ -287,8 +287,8 @@ gint create_field(
 	/* we are ignoring subfields for now */
 	field->subfields=0;
 
-	field->hf_id=params->hf_id;
-	field->ett_id=params->ett_id;
+	field->hf_id=-1;
+	field->ett_id=-1;
 
 	field->next=0;
 
