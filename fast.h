@@ -36,6 +36,8 @@ void FAST_setup(int);
 
 void FAST_dissect(int,tvbuff_t*,int,packet_info*,proto_tree*);
 
+void parse_xml(const char*);
+
 /* handles to common packet field tree elements */
 extern int ett_fast;
 extern int ett_fast_tid;
