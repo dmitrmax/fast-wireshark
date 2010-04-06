@@ -12,7 +12,7 @@ void parse_xml(const char *);
 	parse_template is passed a node to a template and tries to read the things inside of it. 
 	****** currently only finds null. by output it seems to be an issue with parse_xml not parsing the file right
 *****/
-void parse_template(xmlDocPtr, xmlNodePtr, struct template_type**);
+void parse_template(xmlDocPtr, xmlNodePtr, struct template_type*);
 
 /*****
 	Code for parse_xml. Comments below
@@ -65,11 +65,11 @@ void parse_xml(const char* template){
 		if ((!xmlStrcmp(cur->name, (const xmlChar *)"template"))) {
 			xmlChar * name;
 			xmlChar * id;
-			struct template_type ** template;
+			struct template_type * template;
 			name = xmlGetProp(cur,(const xmlChar*) "name");
 			id = xmlGetProp(cur,(const xmlChar*) "id");
-			printf("Name: %s. \nID: %s \n", name, id);
-			create_template((const char *)name, atoi((const char*)id), template);
+/*			printf("Name: %s. \nID: %s \n", name, id);*/
+			create_template((const char *)name, atoi((const char*)id), &template);
 			parse_template(doc, cur->xmlChildrenNode, template);
 			xmlFree(name);
 			xmlFree(id);
@@ -88,7 +88,7 @@ void parse_xml(const char* template){
 /*****
 our lovely Parse-template function. This function will eventually build our templates we use, but for now it just tries to traverse them
 *****/
-void parse_template(xmlDocPtr doc, xmlNodePtr cur, struct template_type** template) {
+void parse_template(xmlDocPtr doc, xmlNodePtr cur, struct template_type* template) {
 
 	/*****
 	convience vairable for storing values
@@ -116,6 +116,7 @@ void parse_template(xmlDocPtr doc, xmlNodePtr cur, struct template_type** templa
 			if (cur->xmlChildrenNode != NULL){
 	/*			printf("SubNodeName: %s \n", cur->xmlChildrenNode->name);*/
 			}
+			
 			xmlFree(name);
 			xmlFree(presence);
 			xmlFree(id);
