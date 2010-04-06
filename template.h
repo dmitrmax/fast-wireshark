@@ -210,9 +210,6 @@ gint find_template_field_byindex(
 
 void cleanup_all(void);
 
-/* TODO: testing purposes only */
-gint setup_template_fields(struct template_type*,int);
-
 /****************************************************************************/
 
 /* decode raw data into field_value's */
