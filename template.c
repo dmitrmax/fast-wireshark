@@ -108,7 +108,11 @@ gint create_field(
 	memset(field,0,sizeof(struct template_field_type));
 
 	/* copy name */
-	field->name = g_strdup(params->name);
+	{
+		size_t size = (7+strlen(params->name))*sizeof(char);
+		field->name = g_malloc (size);
+		g_snprintf (field->name, size, "fast.%s", params->name);
+	}
 	if(!field->name)
 	{
 		g_free(field);
