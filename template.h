@@ -108,7 +108,7 @@ gint copy_field_value(guint type, field_value* src, field_value* dest);
 
 struct template_field_type;
 typedef gint (*field_read_func_type)(
-	field_value*,
+	struct template_field_type*,
 	tvbuff_t*,
 	guint);
 typedef gint (*field_display_func_type)(
@@ -142,6 +142,9 @@ struct template_field_type
 	field_value value;
 
 	/***** Ignore these fields when calling add_field() *****/
+
+	/* 1=field has a nullable representation 0= it doesnt */
+	gint nullable;
 
 	/* offset into current tvbuff and length of corresponding
 		data in tvbuff */
@@ -192,6 +195,9 @@ struct template_field_type
 #define TYPE_IS_COMPLEX(t) (t==FIELD_TYPE_SEQ || t==FIELD_TYPE_GROUP)
 #define FIELD_IS_COMPLEX(f) (TYPE_IS_COMPLEX(FIELD_TYPE(f)))
 
+#define FIELD_IS_MANDATORY(f)	((f)->mandatory==1)
+#define FIELD_HAS_NULL(f)		((f)->nullable==1)
+
 gint create_field(
 	struct template_type*,
 	struct template_field_type*,
@@ -214,17 +220,17 @@ void cleanup_all(void);
 
 /* decode raw data into field_value's */
 
-gint field_decode_uint32	(field_value*,tvbuff_t*,guint);
-gint field_decode_int32		(field_value*,tvbuff_t*,guint);
-gint field_decode_uint64	(field_value*,tvbuff_t*,guint);
-gint field_decode_int64		(field_value*,tvbuff_t*,guint);
+gint field_decode_uint32	(struct template_field_type*,tvbuff_t*,guint);
+gint field_decode_int32		(struct template_field_type*,tvbuff_t*,guint);
+gint field_decode_uint64	(struct template_field_type*,tvbuff_t*,guint);
+gint field_decode_int64		(struct template_field_type*,tvbuff_t*,guint);
 
-gint field_decode_ascii		(field_value*,tvbuff_t*,guint);
-gint field_decode_utf8		(field_value*,tvbuff_t*,guint);
-gint field_decode_bytes		(field_value*,tvbuff_t*,guint);
+gint field_decode_ascii		(struct template_field_type*,tvbuff_t*,guint);
+gint field_decode_utf8		(struct template_field_type*,tvbuff_t*,guint);
+gint field_decode_bytes		(struct template_field_type*,tvbuff_t*,guint);
 
-gint field_decode_flt10		(field_value*,tvbuff_t*,guint);
-gint field_decode_fixdec	(field_value*,tvbuff_t*,guint);
+gint field_decode_flt10		(struct template_field_type*,tvbuff_t*,guint);
+/*gint field_decode_fixdec	(struct template_field_type*,tvbuff_t*,guint);*/
 
 /****************************************************************************/
 
@@ -240,8 +246,8 @@ gint field_display_utf8		(struct template_field_type*,proto_tree*,tvbuff_t*);
 gint field_display_bytes	(struct template_field_type*,proto_tree*,tvbuff_t*);
 
 gint field_display_flt10	(struct template_field_type*,proto_tree*,tvbuff_t*);
-gint field_display_fixdec	(struct template_field_type*,proto_tree*,tvbuff_t*);
-
+/*gint field_display_fixdec	(struct template_field_type*,proto_tree*,tvbuff_t*);
+*/
 /****************************************************************************/
 
 /*  field operators */

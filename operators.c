@@ -20,7 +20,7 @@ gint field_op_noop(
 	if(f->mandatory)
 	{
 		f->state=FIELD_STATE_SET|FIELD_DISPLAY_BIT;
-		ret=(f->decode)(&(f->value),buf,*off);
+		ret=(f->decode)(f,buf,*off);
 		if(ret<0) return ret;
 
 		*off = *off + ret;
@@ -32,7 +32,7 @@ gint field_op_noop(
 
 		if(ret==0)
 		{
-			ret=(f->decode)(&(f->value),buf,*off);
+			ret=(f->decode)(f,buf,*off);
 			if(ret<0) return ret;
 
 			*off = *off + ret;
@@ -86,7 +86,7 @@ gint field_op_default(
 	{
 		if(**pmap)
 		{
-			ret=(f->decode)(&(f->value),buf,*off);
+			ret=(f->decode)(f,buf,*off);
 			if(ret<0) return ret;
 
 			*off = *off + ret;
@@ -111,7 +111,7 @@ gint field_op_default(
 			}
 			else
 			{
-				ret=(f->decode)(&(f->value),buf,*off);
+				ret=(f->decode)(f,buf,*off);
 				if(ret<0) return ret;
 				*off=*off+ret;
 				f->state=FIELD_STATE_SET|FIELD_DISPLAY_BIT;
@@ -141,7 +141,7 @@ gint field_op_copy(
 	{
 		if(**pmap)
 		{
-			ret=(f->decode)(&(f->value),buf,*off);
+			ret=(f->decode)(f,buf,*off);
 			if(ret<0) return ret;
 			*off=*off+ret;
 		}
@@ -159,7 +159,7 @@ gint field_op_copy(
 
 			if(ret==0)
 			{
-				ret=(f->decode)(&(f->value),buf,*off);
+				ret=(f->decode)(f,buf,*off);
 				if(ret<0) return ret;
 
 				*off=*off+ret;
@@ -200,7 +200,7 @@ gint field_op_incr(
 	{
 		if(**pmap)
 		{
-			ret=(f->decode)(&(f->value),buf,*off);
+			ret=(f->decode)(f,buf,*off);
 			if(ret<0) return ret;
 			*off=*off+ret;
 		}
@@ -227,7 +227,7 @@ gint field_op_incr(
 
 			if(ret==0)
 			{
-				ret=(f->decode)(&(f->value),buf,*off);
+				ret=(f->decode)(f,buf,*off);
 				if(ret<0) return ret;
 				*off=*off+ret;
 				f->state=FIELD_STATE_SET|FIELD_DISPLAY_BIT;

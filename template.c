@@ -157,11 +157,13 @@ gint create_field(
 		}
 
 		field->op = field_op_default;
+		if(params->mandatory) field->nullable=1;
 
 		break;
 
 	case FIELD_OP_COPY:
 		field->op = field_op_copy;
+		if(params->mandatory) field->nullable=1;
 		break;
 
 	case FIELD_OP_INCR:
@@ -175,6 +177,7 @@ gint create_field(
 		}
 
 		field->op = field_op_incr;
+		if(params->mandatory) field->nullable=1;
 		break;
 
 	case FIELD_OP_DELTA:

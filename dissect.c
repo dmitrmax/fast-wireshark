@@ -212,6 +212,7 @@ void FAST_dissect(int proto_fast, tvbuff_t* tvb, int n, packet_info* pinfo,
 	if(!t)
 	{
 		DBG1("No template found for TID %d",current_tid);
+		current_tid=0;
 		return;
 	}
 
