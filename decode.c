@@ -194,33 +194,34 @@ gint decode_ascii(
 /* NOTE this returns memory that must be free'd with g_free() */
 gint decode_bytes(
 	tvbuff_t* buf,
-	guint off,
-	guint8** out)
+    guint off,
+    guint8** out,
+    guint32* sz)
 {
-	guint32 sz;
-	gint ret;
-	guint8* p;
+    gint ret;
+    guint8* p;
 
-	ret = decode_uint32(buf,off,&sz);
-	if(ret<0) return ret;
+    ret = decode_uint32(buf,off,sz);
+    if(ret<0) return ret;
 
-	p=tvb_memdup(buf,off+ret,sz);
-	if(!p)
-	{
-		DBG0("out of memory");
-		return ERR_NOMEM;
-	}
-	*out=p;
-	return sz;
+    p=tvb_memdup(buf,off+ret,*sz);
+    if(!p)
+    {
+        DBG0("out of memory");
+        return ERR_NOMEM;
+    }
+    *out=p;
+    return ret + *sz;
 }
 
 /* NOTE: this returns memory in out that must be free'd with g_free() */
 gint decode_utf8(
 	tvbuff_t* buf,
 	guint off,
-	guint8** out)
+	guint8** out,
+    guint32* sz)
 {
-	return decode_bytes(buf,off,out);
+	return decode_bytes(buf,off,out,sz);
 }
 
 gint decode_flt10(

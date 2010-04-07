@@ -37,18 +37,18 @@ gint field_decode_ascii(field_value* out, tvbuff_t* buf, guint off)
 
 gint field_decode_utf8(field_value* out, tvbuff_t* buf, guint off)
 {
-	return field_decode_utf8(out,buf,off);
+	return decode_utf8(buf,off,&out->str.p,&out->str.len);
 }
 
 gint field_decode_bytes(field_value* out, tvbuff_t* buf, guint off)
 {
-	gint ret=decode_bytes(buf,off,&(out->str.p));
+	gint ret;
+	ret = decode_bytes (buf, off, &out->str.p, &out->str.len);
 	if(ret<0)
 	{
 		DBG0("bad input data format");
 		return ERR_BADFMT;
 	}
-	out->str.len=ret;
 	return ret;
 }
 
@@ -146,7 +146,7 @@ gint field_display_bytes(
 {
 	int i;
 	char* hexstring = (char*) ep_alloc 
-		((2*f->value.str.len + 1) * sizeof (char));
+		(2*f->value.str.len + sizeof (char));
 
 	for (i = 0; i < f->value.str.len; ++i)
 	{
@@ -171,8 +171,17 @@ gint field_display_utf8(
 	proto_tree* tree,
 	tvbuff_t* buf)
 {
-	DBG0("not implemented");
-	return ERR_NOTIMPL;
+	char* str = (char*) ep_alloc (f->value.str.len+sizeof(char));
+	memcpy (str, f->value.str.p, f->value.str.len);
+	str[f->value.str.len] = 0;
+	proto_tree_add_string(
+		tree,
+		f->hf_id,
+		buf,
+		f->offset,
+		f->length,
+		str);
+	return 0;
 }
 
 gint field_display_flt10(

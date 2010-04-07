@@ -93,7 +93,7 @@ gint setup_template_fields(
 		case FIELD_TYPE_ASCII:
 		case FIELD_TYPE_BYTES:
 		case FIELD_TYPE_FLT10:
-			type=FT_STRING;
+			type=FT_STRINGZ;
 			base=BASE_NONE;
 			break;
 		case FIELD_TYPE_SEQ:
