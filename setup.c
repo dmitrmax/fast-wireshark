@@ -46,4 +46,9 @@ void FAST_setup(int id)
 	f.mandatory=1;
 	f.name="byte1";
 	create_field(t,&f,0);
+
+	f.type=FIELD_TYPE_FLT10|FIELD_OP_NONE;
+	f.mandatory=1;
+	f.name="scaled1";
+	create_field(t,&f,0);
 }

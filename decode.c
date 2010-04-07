@@ -226,11 +226,20 @@ gint decode_utf8(
 gint decode_flt10(
 	tvbuff_t* buf,
 	guint off,
-	gint32* wholepart_out,
-	gint32* decpart_out)
+	gint32* coeff,
+	gint32* exponent)
 {
-	DBG0("not implemented");
-	return ERR_NOTIMPL;
+	int ret;
+	const guint orig_off = off;
+	ret = decode_int32 (buf, off, exponent);
+		/* printf ("exponent: %d\n", *exponent); */
+	if (ret < 0)  return ret;
+	off += ret;
+	ret = decode_int32 (buf, off, coeff);
+		/* printf ("coeff: %d\n", *coeff); */
+	if (ret < 0)  return ret;
+	off += ret;
+	return off - orig_off;
 }
 
 gint decode_fixdec(

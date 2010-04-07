@@ -37,7 +37,7 @@ gint field_decode_ascii(field_value* out, tvbuff_t* buf, guint off)
 
 gint field_decode_utf8(field_value* out, tvbuff_t* buf, guint off)
 {
-	return field_decode_bytes(out,buf,off);
+	return field_decode_utf8(out,buf,off);
 }
 
 gint field_decode_bytes(field_value* out, tvbuff_t* buf, guint off)
@@ -54,7 +54,7 @@ gint field_decode_bytes(field_value* out, tvbuff_t* buf, guint off)
 
 gint field_decode_flt10(field_value* out, tvbuff_t* buf, guint off)
 {
-	return ERR_NOTIMPL;
+    return decode_flt10 (buf, off, &out->flt10.mant, &out->flt10.exp);
 }
 
 gint field_decode_fixdec(field_value* out, tvbuff_t* buf, guint off)
@@ -180,8 +180,19 @@ gint field_display_flt10(
 	proto_tree* tree,
 	tvbuff_t* buf)
 {
-	DBG0("not implemented");
-	return ERR_NOTIMPL;
+	char* str = (char*) ep_alloc (30 * sizeof (char));
+
+    g_snprintf (str, 30, "%de%d", f->value.flt10.mant,
+                f->value.flt10.exp);
+
+	proto_tree_add_string(
+		tree,
+		f->hf_id,
+		buf,
+		f->offset,
+		f->length,
+		str);
+	return 0;
 }
 
 gint field_display_fixdec(

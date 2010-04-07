@@ -92,10 +92,10 @@ gint setup_template_fields(
 		case FIELD_TYPE_UTF8:
 		case FIELD_TYPE_ASCII:
 		case FIELD_TYPE_BYTES:
+		case FIELD_TYPE_FLT10:
 			type=FT_STRING;
 			base=BASE_NONE;
 			break;
-		case FIELD_TYPE_FLT10:
 		case FIELD_TYPE_SEQ:
 		case FIELD_TYPE_GROUP:
 			DBG1("field type %d unimplemented",FIELD_TYPE(cur));

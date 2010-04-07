@@ -66,7 +66,7 @@ typedef union field_value_type
 	struct base10_float_value_type_
 	{
 		gint32 mant; /* decimal mantissa */
-		guint32 exp; /* base-10 exponent */
+		gint32 exp; /* base-10 exponent */
 	} flt10;
 
 } field_value;
