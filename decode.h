@@ -23,7 +23,7 @@ gint decode_bytes(tvbuff_t*,guint,guint8**,guint32*);
 gint decode_utf8(tvbuff_t*,guint,guint8**,guint32*);
 
 gint decode_flt10(tvbuff_t*,guint,gint32*,gint32*);
-gint decode_fixdec(tvbuff_t*,guint,guint,gint32*,gint32*);
+/*gint decode_fixdec(tvbuff_t*,guint,guint,gint32*,gint32*);*/
 
 gint decode_pmap(tvbuff_t*,guint,guint8**);
 

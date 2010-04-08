@@ -243,7 +243,7 @@ gint decode_flt10(
 	return off - orig_off;
 }
 
-gint decode_fixdec(
+/*gint decode_fixdec(
 	tvbuff_t* buf,
 	guint off,
 	guint wholebits,
@@ -252,7 +252,7 @@ gint decode_fixdec(
 {
 	DBG0("not implemented");
 	return ERR_NOTIMPL;
-}
+}*/
 
 gint decode_pmap(
 	tvbuff_t* buf,
