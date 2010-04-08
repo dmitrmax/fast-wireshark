@@ -4,25 +4,16 @@
 #include <libxml/parser.h>
 
 /* here are our two functions*/
-/*****
-	parse_xml is the funciton called form packet-fast.c It finds the verious templates and has them parsed
-*****/
+/* parse_xml is the funciton called from packet-fast.c It finds the verious templates and has them parsed. */
 void parse_xml(const char *);
-/*****
-	parse_template is passed a node to a template and tries to read the things inside of it. 
-	****** currently only finds null. by output it seems to be an issue with parse_xml not parsing the file right
-*****/
+/* parse_template is passed a node to a template and tries to read the things inside of it. */
 void parse_template(xmlDocPtr, xmlNodePtr, struct template_type*);
 
-/*****
-	Code for parse_xml. Comments below
-*****/
+/* Code for parse_xml. Comments below */
 void parse_xml(const char* template){
 	
-	/*****
-		Our main vairables. the xmlDocPtr doc is a pointer to the document, 
-		the xmlNode pointer cur is the current node we are at. We traverse the document like a tree
-	*****/
+	/* 	Our main vairables. the xmlDocPtr doc is a pointer to the document, 
+		the xmlNode pointer cur is the current node we are at. We traverse the document like a tree. */
 	xmlDocPtr doc;
 	xmlNodePtr cur;
 
@@ -68,7 +59,7 @@ void parse_xml(const char* template){
 			struct template_type * template;
 			name = xmlGetProp(cur,(const xmlChar*) "name");
 			id = xmlGetProp(cur,(const xmlChar*) "id");
-/*			printf("Name: %s. \nID: %s \n", name, id);*/
+			printf("Name: %s. \nID: %s \n", name, id);
 			create_template((const char *)name, atoi((const char*)id), &template);
 			parse_template(doc, cur->xmlChildrenNode, template);
 			xmlFree(name);
@@ -109,13 +100,59 @@ void parse_template(xmlDocPtr doc, xmlNodePtr cur, struct template_type* templat
 			/*****
 			Find the element of the current node and move into more looping
 			*****/		
+			struct template_field_type create;			
+			guint fop;
 			name = xmlGetProp(cur,(const xmlChar*) "name");
 			id = xmlGetProp(cur,(const xmlChar*) "id");
+			/* set up the field from the current node */
 			presence = xmlGetProp(cur,(const xmlChar*) "presence");
-/*			printf("Propname: %s \nnode name: %s \nPropPresence: = %s \nPropid: %s \n", name, cur->name, presence, id);*/
-			if (cur->xmlChildrenNode != NULL){
-	/*			printf("SubNodeName: %s \n", cur->xmlChildrenNode->name);*/
+			create.name=(char *)cur->name;
+			if ((!xmlStrcmp(presence, (const xmlChar *)"optional"))) {	
+				create.mandatory=0;
 			}
+			else if ((!xmlStrcmp(presence, (const xmlChar *)"mandatory"))) {
+				create.mandatory=1;
+			}
+			else {
+				create.mandatory=1;
+			}
+			/* check for fields in subset notes */
+			if (cur->xmlChildrenNode != NULL){
+				if ((!xmlStrcmp(cur->xmlChildrenNode->next->name, (const xmlChar *)"default"))) {
+					fop=FIELD_OP_DEFAULT;
+				}
+				if ((!xmlStrcmp(cur->xmlChildrenNode->next->name, (const xmlChar *)"copy"))) {
+					fop=FIELD_OP_COPY;
+				}
+				if ((!xmlStrcmp(cur->xmlChildrenNode->next->name, (const xmlChar *)"constant"))) {
+					fop=FIELD_OP_CONST;
+				}
+/*				printf("SubNodeName: %s \n", cur->xmlChildrenNode->next->name);*/
+			}
+			/* Determeine Type and create */
+			if ((!xmlStrcmp(cur->name, (const xmlChar *)"int32"))) {
+				create.type=FIELD_TYPE_INT32|fop;
+				create_field(template, &create, NULL);
+			}
+			if ((!xmlStrcmp(cur->name, (const xmlChar *)"uInt32"))) {
+				create.type=FIELD_TYPE_UINT32|fop;
+				create_field(template, &create, NULL);
+			}
+			if ((!xmlStrcmp(cur->name, (const xmlChar *)"int64"))) {
+				create.type=FIELD_TYPE_INT64|fop;
+				create_field(template, &create, NULL);
+			}
+			if ((!xmlStrcmp(cur->name, (const xmlChar *)"uInt64"))) {
+				create.type=FIELD_TYPE_UINT64|fop;
+				create_field(template, &create, NULL);
+			}
+			if ((!xmlStrcmp(cur->name, (const xmlChar *)"string"))) {
+				create.type=FIELD_TYPE_ASCII|fop;
+				create_field(template, &create, NULL);
+			}
+			
+/*			printf("Propname: %s \nnode name: %s \nPropPresence: = %s \nPropid: %s \n", name, cur->name, presence, id);*/
+
 			
 			xmlFree(name);
 			xmlFree(presence);
