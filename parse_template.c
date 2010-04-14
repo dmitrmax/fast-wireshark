@@ -8,6 +8,7 @@
 void parse_xml(const char *);
 /* parse_template is passed a node to a template and tries to read the things inside of it. */
 void parse_template(xmlDocPtr, xmlNodePtr, struct template_type*);
+void assign_Value(xmlChar *, struct template_field_type *, xmlChar *);
 
 /* Code for parse_xml. Comments below */
 void parse_xml(const char* template){
@@ -85,7 +86,7 @@ void parse_template(xmlDocPtr doc, xmlNodePtr cur, struct template_type* templat
 	convience vairable for storing values
 	*****/
 	xmlChar *name;
-/*	xmlChar *value;*/
+	xmlChar *value;
 	xmlChar *id;
 	xmlChar *presence;
 	/*****
@@ -104,6 +105,7 @@ void parse_template(xmlDocPtr doc, xmlNodePtr cur, struct template_type* templat
 			guint fop;
 			name = xmlGetProp(cur,(const xmlChar*) "name");
 			id = xmlGetProp(cur,(const xmlChar*) "id");
+
 			/* set up the field from the current node */
 			presence = xmlGetProp(cur,(const xmlChar*) "presence");
 			create.name=(char *)cur->name;
@@ -117,9 +119,14 @@ void parse_template(xmlDocPtr doc, xmlNodePtr cur, struct template_type* templat
 				create.mandatory=1;
 			}
 			/* check for fields in subset notes */
+
 			if (cur->xmlChildrenNode != NULL){
+				value = xmlGetProp(cur->xmlChildrenNode->next,(const xmlChar*) "value");
+				if (value != NULL){
+					assign_Value(name, &create, value);
+				}
 				if ((!xmlStrcmp(cur->xmlChildrenNode->next->name, (const xmlChar *)"default"))) {
-					fop=FIELD_OP_DEFAULT;
+					fop=FIELD_OP_DEFAULT;					
 				}
 				if ((!xmlStrcmp(cur->xmlChildrenNode->next->name, (const xmlChar *)"copy"))) {
 					fop=FIELD_OP_COPY;
@@ -127,6 +134,22 @@ void parse_template(xmlDocPtr doc, xmlNodePtr cur, struct template_type* templat
 				if ((!xmlStrcmp(cur->xmlChildrenNode->next->name, (const xmlChar *)"constant"))) {
 					fop=FIELD_OP_CONST;
 				}
+				if ((!xmlStrcmp(cur->xmlChildrenNode->next->name, (const xmlChar *)"increment"))) {
+					fop=FIELD_OP_CONST;
+				}
+				if ((!xmlStrcmp(cur->xmlChildrenNode->next->name, (const xmlChar *)"constant"))) {
+					fop=FIELD_OP_CONST;
+				}
+				if ((!xmlStrcmp(cur->xmlChildrenNode->next->name, (const xmlChar *)"increment"))) {
+					fop=FIELD_OP_INCR;
+				}
+				if ((!xmlStrcmp(cur->xmlChildrenNode->next->name, (const xmlChar *)"delta"))) {
+					fop=FIELD_OP_DELTA;
+				}
+				if ((!xmlStrcmp(cur->xmlChildrenNode->next->name, (const xmlChar *)"tail"))) {
+					fop=FIELD_OP_TAIL;
+				}
+				xmlFree(value);			
 /*				printf("SubNodeName: %s \n", cur->xmlChildrenNode->next->name);*/
 			}
 			/* Determeine Type and create */
@@ -150,10 +173,8 @@ void parse_template(xmlDocPtr doc, xmlNodePtr cur, struct template_type* templat
 				create.type=FIELD_TYPE_ASCII|fop;
 				create_field(template, &create, NULL);
 			}
-			
 /*			printf("Propname: %s \nnode name: %s \nPropPresence: = %s \nPropid: %s \n", name, cur->name, presence, id);*/
 
-			
 			xmlFree(name);
 			xmlFree(presence);
 			xmlFree(id);
@@ -165,4 +186,46 @@ void parse_template(xmlDocPtr doc, xmlNodePtr cur, struct template_type* templat
 	return;
 }
 
-
+void assign_Value(xmlChar * name, struct template_field_type * create, xmlChar *value){	
+	struct template_field_type meow;
+	meow = *create;
+	if ((!xmlStrcmp(name, (const xmlChar *)"default"))) {
+		if ((!xmlStrcmp(name, (const xmlChar *)"int32"))) {
+			(*create).cfg_value.i32=(gint32)atoi((const char *)value);
+		}
+		if ((!xmlStrcmp(name, (const xmlChar *)"uInt32"))) {
+			(*create).cfg_value.u32=(gint32)atoi((const char *)value);
+		}
+		if ((!xmlStrcmp(name, (const xmlChar *)"int64"))) {
+			(*create).cfg_value.i64=(gint32)atoi((const char *)value);
+		}
+		if ((!xmlStrcmp(name, (const xmlChar *)"uInt64"))) {
+			(*create).cfg_value.u64=(gint32)atoi((const char *)value);
+		}
+		if ((!xmlStrcmp(name, (const xmlChar *)"string"))) {
+			(*create).cfg_value.str.p=(guint8 *) value;
+		}
+	}
+	if 	((!xmlStrcmp(name, (const xmlChar *)"copy")) 
+		|| (!xmlStrcmp(name, (const xmlChar *)"constant"))
+		|| (!xmlStrcmp(name, (const xmlChar *)"increment"))
+		|| (!xmlStrcmp(name, (const xmlChar *)"constant")) 
+		|| (!xmlStrcmp(name, (const xmlChar *)"delta")) 
+		|| (!xmlStrcmp(name, (const xmlChar *)"tail"))) {
+			if ((!xmlStrcmp(name, (const xmlChar *)"int32"))) {
+				(*create).value.i32=(gint32)atoi((const char *)value);
+			}
+			if ((!xmlStrcmp(name, (const xmlChar *)"uInt32"))) {
+				(*create).value.u32=(gint32)atoi((const char *)value);
+			}
+			if ((!xmlStrcmp(name, (const xmlChar *)"int64"))) {
+				(*create).value.i64=(gint32)atoi((const char *)value);
+			}
+			if ((!xmlStrcmp(name, (const xmlChar *)"uInt64"))) {
+				(*create).value.u64=(gint32)atoi((const char *)value);
+			}
+			if ((!xmlStrcmp(name, (const xmlChar *)"string"))) {
+				(*create).value.str.p=(guint8 *) value;
+			}					
+		}	
+}
