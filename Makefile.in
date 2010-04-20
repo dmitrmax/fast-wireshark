@@ -36,7 +36,7 @@ CFLAGS = -DHAVE_CONFIG_H $(INCS) -DINET6 \
 
 $(PLUGIN) : $(OBJS)
 	mkdir -p $(PLUGIN_DIR)
-	$(CC) -shared $(OBJS) $(LIBS) -static -o $@
+	$(CC) -shared $(OBJS) $(LIBS) -o $@
 
 # Do this if we wanna be cool
 #%.o: %.d
