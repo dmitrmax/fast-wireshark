@@ -87,7 +87,7 @@ gint create_field(
 {
 	struct template_field_type* field;
 
-	if(!in_template || !params || !params->name)
+	if(/*!in_template ||*/ !params || !params->name)
 	{
 		DBG0("null argument");
 		return ERR_BADARG;
@@ -301,6 +301,10 @@ gint create_field(
 
 	/************************************************************************/
 
+	if(!in_template && FIELD_IS_COMPLEX(params))
+	{
+		/* nothing */
+	}
 	if(!in_template->fields)
 	{
 		in_template->fields=field;
@@ -313,6 +317,44 @@ gint create_field(
 	}
 
 	if(outptr) *outptr=field;
+
+	return 0;
+}
+
+gint create_subfield(
+	struct template_type* t,
+	struct template_field_type* parent,
+	struct template_field_type* params,
+	struct template_field_type** outptr)
+{
+	struct template_field_type* p;
+	gint ret;
+
+	if(!t || !parent || !params) return ERR_BADARG;
+
+	if(!FIELD_IS_COMPLEX(parent))
+	{
+		return ERR_BADARG;
+	}
+
+	ret=create_field(0,params,&p);
+	if(ret<0 || !p)
+	{
+		return ret;
+	}
+
+	if(!parent->subfields)
+	{
+		parent->subfields=p;
+	}
+	else
+	{
+		struct template_field_type* cur;
+		for(cur=parent->subfields; cur->next; cur=cur->next);
+		cur->next=p;
+	}
+
+	if(outptr) *outptr=p;
 
 	return 0;
 }

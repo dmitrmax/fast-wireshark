@@ -106,6 +106,10 @@ gint copy_field_value(guint type, field_value* src, field_value* dest);
 
 #define FIELD_RAW_NULL		0x80
 
+#define FIELD_MANDATORY_BIT	0x01
+#define FIELD_NULLABLE_BIT	0x02
+#define FIELD_PMAP_BIT		0x04
+
 struct template_field_type;
 typedef gint (*field_read_func_type)(
 	struct template_field_type*,
@@ -145,6 +149,9 @@ struct template_field_type
 
 	/* 1=field has a nullable representation 0= it doesnt */
 	gint nullable;
+
+	/* mandatory, nullable, has pmap */
+	guint8 flags;
 
 	/* offset into current tvbuff and length of corresponding
 		data in tvbuff */
@@ -200,6 +207,11 @@ struct template_field_type
 
 gint create_field(
 	struct template_type*,
+	struct template_field_type*,
+	struct template_field_type**);
+gint create_subfield(
+	struct template_type*,
+	struct template_field_type*,
 	struct template_field_type*,
 	struct template_field_type**);
 

@@ -283,6 +283,9 @@ gint field_op_tail(
 	tvbuff_t* buf,
 	guint* off)
 {
+	gint ret;
+	field_value tmp;
+
 	DBG0("not implemented");
 	return ERR_NOTIMPL;
 }
