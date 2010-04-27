@@ -86,6 +86,7 @@ gint create_field(
 	struct template_field_type** outptr)
 {
 	struct template_field_type* field;
+	struct template_field_type* tmp_dec_field;
 
 	if(/*!in_template ||*/ !params || !params->name)
 	{
@@ -168,7 +169,7 @@ gint create_field(
 
 	case FIELD_OP_INCR:
 
-		if(FIELD_IS_COMPLEX(params))
+		if(FIELD_IS_BYTESTR(params) || FIELD_TYPE(params)==FIELD_TYPE_GROUP)
 		{
 			g_free(field->name);
 			g_free(field);
@@ -184,7 +185,8 @@ gint create_field(
 
 		/* delta is complicated enough we need two versions, for strings
 			and integers */
-		if(FIELD_IS_INTEGER(params) || FIELD_IS_DECIMAL(params))
+		if(FIELD_IS_INTEGER(params) || FIELD_IS_DECIMAL(params) ||
+			FIELD_TYPE(params)==FIELD_TYPE_SEQ)
 		{
 			field->op = field_op_delta_num;
 		}
@@ -250,8 +252,12 @@ gint create_field(
 		break;
 
 	case FIELD_TYPE_FLT10:
-		field->decode=	field_decode_flt10;
-		field->display=	field_display_flt10;
+		/*field->decode=	field_decode_flt10;
+		field->display=	field_display_flt10;*/
+
+		field->display=field_display_flt10;
+		field->op=field_op_dec;
+
 		break;
 	/*case FIELD_TYPE_FIXDEC:
 		field->decode=	field_decode_fixdec;
@@ -273,9 +279,15 @@ gint create_field(
 		break;
 
 	case FIELD_TYPE_SEQ:
+		field->decode=field_decode_uint32;
+		field->display=0;
+		break;
 	case FIELD_TYPE_GROUP:
-		DBG0("field type implemented");
-		return ERR_NOTIMPL;
+		field->decode=0;
+		field->display=0;
+		/*DBG0("field type implemented");
+		return ERR_NOTIMPL;*/
+		break;
 
 	default:
 		g_free(field->name);
@@ -301,7 +313,7 @@ gint create_field(
 
 	/************************************************************************/
 
-	if(!in_template && FIELD_IS_COMPLEX(params))
+	if(!in_template && (FIELD_IS_COMPLEX(params) || FIELD_IS_DECIMAL(params)))
 	{
 		/* nothing */
 	}

@@ -217,10 +217,17 @@ gint field_display_flt10(
 	proto_tree* tree,
 	tvbuff_t* buf)
 {
-	char* str = (char*) ep_alloc (30 * sizeof (char));
+	gint32 mant,exp;
+	char* str;
 
-    g_snprintf (str, 30, "%de%d", f->value.flt10.mant,
-                f->value.flt10.exp);
+	mant=f->subfields->value.i32;
+	exp=f->subfields->next->value.i32;
+
+	str = (char*) ep_alloc (30 * sizeof (char));
+
+    /*g_snprintf (str, 30, "%de%d", f->value.flt10.mant,
+                f->value.flt10.exp);*/
+    g_snprintf(str,30,"%de%d",mant,exp);
 
 	proto_tree_add_string(
 		tree,

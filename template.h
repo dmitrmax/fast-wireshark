@@ -271,5 +271,6 @@ gint field_op_incr		(struct template_field_type*,guint8**,tvbuff_t*,guint*);
 gint field_op_delta_num	(struct template_field_type*,guint8**,tvbuff_t*,guint*);
 gint field_op_delta_str	(struct template_field_type*,guint8**,tvbuff_t*,guint*);
 gint field_op_tail		(struct template_field_type*,guint8**,tvbuff_t*,guint*);
+gint field_op_dec		(struct template_field_type*,guint8**,tvbuff_t*,guint*);
 
 #endif

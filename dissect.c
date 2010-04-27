@@ -138,6 +138,7 @@ static void process_fields(
 	guint pmap_len)
 {
 	int ret;
+	struct template_field_type* cur_sub;
 	/*TRACE();*/
 
 	for(;cur;cur=cur->next)
@@ -149,25 +150,132 @@ static void process_fields(
 			return;
 		}
 
-		cur->offset = off;
-		ret=(cur->op)(cur,&pmap,tvb,&off);
-		cur->length = off - cur->offset;
-
-		if(ret<0)
+		if(FIELD_TYPE(cur)==FIELD_TYPE_GROUP && *pmap)
 		{
-			DBG_RET(ret);
-			return;
-		}
+			pmap++;
 
-		if(FIELD_DISPLAY_ON(cur))
-		{
-			if(!(cur->display))
+			for(cur_sub=cur->subfields;cur_sub;cur_sub=cur_sub->next)
 			{
-				DBG1("no display function for %s",cur->name);
+				cur_sub->offset = off;
+				ret=(cur->op)(cur,&pmap,tvb,&off);
+				cur_sub->length = off - cur_sub->offset;
+
+				if(ret<0)
+				{
+					DBG_RET(ret);
+					return;
+				}
+
+				if(FIELD_DISPLAY_ON(cur))
+				{
+					if(!(cur->display))
+					{
+						DBG1("no display function for %s",cur->name);
+						return;
+					}
+
+					(cur->display)(cur,tree,tvb);
+				}
+			}
+		}
+		else if(FIELD_TYPE(cur)==FIELD_TYPE_FLT10)
+		{
+			for(cur_sub=cur->subfields;cur_sub;cur_sub=cur_sub->next)
+			{
+				cur_sub->offset = off;
+				ret=(cur->op)(cur,&pmap,tvb,&off);
+				cur_sub->length = off - cur_sub->offset;
+
+				if(ret<0)
+				{
+					DBG_RET(ret);
+					return;
+				}
+			}
+
+			/* display is determined by the exponent field */
+			if(FIELD_DISPLAY_ON(cur->subfields->next))
+			{
+				if(!(cur->display))
+				{
+					DBG1("no display function for %s",cur->name);
+					return;
+				}
+
+				(cur->display)(cur,tree,tvb);
+			}
+		}
+		else if(FIELD_TYPE(cur)==FIELD_TYPE_SEQ)
+		{
+			/* TODO: this doesnt work */
+			gint i;
+
+			cur->offset=off;
+			ret=(cur->op)(cur,&pmap,tvb,&off);
+			cur->length = off-cur->offset;
+
+			pmap++;
+
+			if(ret<0)
+			{
+				DBG_RET(ret);
 				return;
 			}
 
-			(cur->display)(cur,tree,tvb);
+			for(i=0;i<cur->value.u32;i++)
+			{
+				if(*pmap)
+				{
+					pmap++;
+
+					for(cur_sub=cur->subfields;cur_sub;cur_sub=cur_sub->next)
+					{
+						cur_sub->offset = off;
+						ret=(cur->op)(cur,&pmap,tvb,&off);
+						cur_sub->length = off - cur_sub->offset;
+
+						if(ret<0)
+						{
+							DBG_RET(ret);
+							return;
+						}
+
+						if(FIELD_DISPLAY_ON(cur))
+						{
+							if(!(cur->display))
+							{
+								DBG1("no display function for %s",cur->name);
+								return;
+							}
+
+							(cur->display)(cur,tree,tvb);
+						}
+					}
+				}
+			}
+		}
+		else
+		{
+			cur->offset = off;
+			ret=(cur->op)(cur,&pmap,tvb,&off);
+			cur->length = off - cur->offset;
+
+			if(ret<0)
+			{
+				DBG_RET(ret);
+				return;
+			}
+
+			if(FIELD_DISPLAY_ON(cur))
+			{
+				if(!(cur->display))
+				{
+					DBG1("no display function for %s",cur->name);
+					return;
+				}
+
+				(cur->display)(cur,tree,tvb);
+			}
 		}
 	}
 }
