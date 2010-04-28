@@ -33,7 +33,10 @@ errors and are much safer.
 
 If you need to add new sources to the project, modify Makefile.common
 as that will be included in the actual source file and wont screw up the
-build script at all
+build script at all.
+
+Globals are bad.  don't use them unless you really,really,really,really
+need to.
 
 ----- Design -----
 There are, ideally, three layers of code in this plugin.
