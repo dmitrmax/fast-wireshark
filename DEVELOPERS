@@ -1,0 +1,93 @@
+Forward notes:
+You may notice that some of the code here doesnt follow the guidelines
+given in this document.  When this is the case, remember that all
+developers including me are fallible :)  By all means rewrite some of the
+existing code here to make it more in line with the ideal.
+
+A good reference document for the FAST spec is attached
+as fast_specification_1x1.pdf  Unfortunately the document is not very
+accessable if you are trying to understand how the protocol works and is really
+only useful as a reference.
+
+Please refer to the TODO file for some direction on what to work on.
+
+----- Debugging -----
+When you need to do some sort of printouts for debugging, /please/ use
+the DBG*() macros; they are really easy to use and make tracking down
+random output statements much easier, and they work just like printf.  Another
+advantage is that you can compile them out if you so choose by modifying
+fast.h
+
+the cur-client script in the test subdir is very useful for testing.
+
+----- General coding -----
+Coding style in this project is fairly loose.  Macros and constants should
+be all CAPS, functions and types use underscores_for_spaces_style.  A function
+that is intended to be internal to a single module should be declared
+static.  If this is not possible for some reason, add a trailing underscore
+to the name: like_this_ .  Please don't use leading underscores as symbols
+with leading underscores are reserved identifiers.
+Please use the portable types defined in GLib, like guint8, etc. and the
+Glib functions like g_malloc/g_free because they will catch many programming
+errors and are much safer.
+
+If you need to add new sources to the project, modify Makefile.common
+as that will be included in the actual source file and wont screw up the
+build script at all
+
+----- Design -----
+There are, ideally, three layers of code in this plugin.
+
+The lowest layer contains the low-level decoding functions:
+count_encoded_bytes, decode_int32,decode_uint32,decode_int64,decode_uint64,
+decode_acsii,decode_bytes,decode_utf8,decode_pmap,decode_check_null
+These functions are all fairly well-tested and you should use them.  Note that
+decode_flt10 is deprecated;  the reason is that these functions are all very
+low-level.  Everything in the FAST protocol is constructed from integers and
+strings, so that is all these functions can read (PMAP is a special case).
+These functions are contained in decode.h and decode.c
+
+Built on top of the low-level decoding functions is the FAST template system.
+Each of the field types have separate functions for deconding and displaying,
+and each operator has its own function for performing its operation.  There
+are two types of fields, 'simple' and 'complex'.  Simple fields require a
+single template_field_type struct, and are:
+UINT32,INT32,UINT64,INT64,ASCII,UTF8,BYTESTR
+The other 'complex' fields are built on top of these:
+GROUP has no operator of its own, but does have its own pmap bit.
+	It uses the subfields member to store all its components.
+FLT10 (the 'scaled number' type in the protocol documentation) has no operator
+	of its own, and the mantiss and exponent are stored in the subfields
+	member, respectively.  The exponent member is what determines whether
+	the field is nullable, and whether a null was sent (per the FAST spec).
+SEQUENCE has an operator to represent the uint32 number which stores the
+	number of groups.  subfields is used to store each GROUP, and so on
+Each field operator function does most of the work of determining what the
+field should be, and whether it should be displayed in the output.  They take
+pointers to the PMAP array and offset which they will modify to reflect the
+current state of the buffer being read.
+Significant parts of this code need to be redesigned; sequences do not work,
+and there are many special cases in the higher-level layer that need to be
+removed by rewriting stuff here.
+NOTE: right now there is a bunch of extra code relating to scaled
+	values which we no longer use (the flt10 member of field_value, etc.)
+	This special case code needs to be cleaned up/removed.
+another NOTE: a potential pitfall is that what we call 'simple' and
+	'complex' types are not related to the FAST spec's definition of
+	'primitive' types.
+This layer is implemented in template.h,template.c,field_type.c,
+operators.c
+
+The highest layer is what interfaces with the Wireshark API.  The actual
+API hooks and some special plugin setup code is in packet-fast.c  Be careful
+about modifying that file, as wirshark expects many of the symbols to have
+very specific names.
+The most important part of this layer is dissect.c,which contains the actual
+dissection routine.  This algorithm should do everything through function
+pointers contained in the template_field_type struct, which currently it does
+not do; code needs to be redesigned so the special cases in process_fields
+go away.
+The interface layer is implemented in packet-fast.c,setup.c,fast.h,
+dissect.c
+NOTE: setup.c  can probably be removed entirely
+	as it does nothing other than set up some test data at the moment.

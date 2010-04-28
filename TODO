@@ -1,0 +1,32 @@
+* code that deals with base-10 decimals needs to be changed so that:
+	- the field with a type FLT10 is used only as a pointer to two
+		int32 subfields
+	- the first subfield is the exponent, which also can be nullable
+		and controls whether the entire field will be displayed
+	- the second subfield is the mantissa
+	- all the other special-case stuff related to flt10 can be removed
+* sequences don't work
+	- the most major thing is the setup_template_fields function needs to be
+		called on-the-fly
+		when a sequence is encountered, so it can construct the correct number
+		of group subfields.  This will take a significant amount of work.
+* XML parsing code needs to be completely rewritten
+* there is a lot of potential for memory leaks.
+* all the operator functions dont bounds check the PMAP array.  These
+	functions should not really be allowed to modify the pmap pointer at all;
+	instead the caller should determine whether they used a pmap bit by
+	looking at the template_field_type flags.
+* in the event of an incomplete packet, the plugin will raise an exception
+	and wireshark will terminate it.  We should handle errors more gracefully
+	by checking if there is data before calling tvb_get_guint8 in the
+	low-level decoders
+* process_fields needs to be rewritten so there are no special cases
+* dictionaries are not implemented at all (6.3.1)
+* ASCII fields are not properly checked for all nullability conditions
+	according to the FAST spec (10.6.3)
+* the Delta operator for strings is not implemented
+* template reference instruction (6.4) is not implemented
+* auxiliary identifiers are not implemented (7.1)
+* it would be nice if we identified Dynamic errors with their proper error
+	codes
+* the port the plugin listens on cannot be changed without recompiling
