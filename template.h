@@ -63,6 +63,7 @@ typedef union field_value_type
 		guint32 frac;
 	} fixdec;*/
 
+	/* TODO: this whole substruct needs to be removed */
 	struct base10_float_value_type_
 	{
 		gint32 mant; /* decimal mantissa */
@@ -139,6 +140,7 @@ struct template_field_type
 	field_value cfg_value;
 
 	/* used to store operators if this is a decimal field */
+	/* TODO: should be removed */
 	guint8 dec_ops;
 
 	/* used to store initial field value, or constant value
@@ -179,6 +181,7 @@ struct template_field_type
 #define FIELD_OP(f)			((f)->type & FIELD_TYPE_MASK)
 
 /* added to support decimal fields */
+/* TODO: should be removed */
 #define FIELD_DEC_EXP_OP(f)			((f)->dec_op & 0x0f)
 #define FIELD_DEC_MNT_OP(f)			((f)->dec_op & 0xf0)
 #define FIELD_SET_DEC_EXP_OP(f,op)	((f)->dec_op |= (op))
@@ -241,6 +244,7 @@ gint field_decode_ascii		(struct template_field_type*,tvbuff_t*,guint);
 gint field_decode_utf8		(struct template_field_type*,tvbuff_t*,guint);
 gint field_decode_bytes		(struct template_field_type*,tvbuff_t*,guint);
 
+/* TODO: this should be removed */
 gint field_decode_flt10		(struct template_field_type*,tvbuff_t*,guint);
 /*gint field_decode_fixdec	(struct template_field_type*,tvbuff_t*,guint);*/
 

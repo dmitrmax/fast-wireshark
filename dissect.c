@@ -178,7 +178,7 @@ static void process_fields(
 				}
 			}
 		}
-		else if(FIELD_TYPE(cur)==FIELD_TYPE_FLT10)
+		/*else if(FIELD_TYPE(cur)==FIELD_TYPE_FLT10)
 		{
 			for(cur_sub=cur->subfields;cur_sub;cur_sub=cur_sub->next)
 			{
@@ -193,7 +193,6 @@ static void process_fields(
 				}
 			}
 
-			/* display is determined by the exponent field */
 			if(FIELD_DISPLAY_ON(cur->subfields->next))
 			{
 				if(!(cur->display))
@@ -204,7 +203,7 @@ static void process_fields(
 
 				(cur->display)(cur,tree,tvb);
 			}
-		}
+		}*/
 		else if(FIELD_TYPE(cur)==FIELD_TYPE_SEQ)
 		{
 			/* TODO: this doesnt work */

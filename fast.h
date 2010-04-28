@@ -64,6 +64,8 @@ void debug_out(
 #define DBG2(s,a,b)		debug_out(__FILE__,__func__,__LINE__,s,a,b)
 #define DBG3(s,a,b,c)	debug_out(__FILE__,__func__,__LINE__,s,a,b,c)
 #define DBG4(s,a,b,c,d)	debug_out(__FILE__,__func__,__LINE__,s,a,b,c,d)
+#define DBG5(s,a,b,c,d,e) \
+	debug_out(__FILE__,__func__,__LINE__,s,a,b,c,d,e)
 
 #define DBG_RET(r)	DBG1("Returned %d",r)
 

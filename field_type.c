@@ -220,14 +220,14 @@ gint field_display_flt10(
 	gint32 mant,exp;
 	char* str;
 
-	mant=f->subfields->value.i32;
-	exp=f->subfields->next->value.i32;
+	/*mant=f->subfields->value.i32;
+	exp=f->subfields->next->value.i32;*/
 
 	str = (char*) ep_alloc (30 * sizeof (char));
 
-    /*g_snprintf (str, 30, "%de%d", f->value.flt10.mant,
-                f->value.flt10.exp);*/
-    g_snprintf(str,30,"%de%d",mant,exp);
+    g_snprintf (str, 30, "%de%d", f->value.flt10.mant,
+                f->value.flt10.exp);
+    /*g_snprintf(str,30,"%de%d",mant,exp);*/
 
 	proto_tree_add_string(
 		tree,

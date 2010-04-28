@@ -86,7 +86,6 @@ gint create_field(
 	struct template_field_type** outptr)
 {
 	struct template_field_type* field;
-	struct template_field_type* tmp_dec_field;
 
 	if(/*!in_template ||*/ !params || !params->name)
 	{
@@ -252,11 +251,11 @@ gint create_field(
 		break;
 
 	case FIELD_TYPE_FLT10:
-		/*field->decode=	field_decode_flt10;
-		field->display=	field_display_flt10;*/
+		field->decode=	field_decode_flt10;
+		field->display=	field_display_flt10;
 
-		field->display=field_display_flt10;
-		field->op=field_op_dec;
+		/*field->display=field_display_flt10;
+		field->op=field_op_dec;*/
 
 		break;
 	/*case FIELD_TYPE_FIXDEC:
@@ -313,7 +312,8 @@ gint create_field(
 
 	/************************************************************************/
 
-	if(!in_template && (FIELD_IS_COMPLEX(params) || FIELD_IS_DECIMAL(params)))
+	if(!in_template && (FIELD_IS_COMPLEX(params)
+		/*|| FIELD_IS_DECIMAL(params)*/))
 	{
 		/* nothing */
 	}

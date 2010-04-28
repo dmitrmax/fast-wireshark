@@ -458,6 +458,7 @@ gint field_op_tail(
 	return 0;
 }
 
+/* TODO: this should be used instead of the special-case stuff for FLT10 */
 gint field_op_dec(
 	struct template_field_type* f,
 	guint8** pmap,

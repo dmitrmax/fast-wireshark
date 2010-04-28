@@ -96,6 +96,9 @@ so you can just have the .so built there and it should work
 
 Another note:
 make clean
+will clean up the detritus of the build process, but not the important
+output files or the Makefile
+make distclean
 will clean up the detritus of the build process (INCLUDING the output .so file)
 and remove the generated Makefile, so you will have to run configure to be
 able to build again.
