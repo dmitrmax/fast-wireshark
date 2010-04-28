@@ -30,3 +30,4 @@
 * it would be nice if we identified Dynamic errors with their proper error
 	codes
 * the port the plugin listens on cannot be changed without recompiling
+* the flags value in template_field_struct needs to be set properly

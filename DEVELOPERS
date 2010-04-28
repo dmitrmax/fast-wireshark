@@ -57,18 +57,22 @@ The other 'complex' fields are built on top of these:
 GROUP has no operator of its own, but does have its own pmap bit.
 	It uses the subfields member to store all its components.
 FLT10 (the 'scaled number' type in the protocol documentation) has no operator
-	of its own, and the mantiss and exponent are stored in the subfields
+	of its own, and the exponent and mantissa are stored in the subfields
 	member, respectively.  The exponent member is what determines whether
 	the field is nullable, and whether a null was sent (per the FAST spec).
 SEQUENCE has an operator to represent the uint32 number which stores the
 	number of groups.  subfields is used to store each GROUP, and so on
 Each field operator function does most of the work of determining what the
-field should be, and whether it should be displayed in the output.  They take
+value should be, and whether it should be displayed in the output.  They take
 pointers to the PMAP array and offset which they will modify to reflect the
 current state of the buffer being read.
 Significant parts of this code need to be redesigned; sequences do not work,
 and there are many special cases in the higher-level layer that need to be
-removed by rewriting stuff here.
+removed by rewriting stuff here.  Also, the field operator functions should
+not be modifying the pmap or offset values as it is easy to forget to check
+bounds; the caller function (process_fields and its friends) should
+check for this kind of stuff instead by looking at the template_field_struct
+flags.
 NOTE: right now there is a bunch of extra code relating to scaled
 	values which we no longer use (the flt10 member of field_value, etc.)
 	This special case code needs to be cleaned up/removed.
