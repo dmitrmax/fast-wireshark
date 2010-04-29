@@ -64,6 +64,8 @@ void encode_int64 (gint64 x, GByteArray** arr)
     size_t maxc = 9;
     int i = maxc;
 
+    fprintf (stderr, "this is broken don't use it");
+
     while (1)
     {
         --i;

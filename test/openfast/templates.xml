@@ -1,0 +1,11 @@
+
+<template id="1" name="TestTemplate1">
+    <int32 name="a"/>
+    <int32 name="b"/>
+    <int32 name="c"/>
+    <int64 name="x" />
+    <int64 name="y" />
+    <int64 name="z" />
+    <string name="name" />
+</template>
+

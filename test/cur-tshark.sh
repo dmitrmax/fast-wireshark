@@ -4,7 +4,6 @@ cmd='tshark'
 #cmd='valgrind tshark'
 
 $cmd -i lo -T fields \
-  -e fast.tid -e fast.int1 -e fast.int2 -e fast.str1 \
-  -e fast.int3 -e fast.int4 -e fast.byte1 \
-  -e fast.scaled1
+  -e fast.tid -e fast.name -e fast.a -e fast.b \
+  -e fast.c -e fast.x -e fast.y -e fast.z
 

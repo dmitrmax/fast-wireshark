@@ -157,7 +157,7 @@ gint decode_int64(
 	} while (! (b & STOP_BIT));
 
 	{
-		int shf = 32 - 7*i;
+		int shf = 64 - 7*i;
 		ret = (ret << shf) >> shf; /* Sign extend */
 	}
 
