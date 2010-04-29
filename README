@@ -104,6 +104,53 @@ and remove the generated Makefile, so you will have to run configure to be
 able to build again.
 
 -------------
+Building under windows
+-------------
+Like Linux, you need a Built version of wireshark to run against. You also 
+Will need a win32 Environment for compilation. See 
+http://www.wireshark.org/docs/wsdg_html_chunked/ChSetupWin32.html 
+For details. This will tell you how to get a working build environment,
+including wirehshark source, a version of microsoft's C compiler and linker, 
+and cygwin. Once complete return to this readme.
+
+Once you can build wireshark, you will need
+Our source code, which if your reading this We can assume you can find it.
+Our source code MUST go in the /plugins/fast/ directory of your wireshark source to build.
+
+You will also need a built win32 static library(.lib) of each libxml2, iconv, 
+and Zlib, as well as the includes for iconv(you need the BUILT iconv include.h, 
+NOT source include directory) and libxml2
+
+These includes should be at 
+C:\wireshark-win32-libs\libxml2-2.7.6.win32\include
+and 
+C:\wireshark-win32-libs\iconv-1.9.2.win32\include 
+respectively, when you have aquired them. 
+
+Unfortunately, these paths are hardcoded, you may change the paths in the 
+".c.obj::" Rule if you must. Make sure the paths are prefixed with a -I 
+if you change them, otherwise the compiler will now know where to include the headers from.
+
+The .lib files go into our folder with our source to link with, 
+IE C:.../wireshark-source/plugins/fast.
+You can change this by altering the 
+link -dll /out:$(PLUGIN_NAME).dll
+entry, by replacing the '.' before the \X.lib\ with your new location, But make sure you
+have the right path or the module with either fail to link or fail upon loading after start-up!
+
+In addition, you may consider making the changes listed in Section 3 of README.plugins in 
+the \doc folder of the wireshark soruce, but this only makes wireshark Build our plugin 
+when it builds itself, so not really needed.
+
+Once wireshark is set up, incldues and libraries set, and everything is in the proper places, 
+simple go into our directory, and type 
+nmake -f makefile.nmake
+This will make the files. As a windows use you are are wanting the .dll made by this process.
+Take it, and put it in the /plugins/version/folder of your wireshark folder, where the
+rest of the external plugin dlls exist, and run wireshark. Wireshark will do the rest itself.
+
+
+-------------
 - Linux Capture Permissions
 -------------
 
