@@ -15,40 +15,56 @@ void FAST_setup(int id)
 
 	init_templates();
 
-	create_template("test_template",1,&t);
+	create_template("TestTemplate1",1,&t);
 
 	f.type=FIELD_TYPE_INT32|FIELD_OP_NONE;
 	f.mandatory=1;
-	f.name="int1";
+	f.name="a";
 	create_field(t,&f,0);
 
-	f.type=FIELD_TYPE_UINT32|FIELD_OP_INCR;
-	f.mandatory=0;
-	f.name="int2";
-	create_field(t,&f,0);
-
-	f.type=FIELD_TYPE_ASCII|FIELD_OP_NONE;
+	f.type=FIELD_TYPE_INT32|FIELD_OP_NONE;
 	f.mandatory=1;
-	f.name="str1";
+	f.name="b";
+	create_field(t,&f,0);
+
+	f.type=FIELD_TYPE_INT32|FIELD_OP_NONE;
+	f.mandatory=1;
+	f.name="c";
+	create_field(t,&f,0);
+
+	f.type=FIELD_TYPE_INT64|FIELD_OP_INCR;
+	f.mandatory=1;
+	f.name="x";
 	create_field(t,&f,0);
 
 	f.type=FIELD_TYPE_INT64|FIELD_OP_NONE;
 	f.mandatory=1;
-	f.name="int3";
+	f.name="y";
 	create_field(t,&f,0);
 
-	f.type=FIELD_TYPE_UINT64|FIELD_OP_NONE;
+	f.type=FIELD_TYPE_INT64|FIELD_OP_NONE;
 	f.mandatory=1;
-	f.name="int4";
+	f.name="z";
+	create_field(t,&f,0);
+
+	f.type=FIELD_TYPE_ASCII|FIELD_OP_NONE;
+	f.mandatory=1;
+	f.name="name";
+	create_field(t,&f,0);
+
+	f.type=FIELD_TYPE_FLT10|FIELD_OP_NONE;
+	f.mandatory=1;
+	f.name="decval1";
+	create_field(t,&f,0);
+
+	f.type=FIELD_TYPE_FLT10|FIELD_OP_NONE;
+	f.mandatory=1;
+	f.name="decval2";
 	create_field(t,&f,0);
 
 	f.type=FIELD_TYPE_BYTES|FIELD_OP_NONE;
 	f.mandatory=1;
 	f.name="byte1";
 	create_field(t,&f,0);
-
-	f.type=FIELD_TYPE_FLT10|FIELD_OP_NONE;
-	f.mandatory=1;
-	f.name="scaled1";
-	create_field(t,&f,0);
 }
+

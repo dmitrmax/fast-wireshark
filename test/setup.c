@@ -32,7 +32,7 @@ void FAST_setup(int id)
 	f.name="c";
 	create_field(t,&f,0);
 
-	f.type=FIELD_TYPE_INT64|FIELD_OP_NONE;
+	f.type=FIELD_TYPE_INT64|FIELD_OP_INCR;
 	f.mandatory=1;
 	f.name="x";
 	create_field(t,&f,0);
@@ -50,6 +50,21 @@ void FAST_setup(int id)
 	f.type=FIELD_TYPE_ASCII|FIELD_OP_NONE;
 	f.mandatory=1;
 	f.name="name";
+	create_field(t,&f,0);
+
+	f.type=FIELD_TYPE_FLT10|FIELD_OP_NONE;
+	f.mandatory=1;
+	f.name="decval1";
+	create_field(t,&f,0);
+
+	f.type=FIELD_TYPE_FLT10|FIELD_OP_NONE;
+	f.mandatory=1;
+	f.name="decval2";
+	create_field(t,&f,0);
+
+	f.type=FIELD_TYPE_BYTES|FIELD_OP_NONE;
+	f.mandatory=1;
+	f.name="byte1";
 	create_field(t,&f,0);
 }
 

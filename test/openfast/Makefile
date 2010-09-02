@@ -6,7 +6,12 @@ Main.class: Main.java
 .PHONY: run
 run: Main.class
 	java -cp openfast.jar:. Main
-	timeout 1s netcat -u localhost 1337 < data.fast \
+	make -C ../ server
+	timeout 3s ../server 1337 &
+	sleep 1s
+	timeout 1s nc -u localhost 1337 < data1.fast \
+		|| test $$? -eq 124
+	timeout 1s nc -u localhost 1337 < data2.fast \
 		|| test $$? -eq 124
 
 .PHONY: clean

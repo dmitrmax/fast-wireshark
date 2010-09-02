@@ -3,9 +3,14 @@
     <int32 name="a"/>
     <int32 name="b"/>
     <int32 name="c"/>
-    <int64 name="x" />
+    <int64 name="x">
+        <increment />
+    </int64>
     <int64 name="y" />
     <int64 name="z" />
     <string name="name" />
+    <decimal name="decval1" />
+    <decimal name="decval2" />
+    <byteVector name="byte1" />
 </template>
 
