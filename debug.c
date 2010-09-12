@@ -25,7 +25,7 @@ void debug_out(
 
 	va_start(args,fmt);
 
-	vprintf(buf,args);
+	vfprintf(stderr,buf,args);
 
 	va_end(args);
 }

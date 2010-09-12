@@ -22,9 +22,6 @@
 #include <epan/prefs.h>
 #include <epan/packet.h>
 
-#define FAST_PROTO "udp.port"
-#define FAST_PORT 1337
-
 #define ERR_TRUE	 0
 #define ERR_FAIL	-1
 #define ERR_BADARG	-2
