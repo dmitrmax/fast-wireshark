@@ -41,7 +41,7 @@ static int proto_fast=-1;
 static dissector_handle_t fast_handle;
 
 /* configuration variables */
-guint config_port_number = 1337;
+guint config_port_number = 0;
 const char* config_template_xml_path;
 
 /* forward declarations */
@@ -142,6 +142,7 @@ void proto_reg_handoff_fast(void)
 	static int initialized = FALSE;
   static int currentPort = 0;
   const char* portField = "udp.port";
+
 	if(!initialized)
 	{
 		/* create our dissector */
@@ -155,7 +156,12 @@ void proto_reg_handoff_fast(void)
 	/* send our XML file to be parsed. Validity checked within, see parse_template.c for details */
 	/* TODO: parse_xml(config_template_xml_path); */
 
-  currentPort = config_port_number;
+  if (config_port_number!=0) {
+    currentPort = config_port_number;
+  } else {
+    config_port_number = 1337;
+    fprintf(stderr, "WARNING: Port is not set, using default %u\n", config_port_number);
+  }
 
   /* tell wireshark what underlying protocol and port we use */
   dissector_add(portField, config_port_number, fast_handle);
