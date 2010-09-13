@@ -1,0 +1,60 @@
+#!/bin/sh
+
+###### README ######
+# The environment variables:
+# GDIFF and EDITOR can override what command is used to display
+# a diff or view a newly added file (respectively).
+# I suggest installing 'xxdiff', which is used by default.
+# For the viewing new files, 'less' is used by default.
+#
+# To use gvim, put:
+#   export GDIFF='gvim -fd'
+#   export EDITOR='gvim -f'
+# in your ~/.bashrc file.
+######
+
+fileArg=$1
+shift
+
+if [ -z "$f" ]
+then
+  fileArg='.'
+fi
+
+if [ -z "$GDIFF" ]
+then
+  GDIFF='xxdiff'
+fi
+
+if [ -z "$EDITOR" ]
+then
+  EDITOR='less'
+fi
+
+# Redirect stdin to file descriptor 3,
+# required for vim to not screw up the console.
+exec 3<&0
+
+svn stat -q "$fileArg" | \
+awk -- '$1 == "A" { print $NF; }' | \
+while read -r f
+do
+  printf 'ADD %s\n' "$f"
+  # Don't show directories.
+  if [ ! -d "$f" ]
+  then
+    $EDITOR "$f" <&3
+  fi
+done
+
+svn stat -q "$fileArg" | \
+awk -- '$1 == "M" { print $NF; }' | \
+while read -r f
+do
+  tmpf=`mktemp`
+  printf 'MOD %s\n' "$f"
+  svn cat "$f" > "$tmpf"
+  $GDIFF "$tmpf" "$f" <&3
+  rm "$tmpf"
+done
+
