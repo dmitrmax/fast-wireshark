@@ -131,7 +131,22 @@ void proto_reg_handoff_fast(void)
   }
   else {
     dissector_delete(portField, currentPort, fast_handle);
+
+    
+
+    FILE *fp;
+    if((fp=fopen(config_template_xml_path, "r"))==NULL) {
+      fprintf(stderr, "Cannot open xml file %s\n", config_template_xml_path);
+    } else {
+
+      printf("Using xml file %s ...\n",config_template_xml_path);
+      
+      /* Do somthing with xml file ... */
+      fclose(fp);
+    }
+
   }
+  
 
   /* TODO: parse_xml(config_template_xml_path); */
 
