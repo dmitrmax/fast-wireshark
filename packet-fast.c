@@ -37,9 +37,6 @@ G_MODULE_EXPORT const gchar version[] = "0.1";
 /* global id of our protocol plugin used by wireshark */
 static int proto_fast=-1;
 
-/* handle to our dissector */
-static dissector_handle_t fast_handle;
-
 /* configuration variables */
 guint config_port_number = 0;
 const char* config_template_xml_path;
@@ -72,34 +69,15 @@ G_MODULE_EXPORT void plugin_reg_handoff(void)
 }
 #endif
 
-/* used for setting up the information subtree */
-/*static int ett_fast=-1;
-static int ett_fast_text=-1;
-static int* ett[] = {&ett_fast, &ett_fast_text};
-
-static int hf_fast=-1;
-static int hf_fast_text=-1;*/
 
 /* registers our plugin */
 void proto_register_fast(void)
 {
-	/*
-	static hf_register_info hf[] =
-	{
-		{ &hf_fast,
-			{"Data", "fast.data", FT_NONE, BASE_NONE,
-				NULL, 0x0, "FAST PDU", HFILL}},
-		{ &hf_fast_text,
-			{ "Text", "fast.text", FT_STRING, BASE_NONE,
-				NULL, 0x0, "Text", HFILL }}
-	};
-	 */
-
-	/* only do this if we haven't already */
-	if(proto_fast==-1)
-	{
-        module_t* mod;
-		proto_fast=proto_register_protocol(
+  /* only do this if we haven't already */
+  if(proto_fast==-1)
+  {
+    module_t* mod;
+    proto_fast=proto_register_protocol(
 			"FAST (FIX Adjusted for STreaming) Protocol", /* long name */
 			"FAST", /* short name */
 			"fast" /* abbrev */
@@ -118,7 +96,7 @@ void proto_register_fast(void)
 			&config_port_number);
 		prefs_register_string_preference(
 			mod,
-			"template_file_path",
+			"template",
 			"FAST XML Template file",
 			"Enter a valid filesystem path",
 			&config_template_xml_path);
@@ -136,35 +114,39 @@ void proto_register_fast(void)
 	}
 }
 
-/* setup related to our dissector */
+/* Set user preferences (port and template file).
+ * This function is called by Wireshark when
+ * 1. The program starts up
+ * 2. Preferences for the plugin have changed
+ */
 void proto_reg_handoff_fast(void)
 {
-	static int initialized = FALSE;
-  static int currentPort = 0;
+  static gboolean initialized = FALSE;
+  static guint currentPort = 0;
+  static dissector_handle_t fast_handle;
   const char* portField = "udp.port";
 
-	if(!initialized)
-	{
-		/* create our dissector */
-		fast_handle = create_dissector_handle(dissect_fast,proto_fast);
-    initialized = TRUE;
-	}
-  else
-  {
+  if (!initialized) {
+    fast_handle = create_dissector_handle(dissect_fast, proto_fast);
+  }
+  else {
     dissector_delete(portField, currentPort, fast_handle);
   }
-	/* send our XML file to be parsed. Validity checked within, see parse_template.c for details */
-	/* TODO: parse_xml(config_template_xml_path); */
 
-  if (config_port_number!=0) {
-    currentPort = config_port_number;
-  } else {
+  /* TODO: parse_xml(config_template_xml_path); */
+
+  if (initialized && config_port_number == 0) {
     config_port_number = 1337;
-    fprintf(stderr, "WARNING: Port is not set, using default %u\n", config_port_number);
+    fprintf(stderr, "FAST - WARNING: Port is not set, using default %u\n", config_port_number);
   }
+  currentPort = config_port_number;
 
-  /* tell wireshark what underlying protocol and port we use */
+  /* Tell Wireshark what underlying protocol and port we use. */
   dissector_add(portField, config_port_number, fast_handle);
+
+  if (!initialized) {
+    initialized = TRUE;
+  }
 }
 
 /* this is the actual hook to the dissection function */

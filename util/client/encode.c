@@ -61,10 +61,8 @@ void encode_uint64 (guint64 x, GByteArray** arr)
 void encode_int64 (gint64 x, GByteArray** arr)
 {
     guint8 buf[17];
-    size_t maxc = 9;
-    int i = maxc;
-
-    fprintf (stderr, "this is broken don't use it");
+    guint maxc = 9;
+    guint i = maxc;
 
     while (1)
     {

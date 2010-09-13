@@ -34,20 +34,17 @@ Place dist/fast-ARCH.so into /usr/lib/wireshark/plugins/WS_VERSION
 - Seeing Something Happen
 -------------
 
-At present, the plugin decodes a fixed template.
-You can generate that fixed template with the test client program.
-This only works on POSIX platforms.
+There is a simple utility, which can only be built on POSIX platforms.
 
-   cd test
-   make
-   ./cur-tshark.sh  # This is how to use TShark listening on localhost
-                    # The GUI Wireshark can also be used of course
-   ./cur-client.sh  # This sends some simple packets, look inside to see how
+  cd util
+  make bin/client
+
+Inside of util/client...
+'example-tshark.sh' shows how to use TShark.
+'example-client.sh' shows how to use the client utility.
+'example.xml' is the template file that both of the above scripts assume.
 
 Wireshark will see traffic on the loopback interface (lo).
-
-Try constructing your own packets with ./client, using commands in
-./cur-client.sh as a reference.
 
 With the -h flag, you can shoot packets at a different host. Obviously
 Wireshark must be listening on something other than loopback on the other

@@ -13,10 +13,10 @@
 # in your ~/.bashrc file.
 ######
 
-fileArg=$1
+fileArg="$1"
 shift
 
-if [ -z "$f" ]
+if [ -z "$fileArg" ]
 then
   fileArg='.'
 fi
