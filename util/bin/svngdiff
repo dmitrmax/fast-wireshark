@@ -13,12 +13,9 @@
 # in your ~/.bashrc file.
 ######
 
-fileArg="$1"
-shift
-
-if [ -z "$fileArg" ]
+if [ $# -eq 0 ]
 then
-  fileArg='.'
+  set -- .
 fi
 
 if [ -z "$GDIFF" ]
@@ -35,26 +32,34 @@ fi
 # required for vim to not screw up the console.
 exec 3<&0
 
-svn stat -q "$fileArg" | \
-awk -- '$1 == "A" { print $NF; }' | \
-while read -r f
+while [ $# -gt 0 ]
 do
-  printf 'ADD %s\n' "$f"
-  # Don't show directories.
-  if [ ! -d "$f" ]
-  then
-    $EDITOR "$f" <&3
-  fi
-done
+  fileArg="$1"
+  shift
 
-svn stat -q "$fileArg" | \
-awk -- '$1 == "M" { print $NF; }' | \
-while read -r f
-do
-  tmpf=`mktemp`
-  printf 'MOD %s\n' "$f"
-  svn cat "$f" > "$tmpf"
-  $GDIFF "$tmpf" "$f" <&3
-  rm "$tmpf"
+  # Show newly added files.
+  svn stat -q "$fileArg" | \
+  awk -- '$1 == "A" { print $NF; }' | \
+  while read -r f
+  do
+    printf 'ADD %s\n' "$f"
+    # Don't show directories.
+    if [ ! -d "$f" ]
+    then
+      $EDITOR "$f" <&3
+    fi
+  done
+
+  # Show modified files.
+  svn stat -q "$fileArg" | \
+  awk -- '$1 == "M" { print $NF; }' | \
+  while read -r f
+  do
+    tmpf=`mktemp`
+    printf 'MOD %s\n' "$f"
+    svn cat "$f" > "$tmpf"
+    $GDIFF "$tmpf" "$f" <&3
+    rm "$tmpf"
+  done
 done
 
