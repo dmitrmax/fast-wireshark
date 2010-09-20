@@ -1,15 +1,15 @@
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.math.BigDecimal;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
+import java.util.Iterator;
+import java.util.List;
 
 import org.openfast.*;
 import org.openfast.template.*;
-import org.openfast.template.loader.*;
+
+import com.google.code.fastwireshark.data.DataPlan;
+import com.google.code.fastwireshark.data.MessagePlan;
+import com.google.code.fastwireshark.io.BinaryOutputStream;
+import com.google.code.fastwireshark.io.MessageTemplateRepository;
+import com.google.code.fastwireshark.io.XMLDataPlanLoader;
 
 import static java.lang.System.out;
 
@@ -24,55 +24,39 @@ public class Main {
 	private static final String STRING = "string";
 	private static final Object UNICODE = "unicode";
 	private static final Object ASCII = "ascii";
-	private static final MessageOutputStream messageOut = new MessageOutputStream(new BinaryOutputStream());
-	//TODO move somewhere else
-	private static MessageTemplate[] templates;
+	private static final MessageOutputStream messageOut = new MessageOutputStream(new BinaryOutputStream(out, true));
 	
-	@SuppressWarnings("serial")
 	public static void main(String [] args){
 		
 		out.println("Hello World");
 		try{
 			/*
 			 * LOAD TEMPLATE 
-			 * TODO move this
 			 */
-			InputStream templateSource = new FileInputStream("templates.xml");
-			MessageTemplateLoader templateLoader = new XMLMessageTemplateLoader();
-			templates = templateLoader.load(templateSource);
-			for(MessageTemplate t : templates){
-				out.println(t);
-				for(Field f : t.getFields()){
-					out.println("\t" + f.getName());
-				}
+			
+			MessageTemplateRepository.loadTemplates("templates.xml");
+			
+			for(int i = 0 ; i < MessageTemplateRepository.getTemplates().size() ; i++)
+			{
+				messageOut.registerTemplate(i, MessageTemplateRepository.getTemplates().get(i));
 			}
+			
+			
+			/*
+			 * LOAD PLAN
+			 */
+			
+			XMLDataPlanLoader loader = new XMLDataPlanLoader();
+			
+			DataPlan dp = loader.loadPlan("testPlan.xml");
 			
 			/*
 			 * WRITE OUT
 			 */
-			//FileOutputStream("output.txt")
-			for(int i = 0 ; i < templates.length ; i++)
-			{
-				messageOut.registerTemplate(i, templates[i]);
-			}
-			TestCase tc = new TestCase();
-			
-			
-			tc.addMessageTest(new MessageTest(getTemplateByName("t_ascii_unicode_string"), new HashMap<String,Object>(){
-				{
-					put("a","abc");
-					put("u","abc");
-					put("s","abc");
-				}
-			}));
-			
-			for(MessageTest mt : tc.getTestList()){
+			for(MessagePlan mt : dp.getPlanList()){
 				out.println("***");
 				runMessageTest(mt);
 			}
-			
-			
-			
 			/*
 			 * READ IN
 			 */
@@ -93,8 +77,9 @@ public class Main {
 				out.println(number + " : " + templateId);
 			}
 			//*/
+			out.println("DEBUG LINE");
 		} catch (Throwable e){
-			out.println(e);
+			e.printStackTrace();
 		}
 		out.println("Goodbye World");
 		
@@ -102,25 +87,7 @@ public class Main {
 	
 	
 	
-	public static class BinaryOutputStream extends OutputStream {
-
-		@Override
-		public void write(int i) throws IOException {
-			//Take the lower byte
-			byte b = (byte) i;
-			String s = Integer.toBinaryString(b);
-			//If the byte is negative there will be 1's in the front, just grab the last 8 bits
-			if(s.length() == 32){
-				s = s.substring(24);
-			}
-			//Positive numbers drop leading zeros, Pad
-			while(s.length() < 8) { s = "0" + s; }
-			out.println(s);
-		}
-		
-	}
-	
-	public static void runMessageTest(MessageTest mt){
+	public static void runMessageTest(MessagePlan mt){
 		Message m = new Message(mt.getTemplate());
 		populateFields(m,mt.getValues());
 		messageOut.writeMessage(m);
@@ -131,35 +98,37 @@ public class Main {
 	 * @param message Message to populate
 	 * @param values Values to put into message
 	 */
-	public static void populateFields(Message message,Map<String, Object> values )
+	public static void populateFields(Message message,List<Object> values )
 	{
-		for(Entry<String, Object> e : values.entrySet()){
-			Field f = message.getTemplate().getField(e.getKey());
+		Iterator<Object> iter = values.iterator();
+		for(int i = 1 ; i <= values.size() ; i++){
+			Object o = iter.next();
+			Field f = message.getTemplate().getField(i);
 			
 			if(((Scalar)f).getType().getName().equals(INT32) ||
 			   ((Scalar)f).getType().getName().equals(UINT32)){
-				message.setInteger(e.getKey(), (Integer)e.getValue());
+				message.setInteger(i, (Integer)o);
 			} else
 			if(((Scalar)f).getType().getName().equals(INT64) ||
 			   ((Scalar)f).getType().getName().equals(UINT64)){
-				message.setLong(e.getKey(), (Long)e.getValue());
+				message.setLong(i, (Long)o);
 			} else
 			if(((Scalar)f).getType().getName().equals(DECIMAL)){
 				//Decimal can be of differing arguments, further determine correct type
-				if(e.getValue() instanceof Double){
-					message.setDecimal(e.getKey(), (Double)e.getValue());
+				if(o instanceof Double){
+					message.setDecimal(i, (Double)o);
 				} else 
-				if(e.getValue() instanceof Float){
-					message.setDecimal(e.getKey(), (Float)e.getValue());
+				if(o instanceof Float){
+					message.setDecimal(i, (Float)o);
 				} else 
-				if(e.getValue() instanceof BigDecimal){
-					message.setDecimal(e.getKey(), (BigDecimal)e.getValue());
+				if(o instanceof BigDecimal){
+					message.setDecimal(i, (BigDecimal)o);
 				}
 			} else
 			if(((Scalar)f).getType().getName().equals(STRING) ||
 			   ((Scalar)f).getType().getName().equals(UNICODE) ||
 			   ((Scalar)f).getType().getName().equals(ASCII)){
-				message.setString(e.getKey(), (String)e.getValue());
+				message.setString(i, (String)o);
 			}
 		}
 	}
@@ -167,15 +136,6 @@ public class Main {
 	/*
 	 * TODO move this
 	 */
-	public static MessageTemplate getTemplateByName(String name){
-		MessageTemplate retur = null;
-		for(MessageTemplate t : templates){
-			if(t.getName().equals(name)){
-				retur = t;
-				break;
-			}
-		}
-		return retur;
-	}
+	
 
 }
