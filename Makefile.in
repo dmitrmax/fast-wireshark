@@ -63,12 +63,12 @@ tags: *.c *.h
 
 .PHONY: test
 test: $(PLUGIN)
-	make -C $(TEST) test
+	#make -C $(TEST) test
 
 .PHONY: clean
 clean:
 	rm -f $(OBJS) *.d tags
-	make -C $(TEST) clean
+	#make -C $(TEST) clean
 
 .PHONY: distclean
 distclean: clean

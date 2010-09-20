@@ -1,32 +1,34 @@
-/**
-	@file	debug.c
-	@brief	|
-	@author	Wes Fournier
-
-	|
-*/
+/*!
+ * \file  debug.c
+ * \brief  Debugging output functions.
+ */
 
 #include "fast.h"
 
 #include <stdarg.h>
 #include <stdio.h>
 
-void debug_out(
-	const char* file,
-	const char* func,
-	int line,
-	const char* fmt,
-	...)
+/*! \brief  Print debugging info.
+ * \param file  Filename of caller.
+ * \param func  Function name of caller.
+ * \param line  Line number of caller.
+ * \param fmt   Format string for a printf.
+ */
+void debug_out(const char* file,
+               const char* func,
+               int line,
+               const char* fmt,
+               ...)
 {
-	char buf[1024];
-	va_list args;
+  char buf[1024];
+  va_list args;
 
-	g_snprintf(buf,1024,"%s(%d) %s: %s\n",file,line,func,fmt);
+  g_snprintf(buf,1024,"%s(%d) %s: %s\n",file,line,func,fmt);
 
-	va_start(args,fmt);
+  va_start(args,fmt);
 
-	vfprintf(stderr,buf,args);
+  vfprintf(stderr,buf,args);
 
-	va_end(args);
+  va_end(args);
 }
 

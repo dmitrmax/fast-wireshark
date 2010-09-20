@@ -1,304 +1,198 @@
-/**
-	@file	decode.c
-	@brief	low-level bit decoding routines
-	@author	Wes Fournier
-
-	|
-*/
+/*!
+ * \file decode.c
+ * \brief  Decode simple data types directly.
+ */
 
 #include "decode.h"
 
-#define STOP_BIT 0x80
-#define SIGN_BIT 0x40
+#define StopByte 0x80
+#define NBitsInByte 8
 
-gint count_encoded_bytes(tvbuff_t* buf, guint off)
+/*! \brief  Count the number of bytes in a stop bit encoded byte array.
+ * \param nbytes  Number of bytes in the array.
+ * \param bytes  The actual byte array.
+ * \return 0 if the byte array is overrun before a stop bit is found.
+ *         Otherwise, a positive count of bytes less than /nbytes/.
+ */
+guint count_stop_bit_encoded (guint nbytes, const guint8* bytes)
 {
-	int i=0;
-	guint8 b=0;
-	if(!buf)
-	{
-		DBG0("null argument");
-		return ERR_BADARG;
-	}
+  guint i;
 
-	do
-	{
-		/*  will throw an exception if the data is malformed */
-		b=tvb_get_guint8(buf,off+i);
-		i++;
-	} while(!(b&STOP_BIT));
-
-	return i;
-}
-
-gint decode_uint32(
-	tvbuff_t* buf,
-	guint off,
-	guint32* out)
-{
-	guint32 ret=0;
-
-	int i=0;
-	guint8 b=0;
-
-	if(!buf || !out)
-	{
-		DBG0("null argument");
-	}
-
-	do
-	{
-		ret<<=7;
-		b=tvb_get_guint8(buf,off+i);
-
-		ret |= b & ~STOP_BIT;
-
-		i++;
-	} while(!(b&STOP_BIT));
-
-	if(i>sizeof(guint32))
-	{
-		DBG0("bad input data format");
-		return ERR_BADFMT;
-	}
-
-	*out = ret;
-
-	return i;
-}
-
-gint decode_int32(
-	tvbuff_t* buf,
-	guint off,
-	gint32* out)
-{
-	gint32 ret=0;
-	int i=0;
-	guint8 b;
-
-	if(!buf || !out)
-	{
-		DBG0("null argument");
-		return ERR_BADARG;
-	}
-
-	do
-	{
-		b = tvb_get_guint8 (buf, off +i);
-		ret = (ret << 7) | (b & 0x7F); /* Fill in next 7 bits */
-		++ i;
-	} while (! (b & STOP_BIT));
-
-	{
-		int shf = 32 - 7*i;
-		ret = (ret << shf) >> shf; /* Sign extend */
-	}
-
-	*out = ret;
-	return i;
-}
-
-gint decode_uint64(
-	tvbuff_t* buf,
-	guint off,
-	guint64* out)
-{
-	guint64 ret=0;
-
-	int i=0;
-	guint8 b=0;
-
-	if(!buf || !out)
-	{
-		DBG0("null argument");
-	}
-
-	do
-	{
-		ret<<=7;
-		b=tvb_get_guint8(buf,off+i);
-
-		ret |= b & ~STOP_BIT;
-
-		i++;
-	} while(!(b&STOP_BIT));
-
-	if(i>sizeof(guint64))
-	{
-		DBG0("bad input data format");
-		return ERR_BADFMT;
-	}
-
-	*out = ret;
-
-	return i;
-}
-
-gint decode_int64(
-	tvbuff_t* buf,
-	guint off,
-	gint64* out)
-{
-	gint64 ret=0;
-	int i=0;
-	guint8 b;
-
-	if(!buf || !out)
-	{
-		DBG0("null argument");
-		return ERR_BADARG;
-	}
-
-	do
-	{
-		b = tvb_get_guint8 (buf, off +i);
-		ret = (ret << 7) | (b & 0x7F); /* Fill in next 7 bits */
-		++ i;
-	} while (! (b & STOP_BIT));
-
-	{
-		int shf = 64 - 7*i;
-		ret = (ret << shf) >> shf; /* Sign extend */
-	}
-
-	*out = ret;
-	return i;
-}
-
-/* NOTE this returns memory in out that must be free'd with g_free() */
-gint decode_ascii(
-	tvbuff_t* buf,
-	guint off,
-	guint8** out)
-{
-	gint ret;
-	guint8* s;
-	int i;
-
-	ret = count_encoded_bytes(buf,off);
-	if(ret<0) return ret;
-
-	s=tvb_get_string(buf,off,ret);
-	if(!s)
-	{
-		DBG0("out of memory");
-		return ERR_NOMEM;
-	}
-	for(i=0;i<ret;i++) s[i]=s[i] & ~STOP_BIT;
-
-	*out=s;
-
-	return ret;
-}
-
-/* NOTE this returns memory that must be free'd with g_free() */
-gint decode_bytes(
-	tvbuff_t* buf,
-    guint off,
-    guint8** out,
-    guint32* sz)
-{
-    gint ret;
-    guint8* p;
-
-    ret = decode_uint32(buf,off,sz);
-    if(ret<0) return ret;
-
-    p=tvb_memdup(buf,off+ret,*sz);
-    if(!p)
-    {
-        DBG0("out of memory");
-        return ERR_NOMEM;
+  for (i = 0; i < nbytes; ++i) {
+    if (bytes[i] & StopByte) {
+      return i+1;
     }
-    *out=p;
-    return ret + *sz;
+  }
+
+  return 0;
 }
 
-/* NOTE: this returns memory in out that must be free'd with g_free() */
-gint decode_utf8(
-	tvbuff_t* buf,
-	guint off,
-	guint8** out,
-    guint32* sz)
+
+/*! \brief  Count the bits which will be decoded from a set number of bytes.
+ * \return  The bit count.
+ */
+guint number_decoded_bits (guint nbytes)
 {
-	return decode_bytes(buf,off,out,sz);
+  return nbytes * (NBitsInByte -1);
 }
 
-gint decode_flt10(
-	tvbuff_t* buf,
-	guint off,
-	gint32* coeff,
-	gint32* exponent)
+
+/*! \brief  Decode a pmap into a pre-allocated boolean array.
+ *
+ * \param nbytes  Number of bytes to decode.
+ * \param bytes  Bytes to decode.
+ * \param pmap_res  Return value. Preallocated.
+ * \sa number_decoded_bits
+ */
+void decode_pmap (guint nbytes, const guint8* bytes,
+                  gboolean* pmap_res)
 {
-	int ret;
-	const guint orig_off = off;
-	ret = decode_int32 (buf, off, exponent);
-		/* printf ("exponent: %d\n", *exponent); */
-	if (ret < 0)  return ret;
-	off += ret;
-	ret = decode_int32 (buf, off, coeff);
-		/* printf ("coeff: %d\n", *coeff); */
-	if (ret < 0)  return ret;
-	off += ret;
-	return off - orig_off;
+  guint i;
+  guint8 j;
+
+  for (i = 0; i < nbytes; ++i) {
+    for (j = 1; j < NBitsInByte; ++j) {
+      guint pmap_idx;
+      pmap_idx = NBitsInByte * i + j -1;
+      pmap_res[pmap_idx] = bytes[i] & (StopByte >> j);
+    }
+  }
 }
 
-/*gint decode_fixdec(
-	tvbuff_t* buf,
-	guint off,
-	guint wholebits,
-	gint32* wholepart_out,
-	gint32* decpart_out)
+
+/*! \brief  Decode an unsigned 32bit integer,
+ *          disregarding the first bit in each byte.
+ *
+ * This function assumes error checking has already occurred,
+ * and truncates its results accordingly.
+ *
+ * \param nbytes  Number of bytes to decode.
+ * \param bytes  Bytes to decode.
+ * \return  The decoded uInt32.
+ */
+guint32 decode_uint32 (guint nbytes, const guint8* bytes)
 {
-	DBG0("not implemented");
-	return ERR_NOTIMPL;
-}*/
+  guint32 n = 0;
+  guint i;
+  if (0 == nbytes)  return 0;
 
-gint decode_pmap(
-	tvbuff_t* buf,
-	guint off,
-	guint8** outbits)
-{
-	gint sz;
-	guint8* ret;
-	int i;
-
-	sz=count_encoded_bytes(buf,off);
-	if(sz<0) return sz;
-
-	ret=g_malloc(sz*7);
-	if(!ret)
-	{
-		DBG0("out of memory");
-		return ERR_NOMEM;
-	}
-
-	/* Is there a reason this was being set to zero? -- grn */
-	/* guint8 b=0; */
-
-	for(i=0;i<sz*7;)
-	{
-		guint8 b;
-		b=tvb_get_guint8(buf,off+i);
-		ret[i++]=b&0x40;
-		ret[i++]=b&0x20;
-		ret[i++]=b&0x10;
-		ret[i++]=b&0x08;
-		ret[i++]=b&0x04;
-		ret[i++]=b&0x02;
-		ret[i++]=b&0x01;
-	}
-
-	*outbits=ret;
-
-	return sz;
+  for (i = 0; i < nbytes -1; ++i) {
+    n |= bytes[i];  /* Put in lower bits. */
+    n <<= NBitsInByte -1;  /* Scoot over for next data. */
+  }
+  /* (i == nbytes -1) */
+  n |= bytes[i] & ~StopByte;
+  return n;
 }
 
-gint decode_check_null(
-	tvbuff_t* buf,
-	guint off)
+
+/*! \brief  Decode an unsigned 64bit integer,
+ *          disregarding the first bit in each byte.
+ *
+ * This function assumes error checking has already occurred,
+ * and truncates its results accordingly.
+ *
+ * \param nbytes  Number of bytes to decode.
+ * \param bytes  Bytes to decode.
+ * \return  The decoded uInt64.
+ */
+guint64 decode_uint64 (guint nbytes, const guint8* bytes)
 {
-	guint8 b=tvb_get_guint8(buf,off);
-	if(b==0x80) return 1;
-	return 0;
+  guint64 n = 0;
+  guint i;
+  if (0 == nbytes)  return 0;
+
+  for (i = 0; i < nbytes -1; ++i) {
+    n |= bytes[i];  /* Put in lower bits. */
+    n <<= NBitsInByte -1;  /* Scoot over for next data. */
+  }
+  /* (i == nbytes -1) */
+  n |= bytes[i] & ~StopByte;
+  return n;
 }
+
+
+/*! \brief  Decode a signed 32bit integer,
+ *          disregarding the first bit in each byte.
+ *
+ * This function assumes error checking has already occurred,
+ * and truncates its results accordingly.
+ *
+ * \param nbytes  Number of bytes to decode.
+ * \param bytes  Bytes to decode.
+ * \return  The decoded Int32.
+ * \sa decode_uint32
+ */
+gint32 decode_int32 (guint nbytes, const guint8* bytes)
+{
+  gint32 n;
+  if (0 == nbytes)  return 0;
+  n = (gint32) decode_uint32 (nbytes, bytes);
+
+  /* If we have a sign bit, */
+  if (bytes[0] & (StopByte >> 1)) {
+    /* sign extend /n/. */
+    n |= ~(gint32)0 << number_decoded_bits (nbytes);
+  }
+  return n;
+}
+
+
+/*! \brief  Decode a signed 64bit integer,
+ *          disregarding the first bit in each byte.
+ *
+ * This function assumes error checking has already occurred,
+ * and truncates its results accordingly.
+ *
+ * \param nbytes  Number of bytes to decode.
+ * \param bytes  Bytes to decode.
+ * \return  The decoded Int64.
+ * \sa decode_uint64
+ */
+gint64 decode_int64 (guint nbytes, const guint8* bytes)
+{
+  gint64 n;
+  if (0 == nbytes)  return 0;
+  n = (gint64) decode_uint64 (nbytes, bytes);
+
+  /* If we have a sign bit, */
+  if (bytes[0] & (StopByte >> 1)) {
+    /* sign extend /n/. */
+    n |= ~(gint64)0 << number_decoded_bits (nbytes);
+  }
+  return n;
+}
+
+
+/*! \brief  Decode an ASCII string.
+ *
+ * This function assumes error checking has already occurred,
+ * and truncates its results accordingly.
+ *
+ * \param nbytes  Number of bytes to decode.
+ * \param bytes  Bytes to decode.
+ * \param str  Return value. Must be preallocated to at least /nbytes/.
+ */
+void decode_ascii_string (guint nbytes, const guint8* bytes,
+                          guint8* str)
+{
+  memcpy (str, bytes, nbytes*sizeof(guint8));
+  str[nbytes-1] &= ~StopByte;
+}
+
+
+/*! \brief  Decode a byte vector.
+ *
+ * This function assumes error checking has already occurred,
+ * and truncates its results accordingly.
+ *
+ * \param nbytes  Number of bytes to decode.
+ * \param bytes  Bytes to decode.
+ * \param str  Return value. Must be preallocated to at least /nbytes/.
+ */
+void decode_byte_vector (guint nbytes, const guint8* bytes,
+                         guint8* vec)
+{
+  memcpy (vec, bytes, nbytes*sizeof(guint8));
+}
+

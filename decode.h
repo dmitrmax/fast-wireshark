@@ -1,33 +1,23 @@
-/**
-	@file	decode.h
-	@brief	|
-	@author	Wes Fournier
-
-	|
-*/
+/*!
+ * \file  decode.h
+ * \brief  Lowest level field decoding functions.
+ */
 
 #ifndef DECODE_H_INCLUDED_
 #define DECODE_H_INCLUDED_
 
 #include "fast.h"
 
-gint count_encoded_bytes(tvbuff_t*,guint);
+guint count_stop_bit_encoded (guint nbytes, const guint8* bytes);
+guint number_decoded_bits (guint nbytes);
 
-gint decode_int32(tvbuff_t*,guint,gint32*);
-gint decode_uint32(tvbuff_t*,guint,guint32*);
-gint decode_int64(tvbuff_t*,guint,gint64*);
-gint decode_uint64(tvbuff_t*,guint,guint64*);
-
-gint decode_ascii(tvbuff_t*,guint,guint8**);
-gint decode_bytes(tvbuff_t*,guint,guint8**,guint32*);
-gint decode_utf8(tvbuff_t*,guint,guint8**,guint32*);
-
-/* NOTE: this function is deprecated */
-gint decode_flt10(tvbuff_t*,guint,gint32*,gint32*);
-/*gint decode_fixdec(tvbuff_t*,guint,guint,gint32*,gint32*);*/
-
-gint decode_pmap(tvbuff_t*,guint,guint8**);
-
-gint decode_check_null(tvbuff_t*,guint);
+void decode_pmap (guint nbytes, const guint8* bytes, gboolean* pmap_res);
+guint32 decode_uint32 (guint nbytes, const guint8* bytes);
+guint64 decode_uint64 (guint nbytes, const guint8* bytes);
+gint32 decode_int32 (guint nbytes, const guint8* bytes);
+gint64 decode_int64 (guint nbytes, const guint8* bytes);
+void decode_ascii_string (guint nbytes, const guint8* bytes, guint8* str);
+void decode_byte_vector (guint nbytes, const guint8* bytes, guint8* vec);
 
 #endif
+

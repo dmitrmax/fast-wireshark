@@ -1,7 +1,6 @@
 /**
 	@file	fast.h
 	@brief	shared definitions
-	@author	Wes Fournier
 
 	Shared include file for other headers
 	shared constants and function prototypes from dissect.c and setup.c
@@ -29,21 +28,9 @@
 #define ERR_BADFMT	-4
 #define ERR_NOTIMPL	-5
 
-void FAST_setup(int);
-
-void FAST_dissect(int,tvbuff_t*,int,packet_info*,proto_tree*);
+GNode* FAST_setup ();
 
 void parse_xml(const char*);
-
-/* handles to common packet field tree elements */
-extern int ett_fast;
-extern int ett_fast_tid;
-extern int hf_fast;
-extern int hf_fast_tid;
-
-/* configuration variables */
-extern guint config_port_number;
-extern const char* config_template_xml_path;
 
 void debug_out(
 	const char*,
@@ -65,6 +52,12 @@ void debug_out(
 	debug_out(__FILE__,__func__,__LINE__,s,a,b,c,d,e)
 
 #define DBG_RET(r)	DBG1("Returned %d",r)
+
+#define BAILOUT(r,s) \
+  do { \
+    DBG1("%s", s); \
+    return r; \
+  } while (0)
 
 #define TRACE() DBG0("trace")
 

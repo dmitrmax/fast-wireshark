@@ -1,369 +1,449 @@
-/**
-	@file	dissect.c
-	@brief	packet dissection routine
-	@author	Wes Fournier
+/*!
+ * \file dissect.c
+ * \brief  Handle payload dissection independent of Wireshark.
+ */
 
-	|
-*/
-
+#include "dissect.h"
 #include "fast.h"
 #include "template.h"
 #include "decode.h"
 
-static guint32 current_tid=0;
-static guint32 last_tid=0;
+/*! \brief  Shift a buffer by a certain amount.
+ *
+ * All arguments are modified accordingly.
+ *
+ * \param offjmp  The amount to move forward in the buffer.
+ * \param offset  Distance into the buffer currently.
+ * \param nbytes  Number of indices remaining in the buffer.
+ * \param bytes  Buffer that is offset by /offset/ from its real start.
+ * \sa ShiftBytes
+ */
+#define ShiftBuffer(offjmp, offset, nbytes, bytes) \
+  do { \
+    offset += offjmp; \
+    nbytes -= offjmp; \
+    bytes   = offjmp + bytes; \
+    offjmp  = 0; \
+  } while (0)
 
-/* these must be created on the heap */
-static hf_register_info* hfreginfo=0;
-static int** ettreginfo=0;
+/*! \brief  Shift the byte position of a dissection.
+ * \sa ShiftBuffer
+ */
+#define ShiftBytes(positon) \
+  ShiftBuffer(position->offjmp, position->offset, \
+              position->nbytes, position->bytes)
 
-gint setup_template_fields(
-	struct template_type* t,
-	int global_fast_id)
+
+/*! \brief  Claim and retrieve a bit in the PMAP.
+ * \param position  The dissector's currect position.
+ * \return  TRUE or FALSE depending on the PMAP bit value.
+ */
+gboolean dissect_shift_pmap (DissectPosition* position)
 {
-	struct template_field_type* cur;
-	gint i;
-	gint field_count;
-	char buf[256];
-	gint type,base;
-	/*header_field_info tmpinfo;*/
-
-	if(!t)
-	{
-		DBG0("Null argument");
-		return ERR_BADARG;
-	}
-
-	g_free(hfreginfo);
-	g_free(ettreginfo);
-
-	for(field_count=0,cur=t->fields;cur;cur=cur->next,field_count++);
-
-	/* add an entry for the TID */
-	hfreginfo=g_malloc(sizeof(hf_register_info)*(field_count+1));
-	if(!hfreginfo)
-	{
-		return ERR_NOMEM;
-	}
-	memset(hfreginfo,0,sizeof(hf_register_info)*(field_count+1));
-
-	/* add an entry for the base node and TID */
-	ettreginfo=g_malloc(sizeof(int*)*(field_count+2));
-	if(!ettreginfo)
-	{
-		return ERR_NOMEM;
-	}
-	memset(ettreginfo,0,sizeof(int*)*(field_count+2));
-
-	/***** fill out our registration arrays *****/
-
-	hfreginfo[0].p_id=&hf_fast_tid;
-	hfreginfo[0].hfinfo.name="TID";
-	hfreginfo[0].hfinfo.abbrev="fast.tid";
-	hfreginfo[0].hfinfo.type=FT_STRING;
-	hfreginfo[0].hfinfo.display=BASE_NONE;
-	hfreginfo[0].hfinfo.blurb="TID";
-
-	ettreginfo[0]=&ett_fast;
-	ettreginfo[1]=&ett_fast_tid;
-
-	for(i=0,cur=t->fields;cur;cur=cur->next,i++)
-	{
-		/*DBG2("current field %s:%d",cur->name,i);*/
-
-		switch(FIELD_TYPE(cur))
-		{
-		case FIELD_TYPE_INT32:
-			type=FT_INT32;
-			base=BASE_DEC;
-			break;
-		case FIELD_TYPE_UINT32:
-			type=FT_UINT32;
-			base=BASE_DEC;
-			break;
-		case FIELD_TYPE_INT64:
-			type=FT_INT64;
-			base=BASE_DEC;
-			break;
-		case FIELD_TYPE_UINT64:
-			type=FT_UINT64;
-			base=BASE_DEC;
-			break;
-		case FIELD_TYPE_UTF8:
-		case FIELD_TYPE_ASCII:
-		case FIELD_TYPE_BYTES:
-		case FIELD_TYPE_FLT10:
-			type=FT_STRINGZ;
-			base=BASE_NONE;
-			break;
-		case FIELD_TYPE_SEQ:
-		case FIELD_TYPE_GROUP:
-			DBG1("field type %d unimplemented",FIELD_TYPE(cur));
-			g_free(hfreginfo);
-			g_free(ettreginfo);
-			return ERR_BADARG;
-		default:
-			DBG1("Unknown field type %d",FIELD_TYPE(cur));
-			g_free(hfreginfo);
-			g_free(ettreginfo);
-			return ERR_BADARG;
-		}
-
-		g_snprintf(buf,sizeof(buf),"fast.%s",cur->name);
-		hfreginfo[i+1].p_id=&(cur->hf_id);
-		hfreginfo[i+1].hfinfo.name=cur->name;
-		hfreginfo[i+1].hfinfo.abbrev=g_strdup(buf);
-		hfreginfo[i+1].hfinfo.type=type;
-		hfreginfo[i+1].hfinfo.display=base;
-		hfreginfo[i+1].hfinfo.abbrev=cur->name;
-		ettreginfo[i+2]=&(cur->ett_id);
-	}
-
-	/* now we can register our arrays */
-	proto_register_field_array(global_fast_id,hfreginfo,field_count+1);
-	proto_register_subtree_array(ettreginfo,field_count+2);
-
-	/*for(i=0;i<field_count+1;i++) DBG2("hf%d: %d",i,*(hfreginfo[i].p_id));
-	for(i=0;i<field_count+2;i++) DBG2("ett%d: %d",i,*(ettreginfo[i]));*/
-
-	return 0;
+  gboolean result = FALSE;
+  if (position->pmap_idx < position->pmap_len) {
+    result = position->pmap[position->pmap_idx];
+    position->pmap_idx += 1;
+  }
+  else {
+    DBG2("PMAP index out of bounds at %u (length %u).",
+         position->pmap_idx,
+         position->pmap_len);
+  }
+  return result;
 }
 
-static void process_fields(
-	struct template_field_type* cur,
-	tvbuff_t* tvb,
-	guint off,
-	proto_tree* tree,
-	guint8* pmap,
-	guint pmap_len)
+/*! \brief Dissect a FAST message by the bytes.
+ * \param nbytes  Total number of bytes in the message.
+ * \param bytes  The FAST message, sized to /nbytes/.
+ * \param parent  Return value. The message data is built under it.
+ * \return  The template that was used to parse.
+ */
+const GNode* dissect_fast_bytes (guint nbytes, const guint8* bytes,
+                                 GNode* parent)
 {
-	int ret;
-	struct template_field_type* cur_sub;
-	/*TRACE();*/
+  static guint32 template_id = 0;
 
-	for(;cur;cur=cur->next)
-	{
-		/*DBG1("current field %s",cur->name);*/
-		if(!(cur->op))
-		{
-			DBG1("no operator function for %s",cur->name);
-			return;
-		}
+  DissectPosition stacked_position;
+  DissectPosition* position;
+  const GNode* tmpl = 0; /* Template. */
+  FieldData* fdata; /* Template TID data node. */
 
-		if(FIELD_TYPE(cur)==FIELD_TYPE_GROUP && *pmap)
-		{
-			pmap++;
+  position = &stacked_position;
+  position->offjmp = 0;
+  position->offset = 0;
+  position->nbytes = nbytes;
+  position->bytes  = bytes;
 
-			for(cur_sub=cur->subfields;cur_sub;cur_sub=cur_sub->next)
-			{
-				cur_sub->offset = off;
-				ret=(cur->op)(cur,&pmap,tvb,&off);
-				cur_sub->length = off - cur_sub->offset;
+  position->pmap_len = 0;
+  position->pmap_idx = 0;
+  position->pmap     = 0;
 
-				if(ret<0)
-				{
-					DBG_RET(ret);
-					return;
-				}
+  /* Decode the pmap. */
+  position->offjmp = count_stop_bit_encoded (position->nbytes,
+                                             position->bytes);
 
-				if(FIELD_DISPLAY_ON(cur))
-				{
-					if(!(cur->display))
-					{
-						DBG1("no display function for %s",cur->name);
-						return;
-					}
+  position->pmap_len = number_decoded_bits (position->offjmp);
+  if (position->pmap_len == 0)
+    BAILOUT(0,"PMAP length is zero bytes?");
 
-					(cur->display)(cur,tree,tvb);
-				}
-			}
-		}
-		/*else if(FIELD_TYPE(cur)==FIELD_TYPE_FLT10)
-		{
-			for(cur_sub=cur->subfields;cur_sub;cur_sub=cur_sub->next)
-			{
-				cur_sub->offset = off;
-				ret=(cur->op)(cur,&pmap,tvb,&off);
-				cur_sub->length = off - cur_sub->offset;
+  position->pmap = g_malloc (position->pmap_len * sizeof(gboolean));
+  if (!position->pmap)  BAILOUT(0,"Could not allocate memory.");
 
-				if(ret<0)
-				{
-					DBG_RET(ret);
-					return;
-				}
-			}
+  decode_pmap (position->offjmp, position->bytes, position->pmap);
+  ShiftBytes(position);
 
-			if(FIELD_DISPLAY_ON(cur->subfields->next))
-			{
-				if(!(cur->display))
-				{
-					DBG1("no display function for %s",cur->name);
-					return;
-				}
+  /* Initialize head node. */
+  fdata = (FieldData*) g_malloc (sizeof (FieldData));
+  if (!fdata) {
+    g_free (position->pmap);
+    BAILOUT(0,"Could not allocate memory.");
+  }
+  parent->data  = fdata;
+  fdata->start  = position->offset;
+  fdata->nbytes = 0;
+  fdata->value  = 0;
 
-				(cur->display)(cur,tree,tvb);
-			}
-		}*/
-		else if(FIELD_TYPE(cur)==FIELD_TYPE_SEQ)
-		{
-			/* TODO: this doesnt work */
-			gint i;
+  /* Figure out current Template ID. */
+  if (dissect_shift_pmap (position)) {
+    /* Decode from the stream. */
+    position->offjmp = count_stop_bit_encoded (position->nbytes,
+                                               position->bytes);
+    fdata->nbytes = position->offjmp;
+    template_id = decode_uint32 (position->offjmp,
+                                 position->bytes);
+    ShiftBytes(position);
+  }
 
-			cur->offset=off;
-			ret=(cur->op)(cur,&pmap,tvb,&off);
-			cur->length = off-cur->offset;
+  tmpl = find_template (template_id);
 
-			pmap++;
+  /* Bail out if template not found. */
+  if (!tmpl) {
+    g_free(position->pmap);
+    g_free(fdata);
+    DBG1("Template %d not defined.", template_id);
+    return 0;
+  }
 
-			if(ret<0)
-			{
-				DBG_RET(ret);
-				return;
-			}
+  /* Dissect the packet. */
+  {
+    GNode* data_node = 0;
+    dissector_walk(tmpl->children, position,
+                   parent, data_node);
+  }
 
-			for(i=0;i<cur->value.u32;i++)
-			{
-				if(*pmap)
-				{
-					pmap++;
-
-					for(cur_sub=cur->subfields;cur_sub;cur_sub=cur_sub->next)
-					{
-						cur_sub->offset = off;
-						ret=(cur->op)(cur,&pmap,tvb,&off);
-						cur_sub->length = off - cur_sub->offset;
-
-						if(ret<0)
-						{
-							DBG_RET(ret);
-							return;
-						}
-
-						if(FIELD_DISPLAY_ON(cur))
-						{
-							if(!(cur->display))
-							{
-								DBG1("no display function for %s",cur->name);
-								return;
-							}
-
-							(cur->display)(cur,tree,tvb);
-						}
-					}
-				}
-			}
-		}
-		else
-		{
-			cur->offset = off;
-			ret=(cur->op)(cur,&pmap,tvb,&off);
-			cur->length = off - cur->offset;
-
-			if(ret<0)
-			{
-				DBG_RET(ret);
-				return;
-			}
-
-			if(FIELD_DISPLAY_ON(cur))
-			{
-				if(!(cur->display))
-				{
-					DBG1("no display function for %s",cur->name);
-					return;
-				}
-
-				(cur->display)(cur,tree,tvb);
-			}
-		}
-	}
+  g_free(position->pmap);
+  return tmpl;
 }
 
-void FAST_dissect(int proto_fast, tvbuff_t* tvb, int n, packet_info* pinfo,
-	proto_tree* tree)
+
+/*! \brief  Construct a message data tree (of FieldData).
+ * \param tnode  Template node, contains type definition.
+ * \param position  Current position in message.
+ * \param parent  Parent node in data tree.
+ * \param dnode  Previous node in data tree.
+ */
+void dissector_walk (const GNode* tnode,
+                     DissectPosition* position,
+                     GNode* parent, GNode* dnode)
 {
-	gint ret=0;
-	guint off=0;
-	guint8* pmap=0;
-	gint pmap_size;
-	struct template_type* t=0;
-	proto_item* ti=NULL;
-
-	pmap_size=decode_pmap(tvb,off,&pmap);
-	if(pmap_size<0)
-	{
-		DBG_RET(pmap_size);
-		return;
-	}
-	off+=pmap_size;
-
-	if(pmap[0]) /*  check to see if TID is present */
-	{
-		/*  figure out current Template ID */
-		ret=decode_uint32(tvb,off,&current_tid);
-		if(ret<0) return;
-		off+=ret;
-	}
-	else
-	{
-		DBG0("TID not present");
-		current_tid=last_tid;
-	}
-
-	ret=find_template_byid(current_tid,&t);
-	if(ret<0)
-	{
-		DBG_RET(ret);
-		return;
-	}
-	if(!t)
-	{
-		DBG1("No template found for TID %d",current_tid);
-		current_tid=0;
-		return;
-	}
-
-	if(last_tid!=current_tid)
-	{
-		reset_template_state(t);
-		setup_template_fields(t,proto_fast);
-
-		last_tid=current_tid;
-	}
-
-	ti=proto_tree_add_item(tree,proto_fast,tvb,0,-1,FALSE);
-	tree=proto_item_add_subtree(ti,ett_fast);
-
-	/*if(!t)
-	{
-		proto_tree_add_string(
-			tree,
-			hf_fast_tid,
-			tvb,
-			0,
-			strlen("Unknown"),
-			"Unknown");
-
-		DBG1("Unknown or invalid template ID %d",current_tid);
-		g_free(pmap);
-		return;
-	}*/
-
-	proto_tree_add_string(
-		tree,
-		hf_fast_tid,
-		tvb,
-		0,
-		strlen(t->name),
-		t->name);
-
-	process_fields(
-		t->fields,
-		tvb,
-		off,
-		tree,
-		pmap+1,
-		pmap_size-1);
-
-	g_free(pmap);
+  while (tnode) {
+    dnode = dissect_type (tnode, position, parent, dnode);
+    tnode = tnode->next;
+  }
 }
+
+
+/*! \brief  Dissect a certain data type.
+ * \param tnode  Template node, contains type definition.
+ * \param position  Current position in message.
+ * \param parent  Parent node in data tree.
+ * \param dnode  Previous node in data tree.
+ * \return  Node that was created.
+ */
+GNode* dissect_type (const GNode* tnode,
+                     DissectPosition* position,
+                     GNode* parent, GNode* dnode)
+{
+  /* Map to the dissect functions. */
+  static void (*dissect_fn_map[]) (const GNode*, DissectPosition*, GNode*) =
+  {
+    &dissect_uint32,
+    &dissect_uint64,
+    &dissect_int32,
+    &dissect_int64,
+    &dissect_decimal,
+    &dissect_ascii_string,
+    &dissect_byte_vector, /* Unicode string. */
+    &dissect_byte_vector,
+    0, /* &dissect_group, */
+    0, /* &dissect_sequence, */
+    0
+  };
+  const FieldType* ftype;
+  FieldData* fdata;
+  GNode* dnode_next;
+
+  ftype = (FieldType*) tnode->data;
+
+  /* Assure FieldType is good for lookup. */
+  if ((guint) ftype->type >= (guint) FieldTypeEnumLimit) {
+    DBG1("Unknown field type %u.", (guint) ftype->type);
+    return 0;
+  }
+
+  /* Assure the appropriate function exists. */
+  if (!dissect_fn_map[ftype->type]) {
+    DBG1("Field type %u not implemented.", (guint) ftype->type);
+    return 0;
+  }
+
+  /* Set up data. */
+  fdata = (FieldData*) g_malloc (sizeof (FieldData));
+  if (!fdata)  BAILOUT(0,"Could not allocate memory.");
+
+  dnode_next = g_node_new (fdata);
+  if (!dnode_next) {
+    g_free (fdata);
+    BAILOUT(0,"Could not allocate memory.");
+  }
+  g_node_insert_after(parent, dnode, dnode_next);
+
+  /* Call the dissect function. */
+  (*dissect_fn_map[ftype->type]) (tnode, position, dnode_next);
+
+  return dnode_next;
+}
+
+
+/*! \brief  Save some typing when initializing valiables
+ *          in a dissect_TYPE function.
+ * \param ftype  New variable to store the FieldType.
+ * \param fdata  New variable to store the FieldData.
+ * \param tnode  Template tree node containing /ftype/.
+ * \param dnode  Dissect tree node containing /fdata/.
+ */
+#define SetupDissectStack(ftype, fdata, tnode, dnode) \
+  const FieldType* ftype; \
+  FieldData* fdata; \
+  ftype = (FieldType*) tnode->data; \
+  fdata = (FieldData*) dnode->data;
+
+
+/*! \brief  Given a byte stream, dissect an unsigned 32bit integer.
+ * \param tnode  Template tree node.
+ * \param position  Position in the packet.
+ * \param dnode  Dissect tree node.
+ */
+void dissect_uint32 (const GNode* tnode,
+                     DissectPosition* position, GNode* dnode)
+{
+  SetupDissectStack(ftype, fdata,  tnode, dnode);
+
+  if (ftype->mandatory && !ftype->op) {
+    position->offjmp = count_stop_bit_encoded (position->nbytes,
+                                               position->bytes);
+    fdata->start = position->offset;
+    fdata->nbytes = position->offjmp;
+    fdata->value = g_malloc (sizeof (guint32));
+    if (fdata->value) {
+      *(guint32*)fdata->value = decode_uint32 (position->offjmp,
+                                               position->bytes);
+    }
+    ShiftBytes(position);
+  }
+  else {
+    DBG0("Only simple types are implemented.");
+  }
+}
+
+
+/*! \brief  Given a byte stream, dissect an unsigned 64bit integer.
+ * \param tnode  Template tree node.
+ * \param position  Position in the packet.
+ * \param dnode  Dissect tree node.
+ */
+void dissect_uint64 (const GNode* tnode,
+                     DissectPosition* position, GNode* dnode)
+{
+  SetupDissectStack(ftype, fdata,  tnode, dnode);
+
+  if (ftype->mandatory && !ftype->op) {
+    position->offjmp = count_stop_bit_encoded (position->nbytes,
+                                               position->bytes);
+    fdata->start = position->offset;
+    fdata->nbytes = position->offjmp;
+    fdata->value = g_malloc (sizeof (guint64));
+    if (fdata->value) {
+      *(guint64*)fdata->value = decode_uint64 (position->offjmp,
+                                               position->bytes);
+    }
+    ShiftBytes(position);
+  }
+  else {
+    DBG0("Only simple types are implemented.");
+  }
+}
+
+/*! \brief  Given a byte stream, dissect a signed 32bit integer.
+ * \param tnode  Template tree node.
+ * \param position  Position in the packet.
+ * \param dnode  Dissect tree node.
+ */
+void dissect_int32 (const GNode* tnode,
+                    DissectPosition* position, GNode* dnode)
+{
+  SetupDissectStack(ftype, fdata,  tnode, dnode);
+
+  if (ftype->mandatory && !ftype->op) {
+    position->offjmp = count_stop_bit_encoded (position->nbytes,
+                                               position->bytes);
+    fdata->start = position->offset;
+    fdata->nbytes = position->offjmp;
+    fdata->value = g_malloc (sizeof (gint32));
+    if (fdata->value) {
+      *(gint32*)fdata->value = decode_int32 (position->offjmp,
+                                             position->bytes);
+    }
+    ShiftBytes(position);
+  }
+  else {
+    DBG0("Only simple types are implemented.");
+  }
+}
+
+
+/*! \brief  Given a byte stream, dissect a signed 64bit integer.
+ * \param tnode  Template tree node.
+ * \param position  Position in the packet.
+ * \param dnode  Dissect tree node.
+ */
+void dissect_int64 (const GNode* tnode,
+                    DissectPosition* position, GNode* dnode)
+{
+  SetupDissectStack(ftype, fdata,  tnode, dnode);
+
+  if (ftype->mandatory && !ftype->op) {
+    position->offjmp = count_stop_bit_encoded (position->nbytes,
+                                               position->bytes);
+    fdata->start = position->offset;
+    fdata->nbytes = position->offjmp;
+    fdata->value = g_malloc (sizeof (gint64));
+    if (fdata->value) {
+      *(gint64*)fdata->value = decode_int64 (position->offjmp,
+                                             position->bytes);
+    }
+    ShiftBytes(position);
+  }
+  else {
+    DBG0("Only simple types are implemented.");
+  }
+}
+
+
+/*! \brief  Given a byte stream, dissect a decimal number.
+ * \param tnode  Template tree node.
+ * \param position  Position in the packet.
+ * \param dnode  Dissect tree node.
+ */
+void dissect_decimal (const GNode* tnode,
+                      DissectPosition* position, GNode* dnode)
+{
+  SetupDissectStack(ftype, fdata,  tnode, dnode);
+
+  /* Assure existence of 2 child nodes. */
+  if (!tnode->children || !tnode->children->next) {
+    BAILOUT(;,"Error in internal decimal field setup.");
+  }
+
+  if (ftype->mandatory && !ftype->op) {
+    GNode* expt_node;
+    GNode* mant_node;
+
+    fdata->start = position->offset;
+
+    /* Grab exponent. */
+    expt_node = dissect_type (tnode->children, position,
+                              dnode, 0);
+    /* Grab mantissa. */
+    mant_node = dissect_type (tnode->children->next, position,
+                              dnode, expt_node);
+
+    /* Count how many bytes were used. */
+    fdata->nbytes = position->offset - fdata->start;
+    fdata->value = 0;
+  }
+  else {
+    DBG0("Only simple types are implemented.");
+  }
+}
+
+
+/*! \brief  Given a byte stream, dissect an ASCII string.
+ * \param tnode  Template tree node.
+ * \param position  Position in the packet.
+ * \param dnode  Dissect tree node.
+ */
+void dissect_ascii_string (const GNode* tnode,
+                           DissectPosition* position, GNode* dnode)
+{
+  SetupDissectStack(ftype, fdata,  tnode, dnode);
+
+  if (ftype->mandatory && !ftype->op) {
+    position->offjmp = count_stop_bit_encoded (position->nbytes,
+                                               position->bytes);
+    fdata->start = position->offset;
+    fdata->nbytes = position->offjmp;
+    fdata->value = g_malloc (position->offjmp * sizeof(guint8));
+    if (fdata->value) {
+      decode_ascii_string (position->offjmp,
+                           position->bytes,
+                           (guint8*) fdata->value);
+    }
+    ShiftBytes(position);
+  }
+  else {
+    DBG0("Only simple types are implemented.");
+  }
+}
+
+
+/*! \brief  Given a byte stream, dissect a byte vector.
+ * \param tnode  Template tree node.
+ * \param position  Position in the packet.
+ * \param dnode  Dissect tree node.
+ */
+void dissect_byte_vector (const GNode* tnode,
+                          DissectPosition* position, GNode* dnode)
+{
+  SetupDissectStack(ftype, fdata,  tnode, dnode);
+
+  if (ftype->mandatory && !ftype->op) {
+    guint vecsize;
+    fdata->start = position->offset;
+    fdata->nbytes = 0;
+
+    /* See how big the byte vector is. */
+    position->offjmp = count_stop_bit_encoded (position->nbytes,
+                                               position->bytes);
+    fdata->nbytes += position->offjmp;
+    vecsize = decode_uint32 (position->offjmp,
+                             position->bytes);
+    ShiftBytes(position);
+
+    /* Get the byte vector. */
+    position->offjmp = vecsize;
+    fdata->nbytes += position->offjmp;
+    fdata->value = g_malloc (position->offjmp * sizeof(guint8));
+    if (fdata->value) {
+      decode_byte_vector (position->offjmp,
+                          position->bytes,
+                          (guint8*) fdata->value);
+    }
+    ShiftBytes(position);
+  }
+  else {
+    DBG0("Only simple types are implemented.");
+  }
+}
+

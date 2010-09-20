@@ -1,70 +1,65 @@
-/**
-	@file	setup.c
-	@brief	|
-	@author	Wes Fournier
-
-	|
-*/
+/*!
+ * \file setup.c
+ * \brief  Create a simple template to use.
+ */
 
 #include "template.h"
 
-void FAST_setup(int id)
+/*! \brief  Create dummy templates.
+ * \return  The new templates.
+ */
+GNode* FAST_setup ()
 {
-	struct template_type* t;
-	struct template_field_type f;
+  GNode* templates; /* Return value. */
+  /* Temporary storage for each field. */
+  GNode* parent;
+  GNode* tnode_prev;
+  GNode* tnode;
+  FieldType* tfield;
 
-	init_templates();
+  templates = g_node_new (0);
+  if (!templates)  BAILOUT(0, "Error creating root of templates tree.");
 
-	create_template("TestTemplate1",1,&t);
+  /*** Create a template 1. ***/
+  parent = templates;
+  tnode_prev = 0;
 
-	f.type=FIELD_TYPE_INT32|FIELD_OP_NONE;
-	f.mandatory=1;
-	f.name="a";
-	create_field(t,&f,0);
+  tnode = create_field (FieldTypeInt32, FieldOperatorCopy);
+  if (!tnode)  BAILOUT(0, "Error creating a template tree.");
+  tfield = (FieldType*) tnode->data;
+  tfield->name = g_strdup ("TestTemplate1");
+  tfield->id = 1;
+  g_node_insert_after (parent, tnode_prev, tnode);
 
-	f.type=FIELD_TYPE_INT32|FIELD_OP_NONE;
-	f.mandatory=1;
-	f.name="b";
-	create_field(t,&f,0);
+  /* Populate some fields. */
+  parent = tnode;
+  tnode_prev = 0;
 
-	f.type=FIELD_TYPE_INT32|FIELD_OP_NONE;
-	f.mandatory=1;
-	f.name="c";
-	create_field(t,&f,0);
+  /* <uInt32 /> */
+  tnode = create_field (FieldTypeUInt32, FieldOperatorNone);
+  if (!tnode)  BAILOUT(0, "Error creating field.");
+  g_node_insert_after (parent, tnode_prev, tnode);
+  tnode_prev = tnode;
 
-	f.type=FIELD_TYPE_INT64|FIELD_OP_INCR;
-	f.mandatory=1;
-	f.name="x";
-	create_field(t,&f,0);
+  /* <uInt64 /> */
+  tnode = create_field (FieldTypeUInt64, FieldOperatorNone);
+  if (!tnode)  BAILOUT(0, "Error creating field.");
+  g_node_insert_after (parent, tnode_prev, tnode);
+  tnode_prev = tnode;
 
-	f.type=FIELD_TYPE_INT64|FIELD_OP_NONE;
-	f.mandatory=1;
-	f.name="y";
-	create_field(t,&f,0);
+  /* <int32 /> */
+  tnode = create_field (FieldTypeInt32, FieldOperatorNone);
+  if (!tnode)  BAILOUT(0, "Error creating field.");
+  g_node_insert_after (parent, tnode_prev, tnode);
+  tnode_prev = tnode;
 
-	f.type=FIELD_TYPE_INT64|FIELD_OP_NONE;
-	f.mandatory=1;
-	f.name="z";
-	create_field(t,&f,0);
+  /* <int64 /> */
+  tnode = create_field (FieldTypeInt64, FieldOperatorNone);
+  if (!tnode)  BAILOUT(0, "Error creating field.");
+  g_node_insert_after (parent, tnode_prev, tnode);
+  tnode_prev = tnode;
 
-	f.type=FIELD_TYPE_ASCII|FIELD_OP_NONE;
-	f.mandatory=1;
-	f.name="name";
-	create_field(t,&f,0);
-
-	f.type=FIELD_TYPE_FLT10|FIELD_OP_NONE;
-	f.mandatory=1;
-	f.name="decval1";
-	create_field(t,&f,0);
-
-	f.type=FIELD_TYPE_FLT10|FIELD_OP_NONE;
-	f.mandatory=1;
-	f.name="decval2";
-	create_field(t,&f,0);
-
-	f.type=FIELD_TYPE_BYTES|FIELD_OP_NONE;
-	f.mandatory=1;
-	f.name="byte1";
-	create_field(t,&f,0);
+  /* DBG0("Template setup complete."); */
+  return templates;
 }
 
