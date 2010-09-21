@@ -420,7 +420,7 @@ int main(int argc, char **argv) {
 		
 	if (argc <= 1) {
 		printf("Usage: %s docname\n", argv[0]);
-		return(0);
+    return(1);
 	}
 
 	int sucess;
@@ -431,9 +431,10 @@ int main(int argc, char **argv) {
 		printTemplates();
 	} else {
 		fprintf(stderr,"Failed to parse %s\n", docname);
+    return 0;
 	}
 
-	return (1);
+	return (0);
 }
 
 int validField(const char * field){
