@@ -59,6 +59,30 @@ GNode* FAST_setup ()
   g_node_insert_after (parent, tnode_prev, tnode);
   tnode_prev = tnode;
 
+  /* <decimal /> */
+  tnode = create_field (FieldTypeDecimal, FieldOperatorNone);
+  if (!tnode)  BAILOUT(0, "Error creating field.");
+  g_node_insert_after (parent, tnode_prev, tnode);
+  {
+    GNode* exptNode;
+    GNode* mantNode;
+    /* <exponent /> */
+    exptNode = create_field (FieldTypeInt32, FieldOperatorNone);
+    if (!exptNode)  BAILOUT(0, "Error creating field.");
+    g_node_insert_after (tnode, 0,        exptNode);
+    /* <mantissa /> */
+    mantNode = create_field (FieldTypeInt64, FieldOperatorNone);
+    if (!mantNode)  BAILOUT(0, "Error creating field.");
+    g_node_insert_after (tnode, exptNode, mantNode);
+  }
+  tnode_prev = tnode;
+
+  /* <string /> */
+  tnode = create_field (FieldTypeAsciiString, FieldOperatorNone);
+  if (!tnode)  BAILOUT(0, "Error creating field.");
+  g_node_insert_after (parent, tnode_prev, tnode);
+  tnode_prev = tnode;
+
   /* DBG0("Template setup complete."); */
   return templates;
 }

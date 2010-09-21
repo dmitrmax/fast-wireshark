@@ -98,17 +98,17 @@ void proto_register_fast ()
   /* Header fields which always exist. */
   static hf_register_info hf[] =
   {
-    { &hf_fast_uint32,   { "uInt32",     "fast.uint32",   FT_UINT32,      BASE_DEC,   NULL, 0, "", HFILL } },
-    { &hf_fast_uint64,   { "uInt64",     "fast.uint64",   FT_UINT64,      BASE_DEC,   NULL, 0, "", HFILL } },
-    { &hf_fast_int32,    { "int32",      "fast.int32",    FT_INT32,       BASE_DEC,   NULL, 0, "", HFILL } },
-    { &hf_fast_int64,    { "int64",      "fast.int64",    FT_INT64,       BASE_DEC,   NULL, 0, "", HFILL } },
-    { &hf_fast_decimal,  { "decimal",    "fast.decimal",  FT_UINT_STRING, BASE_NONE,  NULL, 0, "", HFILL } },
-    { &hf_fast_ascii,    { "string",     "fast.ascii",    FT_UINT_STRING, BASE_NONE,  NULL, 0, "", HFILL } },
-    { &hf_fast_unicode,  { "unicode",    "fast.unicode",  FT_UINT_BYTES,  BASE_HEX,   NULL, 0, "", HFILL } },
-    { &hf_fast_bytevec,  { "byteVector", "fast.bytevec",  FT_UINT_BYTES,  BASE_HEX,   NULL, 0, "", HFILL } },
-    { &hf_fast_group,    { "group",      "fast.group",    FT_NONE,        BASE_NONE,  NULL, 0, "", HFILL } },
-    { &hf_fast_sequence, { "sequence",   "fast.sequence", FT_NONE,        BASE_NONE,  NULL, 0, "", HFILL } },
-    { &hf_fast_tid,      { "tid",        "fast.tid",      FT_UINT32,      BASE_DEC,   NULL, 0, "", HFILL } }
+    { &hf_fast_uint32,   { "uInt32",     "fast.uint32",   FT_UINT32, BASE_DEC,   NULL, 0, "", HFILL } },
+    { &hf_fast_uint64,   { "uInt64",     "fast.uint64",   FT_UINT64, BASE_DEC,   NULL, 0, "", HFILL } },
+    { &hf_fast_int32,    { "int32",      "fast.int32",    FT_INT32,  BASE_DEC,   NULL, 0, "", HFILL } },
+    { &hf_fast_int64,    { "int64",      "fast.int64",    FT_INT64,  BASE_DEC,   NULL, 0, "", HFILL } },
+    { &hf_fast_decimal,  { "decimal",    "fast.decimal",  FT_NONE,   BASE_NONE,  NULL, 0, "", HFILL } },
+    { &hf_fast_ascii,    { "ascii",      "fast.ascii",    FT_NONE,   BASE_NONE,  NULL, 0, "", HFILL } },
+    { &hf_fast_unicode,  { "unicode",    "fast.unicode",  FT_NONE,   BASE_NONE,  NULL, 0, "", HFILL } },
+    { &hf_fast_bytevec,  { "byteVector", "fast.bytevec",  FT_NONE,   BASE_NONE,  NULL, 0, "", HFILL } },
+    { &hf_fast_group,    { "group",      "fast.group",    FT_NONE,   BASE_NONE,  NULL, 0, "", HFILL } },
+    { &hf_fast_sequence, { "sequence",   "fast.sequence", FT_NONE,   BASE_NONE,  NULL, 0, "", HFILL } },
+    { &hf_fast_tid,      { "tid",        "fast.tid",      FT_UINT32, BASE_DEC,   NULL, 0, "", HFILL } }
   };
   /* Subtree array. */
   static gint *ett[] = {
@@ -299,7 +299,46 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
                              *(gint64*) fdata->value);
         break;
       case FieldTypeDecimal:
+        {
+          GNode* node;
+          gint32 expt = 0;
+          gint64 mant = 0;
+
+          node = dnode->children;
+          if (node) {
+            expt = *(gint32*) ((FieldData*) node->data) -> value;
+            node = node->next;
+          }
+          if (node) {
+            mant = *(gint64*) ((FieldData*) node->data) -> value;
+          }
+
+          proto_tree_add_none_format(tree, hf_fast_decimal, tvb,
+                                     fdata->start, fdata->nbytes,
+                                     "decimal: %" G_GINT64_MODIFIER "de%d",
+                                     mant, expt);
+        }
+        break;
       case FieldTypeAsciiString:
+        {
+          guint8* str;
+          str = (guint8*) g_malloc ((1+fdata->nbytes) * sizeof(guint8));
+          if (str) {
+            memcpy (str, fdata->value, fdata->nbytes * sizeof(guint8));
+            str[fdata->nbytes] = 0;
+            proto_tree_add_none_format(tree, hf_fast_ascii, tvb,
+                                       fdata->start, fdata->nbytes,
+                                       "ascii: %s", str);
+            g_free (str);
+          }
+          else {
+            DBG0("Error allocating memory.");
+            proto_tree_add_none_format(tree, hf_fast_ascii, tvb,
+                                       fdata->start, fdata->nbytes,
+                                       "ascii: %s", "");
+          }
+        }
+        break;
       case FieldTypeUnicodeString:
       case FieldTypeByteVector:
       case FieldTypeGroup:

@@ -8,28 +8,11 @@ then
     exit 1
 fi
 
-"$prog"  -p 1337 \
-         --int32 -5 \
-         --int32 100 \
-         --int32 55555 \
-         --noreq --int64 2600 --req \
-         --int64 4205 \
-         --int64 77 \
-         --ascii "Alejandro" \
-         --int32 1 --int32 2 \
-         --int32 26 --int32 2 \
-         --bytevec 1234AB
-
-
-"$prog"  -p 1337 \
-         --int32 -5 \
-         --int32 100 \
-         --int32 55555 \
-         --noreq --nop --req \
-         --int64 -205 \
-         --int64 77 \
-         --ascii "Incremento" \
-         --int32 1 --int32 5 \
-         --int32 26 --int32 2 \
-         --bytevec 1234AB
+"$prog" -p 1337 \
+        --uint32 55 \
+        --uint64 22 \
+        --int32  56 \
+        --int64 -51 \
+        --int32  55 --int64 -3 \
+        --ascii "hello"
 
