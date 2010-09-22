@@ -2,15 +2,53 @@
 	<Message templateName="t_int32">
 		<int32 value="-0" />
 	</Message>
+
 	<Message>
 		<int32 value="42" />
 	</Message>
+
 	<Message templateName="t_uint32">
 		<uint32 value="128" />
 	</Message>
+
 	<Message templateName="t_ascii_unicode_string">
 		<ascii value="abc" />
 		<unicode value="uvw" />
 		<string value="stu" />
 	</Message>
+
+	<Message templateName="t_increment">
+		<uint32 value="2" />
+		<uint32 value="4" />
+	</Message>	
+
+	<Message templateName="t_copy">
+		<ascii value="" />
+		<ascii value="abcd" />
+	</Message>
+
+	<Message templateName="t_constant_42">
+		<uint32 value="42" />
+	</Message>
+
+	<Message templateName="t_default">
+		<uint32 value="2" />
+	</Message>
+
+	<Message templateName="t_delta_int">
+		<int32 value="2" />
+		<int32 value="44" />
+	</Message>
+
+	<Message templateName="t_delta_string">
+		<string value="GEH6" />
+		<string value="GEM6" />
+	</Message>
+
+	<Message templateName="t_delta_decimal">
+		<decimal value="0" />
+		<decimal value=".42" />
+		<decimal value=".41" />
+	</Message>
+	
 </Plan>
