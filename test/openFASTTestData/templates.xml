@@ -32,4 +32,38 @@
 		<string charset="string" id="2" name="s" />
 	</template>
 	
+	<template name="t_increment" id="7">
+		<uInt32 id="1" presence="mandatory" name="Flag"> <default value="2"/> </uInt32>
+		<uInt32 id="1" presence="mandatory" name="Flag"> <increment value="1"/> </uInt32>
+	</template>
+	
+	<template name="t_copy" id="8">
+		<string id="1" presence="optional" name="Flag"> <copy/> </string>
+		<string id="1" presence="optional" name="Flag"> <copy/> </string>
+	</template>
+	
+	<template name="t_delta_int" id="9">
+		<int32 id="1" presence="mandatory" name="Price"> <delta/> </int32>
+		<int32 id="1" presence="mandatory" name="Price"> <delta/> </int32>
+	</template>
+
+	<template name="t_delta_decimal" id="10">
+		<decimal id="1" presence="mandatory" name="Price"> <default value="0"/> </decimal>
+		<decimal id="1" presence="mandatory" name="Price"> <delta/> </decimal>
+		<decimal id="1" presence="mandatory" name="Price"> <delta/> </decimal>
+	</template>
+
+	<template name="t_delta_string" id="11">
+		<string id="1" presence="mandatory" name="Price"> <default value="GEH6"/> </string>
+		<string id="1" presence="mandatory" name="Price"> <delta/> </string>
+	</template>
+	
+	<template name="t_constant_42" id="12">
+		<uInt32 id="1" presence="mandatory" name="Flag"> <constant value="42"/> </uInt32>
+	</template>
+	
+	<template name="t_default" id="13">
+		<uInt32 id="1" presence="mandatory" name="Flag"> <default value="0"/> </uInt32>
+	</template>
+	
 </templates>
