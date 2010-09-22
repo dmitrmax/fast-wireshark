@@ -17,8 +17,9 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import com.google.code.fastwireshark.data.DataPlan;
 import com.google.code.fastwireshark.data.MessagePlan;
+import com.google.code.fastwireshark.util.Constants;
 
-public class XMLDataPlanLoader extends DefaultHandler {
+public class XMLDataPlanLoader extends DefaultHandler implements Constants{
 
 	private DataPlan plan;
 	private MessageTemplate curMessageTemplate;
@@ -73,32 +74,32 @@ public class XMLDataPlanLoader extends DefaultHandler {
 			}
 			curValues = new ArrayList<Object>();
 		} else
-		if(qName.equalsIgnoreCase("int32") ||
-		   qName.equalsIgnoreCase("uInt32")){
+		if(qName.equalsIgnoreCase(INT32) ||
+		   qName.equalsIgnoreCase(UINT32)){
 			if(attributes.getValue("value") != null){
 				curValues.add(Integer.valueOf(attributes.getValue("value")));
 			} else {
 				curValues.add(null);
 			}
 		} else
-		if(qName.equalsIgnoreCase("int64") ||
-		   qName.equalsIgnoreCase("uInt64")){
+		if(qName.equalsIgnoreCase(INT64) ||
+		   qName.equalsIgnoreCase(UINT64)){
 			if(attributes.getValue("value") != null){
 				curValues.add(Long.valueOf(attributes.getValue("value")));
 			} else {
 				curValues.add(null);
 			}
 		} else
-		if(qName.equalsIgnoreCase("decimal")) {
+		if(qName.equalsIgnoreCase(DECIMAL)) {
 			if(attributes.getValue("value") != null){
 				curValues.add(new BigDecimal(attributes.getValue("value")));
 			} else {
 				curValues.add(null);
 			}
 		} else
-		if(qName.equalsIgnoreCase("string")||
-		   qName.equalsIgnoreCase("ascii") ||
-		   qName.equalsIgnoreCase("unicode")) {
+		if(qName.equalsIgnoreCase(STRING)||
+		   qName.equalsIgnoreCase(ASCII) ||
+		   qName.equalsIgnoreCase(UNICODE)) {
 			if(attributes.getValue("value") != null){
 				curValues.add(attributes.getValue("value"));
 			} else {
