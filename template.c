@@ -36,6 +36,31 @@ void add_templates (GNode* templates)
 
 
 /*!
+ * \brief  Retrieve the name of the field type.
+ * \param type  Field type for the name lookup.
+ * \return  A string corresponding to the type given.
+ *          If the type is invalid, return an empty string.
+ */
+const gchar* field_typename (FieldTypeIdentifier type)
+{
+  static const gchar* names[] =
+  {
+    "uInt32", "uInt64", "int32", "int64",
+    "decimal", "ascii", "unicode", "byteVector",
+    "group", "sequence"
+  };
+  if (0 <= type && type < FieldTypeEnumLimit) {
+    return names[type];
+  }
+  else {
+    DBG1("Unknown type %d", type);
+    return "";
+  }
+}
+
+
+
+/*!
  * \brief  Create internal representation for a field wrapped in a GNode.
  *
  * \return  The new, initialized node holding a non-null FieldType.

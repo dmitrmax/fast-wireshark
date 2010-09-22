@@ -277,75 +277,125 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
     const FieldData* fdata;
     ftype = (FieldType*) tnode->data;
     fdata = (FieldData*) dnode->data;
-    switch (ftype->type) {
-      case FieldTypeUInt32:
-        proto_tree_add_uint(tree, hf_fast_uint32, tvb,
-                            fdata->start, fdata->nbytes,
-                            *(guint32*) fdata->value);
-        break;
-      case FieldTypeUInt64:
-        proto_tree_add_uint64(tree, hf_fast_uint64, tvb,
+    if (fdata->value) {
+      switch (ftype->type) {
+        case FieldTypeUInt32:
+          proto_tree_add_uint(tree, hf_fast_uint32, tvb,
                               fdata->start, fdata->nbytes,
-                              *(guint64*) fdata->value);
-        break;
-      case FieldTypeInt32:
-        proto_tree_add_int(tree, hf_fast_int32, tvb,
-                           fdata->start, fdata->nbytes,
-                           *(gint32*) fdata->value);
-        break;
-      case FieldTypeInt64:
-        proto_tree_add_int64(tree, hf_fast_int64, tvb,
+                              *(guint32*) fdata->value);
+          break;
+        case FieldTypeUInt64:
+          proto_tree_add_uint64(tree, hf_fast_uint64, tvb,
+                                fdata->start, fdata->nbytes,
+                                *(guint64*) fdata->value);
+          break;
+        case FieldTypeInt32:
+          proto_tree_add_int(tree, hf_fast_int32, tvb,
                              fdata->start, fdata->nbytes,
-                             *(gint64*) fdata->value);
-        break;
-      case FieldTypeDecimal:
-        {
-          GNode* node;
-          gint32 expt = 0;
-          gint64 mant = 0;
+                             *(gint32*) fdata->value);
+          break;
+        case FieldTypeInt64:
+          proto_tree_add_int64(tree, hf_fast_int64, tvb,
+                               fdata->start, fdata->nbytes,
+                               *(gint64*) fdata->value);
+          break;
+        case FieldTypeDecimal:
+          {
+            GNode* node;
+            gint32 expt = 0;
+            gint64 mant = 0;
 
-          node = dnode->children;
-          if (node) {
-            expt = *(gint32*) ((FieldData*) node->data) -> value;
-            node = node->next;
-          }
-          if (node) {
-            mant = *(gint64*) ((FieldData*) node->data) -> value;
-          }
+            node = dnode->children;
+            if (node) {
+              expt = *(gint32*) ((FieldData*) node->data) -> value;
+              node = node->next;
+            }
+            if (node) {
+              mant = *(gint64*) ((FieldData*) node->data) -> value;
+            }
 
-          proto_tree_add_none_format(tree, hf_fast_decimal, tvb,
-                                     fdata->start, fdata->nbytes,
-                                     "decimal: %" G_GINT64_MODIFIER "de%d",
-                                     mant, expt);
-        }
-        break;
-      case FieldTypeAsciiString:
-        {
-          guint8* str;
-          str = (guint8*) g_malloc ((1+fdata->nbytes) * sizeof(guint8));
-          if (str) {
-            memcpy (str, fdata->value, fdata->nbytes * sizeof(guint8));
-            str[fdata->nbytes] = 0;
-            proto_tree_add_none_format(tree, hf_fast_ascii, tvb,
+            proto_tree_add_none_format(tree, hf_fast_decimal, tvb,
                                        fdata->start, fdata->nbytes,
-                                       "ascii: %s", str);
-            g_free (str);
+                                       "decimal: %" G_GINT64_MODIFIER "de%d",
+                                       mant, expt);
           }
-          else {
-            DBG0("Error allocating memory.");
-            proto_tree_add_none_format(tree, hf_fast_ascii, tvb,
-                                       fdata->start, fdata->nbytes,
-                                       "ascii: %s", "");
+          break;
+        case FieldTypeAsciiString:
+          {
+            guint8* str;
+            str = (guint8*) g_malloc ((1+fdata->nbytes) * sizeof(guint8));
+            if (str) {
+              memcpy (str, fdata->value, fdata->nbytes * sizeof(guint8));
+              str[fdata->nbytes] = 0;
+              proto_tree_add_none_format(tree, hf_fast_ascii, tvb,
+                                         fdata->start, fdata->nbytes,
+                                         "ascii: %s", str);
+              g_free (str);
+            }
+            else {
+              DBG0("Error allocating memory.");
+              proto_tree_add_none_format(tree, hf_fast_ascii, tvb,
+                                         fdata->start, fdata->nbytes,
+                                         "ascii: %s", "");
+            }
           }
-        }
-        break;
-      case FieldTypeUnicodeString:
-      case FieldTypeByteVector:
-      case FieldTypeGroup:
-      case FieldTypeSequence:
-        DBG1("Unimplemented display field type %u", ftype->type);
-      default:
-        DBG1("Bad field type %u", ftype->type);
+          break;
+        case FieldTypeUnicodeString:
+          {
+            guint8* str;
+            str = (guint8*) g_malloc ((1+fdata->nbytes) * sizeof(guint8));
+            if (str) {
+              memcpy (str, fdata->value, fdata->nbytes * sizeof(guint8));
+              str[fdata->nbytes] = 0;
+              proto_tree_add_none_format(tree, hf_fast_ascii, tvb,
+                                         fdata->start, fdata->nbytes,
+                                         "unicode: %s", str);
+              g_free (str);
+            }
+            else {
+              DBG0("Error allocating memory.");
+              proto_tree_add_none_format(tree, hf_fast_ascii, tvb,
+                                         fdata->start, fdata->nbytes,
+                                         "unicode: %s", "");
+            }
+          }
+          break;
+        case FieldTypeByteVector:
+          {
+            guint8* str;
+            str = (guint8*) g_malloc ((1+2*fdata->nbytes) * sizeof(guint8));
+            if (str) {
+              int i;
+              const guint8* bytes;
+              bytes = (guint8*) fdata->value;
+              for (i = 0; i < fdata->nbytes; ++i) {
+                g_snprintf ((gchar*)(2*i + str), 2*sizeof(guint8),
+                            "%x", bytes[i]);
+              }
+              proto_tree_add_none_format(tree, hf_fast_ascii, tvb,
+                                         fdata->start, fdata->nbytes,
+                                         "byteVector: %s", str);
+              g_free (str);
+            }
+            else {
+              DBG0("Error allocating memory.");
+              proto_tree_add_none_format(tree, hf_fast_ascii, tvb,
+                                         fdata->start, fdata->nbytes,
+                                         "byteVector: %s", "");
+            }
+          }
+          break;
+        case FieldTypeGroup:
+        case FieldTypeSequence:
+          DBG1("Unimplemented display field type %u", ftype->type);
+        default:
+          DBG1("Bad field type %u", ftype->type);
+      }
+    }
+    else {
+      proto_tree_add_none_format(tree, hf_fast_ascii, tvb,
+                                 fdata->start, fdata->nbytes,
+                                 "%s:", field_typename(ftype->type));
     }
 
     tnode = tnode->next;
