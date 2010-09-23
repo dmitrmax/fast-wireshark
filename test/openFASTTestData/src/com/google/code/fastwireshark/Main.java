@@ -20,6 +20,7 @@ public class Main {
 
 
 	public static void main(String [] args){
+		//Dirty code, but effective
 		/**
 		 * Temporary class used to make using the command line arguments easier
 		 * @author pmiele
@@ -30,6 +31,10 @@ public class Main {
 			public String dataPlanFile;
 			public boolean binaryOutput;
 
+			/**
+			 * Parses out the command line arguments and sets the public fields
+			 * @param args The command line arguments from main
+			 */
 			public CommandLineArguments(String [] args){
 
 				for(int i = 0 ; i < args.length ; i++){
@@ -37,7 +42,7 @@ public class Main {
 					if(cur.equals("-t")){
 						if(templateFiles != null){ throw new RuntimeException("Multiple definitions of template files on command line");}
 						templateFiles = new ArrayList<String>();
-						while(!args[++i].startsWith("-")){
+						while(++i < args.length && !args[i].startsWith("-")){
 							templateFiles.add(args[i]);
 						} i--;
 					} else
