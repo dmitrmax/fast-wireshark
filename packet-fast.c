@@ -121,7 +121,7 @@ void proto_register_fast ()
 
   /* Register long, short, and abbreviated forms of the protocol name. */
   proto_fast =
-    proto_register_protocol("FAST (FIX Adjusted for STreaming) Protocol",
+    proto_register_protocol("FAST (FIX Adapted for STreaming) Protocol",
                             "FAST",
                             "fast");
 

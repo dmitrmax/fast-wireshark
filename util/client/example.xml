@@ -10,6 +10,7 @@
     <int64/>
     <decimal/>
     <string/>
+    <string charset="unicode"/>
   </template>
 
 </templates>

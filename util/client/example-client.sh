@@ -14,5 +14,6 @@ fi
         --int32  -56 \
         --int64 63 \
         --int32  4 --int64 5 \
-        --ascii "hello"
+        --ascii "hello" \
+        --bytevec "EB8675309AFB"
 
