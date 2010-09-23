@@ -1,9 +1,23 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<project default="create_run_jar" name="Create Runnable Jar for Project openFASTTestData">
-    <!--this file was created by Eclipse Runnable JAR Export Wizard-->
-    <!--ANT 1.7 is required                                        -->
-    <target name="create_run_jar">
-        <jar destfile="Test.jar" filesetmanifest="mergewithoutmain">
+<project default="jar" name="Create Runnable Jar for openFast Data Plan Runner">
+	
+	<property name="lib.dir" value="lib"/>
+	
+	<path id="libraries">
+		<fileset dir="${lib.dir}" includes="**/*.jar"/>
+	</path>
+	
+	<target name="clean">
+		<delete file="OpenFastPlanRunner.jar" dir="bin"/>
+	</target>
+		
+	<target name="compile">
+		<mkdir dir="bin"/>
+		<javac srcdir="src" destdir="bin" classpathref="libraries"/>
+	</target>
+	
+    <target name="jar" depends="compile">
+        <jar destfile="OpenFastPlanRunner.jar" filesetmanifest="mergewithoutmain">
             <manifest>
                 <attribute name="Main-Class" value="com.google.code.fastwireshark.Main"/>
                 <attribute name="Class-Path" value="."/>
