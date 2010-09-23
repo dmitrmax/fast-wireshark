@@ -58,6 +58,27 @@ const gchar* field_typename (FieldTypeIdentifier type)
   }
 }
 
+/*!
+ * \brief  Retrieve the name of the operator type.
+ * \param type  Operator type for the name lookup.
+ * \return  A string corresponding to the type given.
+ *          If the type is invalid, return an empty string.
+ */
+const gchar* operator_typename (FieldOperatorIdentifier type)
+{
+  static const gchar* names[] =
+  {
+    "no_operator", "constant", "default", "copy",
+    "increment", "delta", "tail"
+  };
+  if(0<= type && type < FieldOperatorEnumLimit) {
+    return names[type];
+  }
+  else {
+    DBG1("Unknown type %d", type);
+    return "";
+  }
+}
 
 
 /*!

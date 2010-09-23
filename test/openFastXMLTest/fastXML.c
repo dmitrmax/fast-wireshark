@@ -17,6 +17,8 @@ struct att {
 	struct att * next; /* Pointer to next attribute */
 };
 
+/* Decimal Idea  if fields can only have 1 operator  make operator 1 and 2 instead of head tail
+** Then only use operator 2 for decimals second field */
 /* operators associated with fields */
 struct operator {
 	char *type; /* type of operator (delta, copy ... ect) */
@@ -292,6 +294,7 @@ int parseTemplate (xmlDocPtr doc, xmlNodePtr cur) {
 					/* printf("found attribute %s = %s\n", attr->name, prop); */
 					if(!validAttribute(f->type, prop)){
 						fprintf(stderr,"Invalid attribute (%s) for field %s\n", prop, f->type);
+            fprintf(stderr,"In template %s\n", t->name);
 						return false;
 					}
 					/* create attribute and add it to the field */
@@ -302,11 +305,12 @@ int parseTemplate (xmlDocPtr doc, xmlNodePtr cur) {
 					a->name = n;
 
 					a->value = prop;
-				}    			
+			  }    			
 			}
 
 			/* find operators for field and check if parse failed*/
 			if(!parseOperators(doc, cur, f)){
+        fprintf(stderr,"In template %s\n", t->name);
 				return false;
 			}
 
@@ -460,6 +464,22 @@ int validField(const char * field){
 }
 
 int validOperator(const char * field, const char * type){
+
+  if(strcmp(type, "constant")==0){
+		return true;
+	} else if(strcmp (type, "increment")==0){
+		return true;
+	} else if(strcmp (type, "default")==0){
+		return true;
+	} else if(strcmp (type, "copy")==0){
+		return true;
+	} else if(strcmp (type, "delta")==0){
+		return true;
+	} else if(strcmp (type, "tail")==0){
+		return true;
+	} else {
+		return false;
+	}
 
 	return true;
 }

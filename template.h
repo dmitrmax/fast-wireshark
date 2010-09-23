@@ -60,6 +60,7 @@ typedef struct field_type_struct FieldType;
 
 void add_templates (GNode* tmpl);
 const gchar* field_typename (FieldTypeIdentifier type);
+const gchar* operator_typename (FieldOperatorIdentifier type);
 GNode* create_field (FieldTypeIdentifier type,
                      FieldOperatorIdentifier op);
 

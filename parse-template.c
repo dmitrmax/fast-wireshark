@@ -19,7 +19,9 @@ static void parser_walk_children (xmlNodePtr cur,
 static GNode* new_parsed_field (xmlNodePtr xmlnode);
 static gboolean field_type_match (xmlNodePtr node,
                                   FieldTypeIdentifier type);
-
+static gboolean parse_operator (xmlNodePtr xmlnode, FieldType * tfield);
+static gboolean parse_decimal (xmlNodePtr xmlnode, FieldType * tfield, GNode * tnode);
+static gboolean operator_type_match (xmlNodePtr node, FieldOperatorIdentifier type);
 
 /*! \brief  Convert an XML file into an internal representation of
  *          the templates.
@@ -192,30 +194,26 @@ GNode* new_parsed_field (xmlNodePtr xmlnode)
     }
 
     if (found) {
-      /* TODO: operator specific stuff. */
+      /* check if field has valid operators */
+      valid = parse_operator(xmlnode, tfield);
     }
-    valid = TRUE;
   }
 
   /* Try decimal. */
   if (!found && field_type_match (xmlnode, FieldTypeDecimal)) {
-    GNode* exptNode;
-    GNode* mantNode;
     found = TRUE;
-    tfield->type = FieldTypeDecimal;
+    valid = parse_decimal(xmlnode, tfield, tnode);
+  }
 
-    /* Add exponent and mantissa. */
-    exptNode = create_field (FieldTypeInt32, FieldOperatorNone);
-    if (!exptNode)  BAILOUT(0, "Error creating exponent field.");
-    g_node_insert_after (tnode, 0,        exptNode);
-
-    mantNode = create_field (FieldTypeInt64, FieldOperatorNone);
-    if (!mantNode)  BAILOUT(0, "Error creating mantissa field.");
-    g_node_insert_after (tnode, exptNode, mantNode);
-
-    /* TODO: Probably functionalize this. */
-
-    valid = TRUE;
+  /* Try string */
+  if(!found && field_type_match (xmlnode, FieldTypeAsciiString)){
+    tfield->type = FieldTypeAsciiString;
+    found = TRUE;
+    valid = parse_operator(xmlnode, tfield);
+  } else if(!found && field_type_match (xmlnode, FieldTypeUnicodeString)){
+    tfield->type = FieldTypeUnicodeString;
+    found = TRUE;
+    valid = parse_operator(xmlnode, tfield);
   }
 
   /* If we retrieved built up the field,
@@ -237,6 +235,104 @@ GNode* new_parsed_field (xmlNodePtr xmlnode)
   return tnode;
 }
 
+
+/*! \brief  Fill in a decimal field in the parse tree.
+ * \param  The XML node which /should/ be a decimal field.
+ * \param  A pointer to the template within the parse tree.
+ * \return  True if sucessfully parsed
+ */
+gboolean parse_decimal (xmlNodePtr xmlnode, FieldType * tfield, GNode * tnode){
+
+    GNode* exptNode;
+    GNode* mantNode;
+    FieldType * expt;
+    FieldType * mant;
+
+    tfield->type = FieldTypeDecimal;
+
+    /* Add exponent and mantissa. */
+    exptNode = create_field (FieldTypeInt32, FieldOperatorNone);
+    if (!exptNode)  BAILOUT(0, "Error creating exponent field.");
+    g_node_insert_after (tnode, 0,        exptNode);
+
+    mantNode = create_field (FieldTypeInt64, FieldOperatorNone);
+    if (!mantNode)  BAILOUT(0, "Error creating mantissa field.");
+    g_node_insert_after (tnode, exptNode, mantNode);
+
+    /* Get exponent and mantissa operators and values (if given) */
+    xmlnode = xmlnode->xmlChildrenNode;
+	  while (xmlnode != NULL) {
+		  if (!ignore_xml_node(xmlnode)){
+        if(0 == xmlStrcasecmp(xmlnode->name, (xmlChar*)"exponent")){
+          expt = (FieldType*) exptNode->data;
+          if(!parse_operator(xmlnode, expt)) return FALSE;
+        } else if( 0 == xmlStrcasecmp(xmlnode->name, (xmlChar*)"mantissa")){
+          mant = (FieldType*) mantNode->data;
+          if(!parse_operator(xmlnode, mant)) return FALSE;
+        } else {
+           DBG1("Unknown decimal subfield %s.", xmlnode->name);
+           return FALSE;
+        }
+      }  
+    xmlnode = xmlnode->next;
+	}
+
+  return TRUE;
+}
+
+/*! \brief  Fill in a field in the parse tree with operator info.
+ * \param  The XML node which /should/ be a field.
+ * \param  A pointer to the field within the parse tree.
+ * \return  True if sucessfully parsed
+ */
+gboolean parse_operator (xmlNodePtr xmlnode, FieldType * tfield){
+  
+  xmlChar *prop;
+  const xmlChar *name;
+  name = xmlnode->name;
+
+	/* loop through field to find operators */
+	xmlnode = xmlnode->xmlChildrenNode;
+	while (xmlnode != NULL) {
+		if (!ignore_xml_node(xmlnode)){
+
+      if (operator_type_match (xmlnode, FieldOperatorConstant)) {
+        tfield->op = FieldOperatorConstant;
+      }
+      else if (operator_type_match (xmlnode, FieldOperatorDefault)) {
+        tfield->op = FieldOperatorDefault;
+      }
+      else if (operator_type_match (xmlnode, FieldOperatorCopy)) {
+        tfield->op = FieldOperatorCopy;
+      }
+      else if (operator_type_match (xmlnode, FieldOperatorIncrement)) {
+        tfield->op = FieldOperatorIncrement;
+      }
+      else if (operator_type_match (xmlnode, FieldOperatorDelta)) {
+        tfield->op = FieldOperatorDelta;
+      }
+      else if (operator_type_match (xmlnode, FieldOperatorTail)) {
+        tfield->op = FieldOperatorTail;
+      } else {
+        DBG2("Invalid operator (%s) for field %s", xmlnode->name, name);
+        return FALSE;
+      }
+			
+			/* get value of operator if given */
+			prop = xmlGetProp(xmlnode, (const xmlChar*)"value");
+			if(prop!=NULL){
+				tfield->value = prop;
+			} else {
+				tfield->value = NULL;			
+			}
+
+		}
+    xmlnode = xmlnode->next;
+	}
+  return TRUE;
+}
+
+
 /*! \brief  Set standard attributes of a field.
  *
  * Specifically, set 'id', 'name', and 'presence'.
@@ -251,11 +347,13 @@ void set_field_attributes (xmlNodePtr xmlnode, FieldType* tfield)
   if (str) {
     tfield->name = g_strdup ((char*)str);
   }
+  xmlFree((void*)str);
   /* Identifier number. */
   str = xmlGetProp(xmlnode, (xmlChar*) "id");
   if (str) {
     tfield->id = atoi((char*)str);
   }
+  xmlFree((void*)str);
   /* Presence. */
   str = xmlGetProp(xmlnode, (xmlChar*) "presence");
   if (str) {
@@ -269,6 +367,7 @@ void set_field_attributes (xmlNodePtr xmlnode, FieldType* tfield)
       DBG1("Error, bad presence option '%s'.", (char*) str);
     }
   }
+  xmlFree((void*)str);
 }
 
 /*! \brief  Check if this XML node should be ignored.
@@ -293,15 +392,32 @@ gboolean field_type_match (xmlNodePtr node, FieldTypeIdentifier type)
 {
   const xmlChar* str1 = node->name;
   const char* str2 = field_typename (type);
+  
   if (type == FieldTypeAsciiString) {
     if (0 == xmlStrcasecmp(str1, (xmlChar*) "string")) {
-    /* TODO look ascii encoding atttribute or none at all. */
+      /* check if charset is ascii or unicode */
+      xmlChar * prop = xmlGetProp(node, (xmlChar*) "charset");
+      if(prop==NULL){
+        /* Assume ascii if not given */
+        return TRUE;
+      }
+      if(0 == xmlStrcasecmp(prop, (xmlChar*) "ascii")){
+        return TRUE;
+      }
     }
     return FALSE;
   }
   else if (type == FieldTypeUnicodeString) {
     if (0 == xmlStrcasecmp(str1, (xmlChar*) "string")) {
-      /* TODO look for no unicode encoding attribute. */
+      /* check if charset is ascii or unicode */
+      xmlChar * prop = xmlGetProp(node, (xmlChar*)"charset");
+      if(prop==NULL){
+        /* Assume ascii if not given */
+        return FALSE;
+      }
+      if(0 == xmlStrcasecmp(prop, (xmlChar*) "unicode")){
+        return TRUE;
+      }
     }
     return FALSE;
   }
@@ -309,4 +425,17 @@ gboolean field_type_match (xmlNodePtr node, FieldTypeIdentifier type)
     return (0 == xmlStrcasecmp(str1, (xmlChar*) str2));
   }
 }
+
+/*! \brief  Check if a string from XML matches the given Operator's type string
+ * \param node  Node in the XML tree. Its name is to be used in comparison.
+ * \param type  Type whose name you want to check against.
+ * \return  TRUE iff the node name matches.
+ */
+gboolean operator_type_match (xmlNodePtr node, FieldOperatorIdentifier type)
+{
+  const xmlChar* str1 = node->name;
+  const char* str2 = operator_typename(type);
+  return (0 == xmlStrcasecmp(str1, (xmlChar*) str2));
+}
+
 
