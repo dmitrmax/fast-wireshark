@@ -11,8 +11,8 @@ fi
 "$prog" -p 1337 \
         --uint32 55 \
         --uint64 22 \
-        --int32  56 \
-        --int64 -51 \
-        --int32  55 --int64 -3 \
+        --int32  -56 \
+        --int64 63 \
+        --int32  4 --int64 5 \
         --ascii "hello"
 

@@ -26,6 +26,7 @@
 
 #include "dissect.h"
 #include "fast.h"
+#include "parse-template.h"
 #include "template.h"
 
 /*! \brief  If not build statically, define a version.
@@ -165,32 +166,30 @@ void proto_reg_handoff_fast ()
   if (!initialized) {
     fast_handle = create_dissector_handle(&dissect_fast, proto_fast);
 
+    /* TODO: REMOVEME */
     /* Hard coded template setup. */
-    add_templates (FAST_setup());
+    /* add_templates (FAST_setup()); */
   }
   else {
-    FILE *fp;
-
     dissector_delete(portField, currentPort, fast_handle);
-    if ((fp=fopen(config_template_xml_path, "r"))==NULL) {
-      fprintf(stderr, "Cannot open xml file %s\n", config_template_xml_path);
-    } else {
-
-      printf("Using xml file %s ...\n",config_template_xml_path);
-      
-      /* Do somthing with xml file ... */
-      fclose(fp);
-    }
-
   }
-  
-  /* TODO: parse_xml(config_template_xml_path); */
 
+  /* Set up port number. */
   if (initialized && config_port_number == 0) {
     config_port_number = 1337;
     fprintf(stderr, "FAST - WARNING: Port is not set, using default %u\n", config_port_number);
   }
   currentPort = config_port_number;
+
+  /* Read templates file. */
+  if (initialized && config_template_xml_path) {
+    GNode* templates;
+    printf("Using xml file %s ...\n",config_template_xml_path);
+    templates = parse_templates_xml (config_template_xml_path);
+    if (templates) {
+      add_templates(templates);
+    }
+  }
 
   /* Tell Wireshark what underlying protocol and port we use. */
   dissector_add(portField, config_port_number, fast_handle);
@@ -277,7 +276,7 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
     const FieldData* fdata;
     ftype = (FieldType*) tnode->data;
     fdata = (FieldData*) dnode->data;
-    if (fdata->value) {
+    if (fdata->value || dnode->children) {
       switch (ftype->type) {
         case FieldTypeUInt32:
           proto_tree_add_uint(tree, hf_fast_uint32, tvb,
@@ -347,14 +346,14 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
             if (str) {
               memcpy (str, fdata->value, fdata->nbytes * sizeof(guint8));
               str[fdata->nbytes] = 0;
-              proto_tree_add_none_format(tree, hf_fast_ascii, tvb,
+              proto_tree_add_none_format(tree, hf_fast_unicode, tvb,
                                          fdata->start, fdata->nbytes,
                                          "unicode: %s", str);
               g_free (str);
             }
             else {
               DBG0("Error allocating memory.");
-              proto_tree_add_none_format(tree, hf_fast_ascii, tvb,
+              proto_tree_add_none_format(tree, hf_fast_unicode, tvb,
                                          fdata->start, fdata->nbytes,
                                          "unicode: %s", "");
             }
@@ -372,14 +371,14 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
                 g_snprintf ((gchar*)(2*i + str), 2*sizeof(guint8),
                             "%x", bytes[i]);
               }
-              proto_tree_add_none_format(tree, hf_fast_ascii, tvb,
+              proto_tree_add_none_format(tree, hf_fast_bytevec, tvb,
                                          fdata->start, fdata->nbytes,
                                          "byteVector: %s", str);
               g_free (str);
             }
             else {
               DBG0("Error allocating memory.");
-              proto_tree_add_none_format(tree, hf_fast_ascii, tvb,
+              proto_tree_add_none_format(tree, hf_fast_bytevec, tvb,
                                          fdata->start, fdata->nbytes,
                                          "byteVector: %s", "");
             }
@@ -393,9 +392,11 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
       }
     }
     else {
+      /* The field is empty. */
+      /* TODO Don't use hf_fast_ascii, displays as fast.ascii field. */
       proto_tree_add_none_format(tree, hf_fast_ascii, tvb,
                                  fdata->start, fdata->nbytes,
-                                 "%s:", field_typename(ftype->type));
+                                 "(empty) %s:", field_typename(ftype->type));
     }
 
     tnode = tnode->next;

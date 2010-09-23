@@ -20,9 +20,14 @@ else
     out_dir="$HOME/.wireshark/plugins"
 fi
 
+xml_cflags=`xml2-config --libs`
+xml_lflags=`xml2-config --cflags`
+
 # using ^ instead of / because it is very unlikely ^ will show up...
 sed -e "s^<WIRESHARK_SRC_ROOT>^${ws_dir}^g" \
     -e "s^<WIRESHARK_OUT>^${out_dir}^g" \
+    -e "s^<XML_LFLAGS>^${xml_lflags}^g" \
+    -e "s^<XML_CFLAGS>^${xml_cflags}^g" \
     Makefile.in > Makefile
 
 if [ ! -e "$ws_dir/config.h" ]

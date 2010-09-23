@@ -41,7 +41,7 @@ enum field_operator_identifier_enum
 };
 typedef enum field_operator_identifier_enum FieldOperatorIdentifier;
 
-typedef void* FieldValue;
+typedef void FieldValue;
 
 /*! \brief  Hold data relevant to a template definition.
  */

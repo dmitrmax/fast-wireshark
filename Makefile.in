@@ -7,7 +7,7 @@ INCS=-I<WIRESHARK_SRC_ROOT> -I/usr/include/glib-2.0 \
 
 SRCS = $(DISSECTOR_SRC)
 
-LIBS = -lm -lz -lxml2
+LIBS = -lm -lz -lxml2 <XML_LFLAGS>
 
 CC   = gcc
 CPP  = cpp
@@ -32,7 +32,9 @@ all: $(PLUGIN)
 CFLAGS = -DHAVE_CONFIG_H $(INCS) -DINET6 \
 	-D_U_=__attribute__\(\(unused\)\) -Wpointer-arith \
 	-g -Wall -ansi -pedantic \
-	-DXTHREADS -D_REENTRANT -DXUSE_MTSAFE_API -fPIC -DPIC
+	-DXTHREADS -D_REENTRANT -DXUSE_MTSAFE_API -fPIC -DPIC \
+	<XML_CFLAGS>
+
 
 $(PLUGIN) : $(OBJS)
 	mkdir -p $(PLUGIN_DIR)

@@ -4,8 +4,10 @@
 PLUGIN_NAME = packet-fast
 
 # the dissector sources (without any helpers)
-DISSECTOR_SRC = packet-fast.c dissect.c setup.c decode.c template.c debug.c
+DISSECTOR_SRC = packet-fast.c dissect.c setup.c decode.c template.c debug.c \
+								parse-template.c
 
 # corresponding headers
+# TODO FIXME
 DISSECTOR_INCLUDES = fast.h decode.h template.h
 
