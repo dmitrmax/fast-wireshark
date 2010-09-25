@@ -59,4 +59,13 @@ public class AsciiBinaryOutputStream extends OutputStream{
 		return this.newLineOnByte;
 	}
 	
+	/**
+	 * Flushes the buffer
+	 * Flushes the wrapped buffer
+	 */
+	public void flush() throws IOException{
+		out.flush();
+		super.flush();
+	}
+	
 }

@@ -1,6 +1,6 @@
 package com.google.code.fastwireshark;
 
-import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,7 +13,6 @@ import com.google.code.fastwireshark.io.MessageTemplateRepository;
 import com.google.code.fastwireshark.io.XMLDataPlanLoader;
 import com.google.code.fastwireshark.runner.DataPlanRunner;
 
-import static java.lang.System.out;
 
 
 public class Main {
@@ -68,12 +67,14 @@ public class Main {
 			/*
 			 * LOAD TEMPLATE 
 			 */
-			MessageOutputStream messageOut;
+			OutputStream out;
 			if(cargs.binaryOutput){
-				messageOut = new MessageOutputStream(new BinaryOutputStream(new FileOutputStream("output.txt"), false));
+				out = new BinaryOutputStream(System.out, false);
 			} else {
-				messageOut = new MessageOutputStream(new AsciiBinaryOutputStream(out, true));
+				out = new AsciiBinaryOutputStream(System.out, true);
 			}
+			MessageOutputStream messageOut = new MessageOutputStream(out);
+			
 			for(String templateFile : cargs.templateFiles){
 				MessageTemplateRepository.loadTemplates(templateFile);
 			}
@@ -94,6 +95,8 @@ public class Main {
 			DataPlanRunner runner = new DataPlanRunner();
 			runner.setMessageOutputStream(messageOut);
 			runner.runDataPlan(dp);
+			// Flush the stream in the case that it is buffered
+			out.flush();
 		} catch (Throwable e){
 			e.printStackTrace();
 		}

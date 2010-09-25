@@ -38,7 +38,6 @@ public class BinaryOutputStream extends OutputStream{
 	public void write(int i) throws IOException {
 		//Take the lower byte
 		byte b = (byte) i;
-		
 		out.write(b);
 		if(getNewLineOnByte()){
 			out.write('\n');
@@ -51,6 +50,15 @@ public class BinaryOutputStream extends OutputStream{
 	
 	public boolean getNewLineOnByte(){
 		return this.newLineOnByte;
+	}
+	
+	/**
+	 * Flushes the buffer
+	 * Flushes the wrapped buffer
+	 */
+	public void flush() throws IOException{
+		out.flush();
+		super.flush();
 	}
 	
 }
