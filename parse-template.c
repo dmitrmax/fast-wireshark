@@ -216,6 +216,14 @@ GNode* new_parsed_field (xmlNodePtr xmlnode)
     valid = parse_operator(xmlnode, tfield);
   }
 
+  /* Try bytevector */
+  if(!found && field_type_match (xmlnode, FieldTypeByteVector)){
+    tfield->type = FieldTypeByteVector;
+    found = TRUE;
+    valid = parse_operator(xmlnode, tfield);
+  }
+
+
   /* If we retrieved built up the field,
    * fill its attributes.
    */
