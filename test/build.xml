@@ -7,6 +7,11 @@
 		<fileset dir="${lib.dir}" includes="**/*.jar"/>
 	</path>
 	
+	<target name="fetchLib">
+		<mkdir dir="lib"/>
+		<get src="http://sourceforge.net/projects/openfast/files/openfast4j/openfast4j-0.9.8/openfast-0.9.8.jar/download" dest="lib/openfast.jar"/>
+	</target>
+	
 	<target name="clean">
 		<delete file="OpenFastPlanRunner.jar" dir="bin"/>
 	</target>
@@ -17,29 +22,29 @@
 	</target>
 	
 	<target name="debugcompile">
-			<mkdir dir="bin"/>
-			<javac srcdir="src" destdir="bin" classpathref="libraries" debug="true"/>
-		</target>
+		<mkdir dir="bin"/>
+		<javac srcdir="src" destdir="bin" classpathref="libraries" debug="true"/>
+	</target>
 	
-    <target name="jar" depends="compile">
-        <jar destfile="OpenFastPlanRunner.jar" filesetmanifest="mergewithoutmain">
-            <manifest>
-                <attribute name="Main-Class" value="com.google.code.fastwireshark.Main"/>
-                <attribute name="Class-Path" value="."/>
-            </manifest>
-            <fileset dir="bin"/>
-            <zipfileset excludes="META-INF/*.SF" src="lib/openfast-0.9.8.jar"/>
-        </jar>
-    </target>
-	
+	<target name="jar" depends="compile">
+		<jar destfile="OpenFastPlanRunner.jar" filesetmanifest="mergewithoutmain">
+			<manifest>
+				<attribute name="Main-Class" value="com.google.code.fastwireshark.Main"/>
+				<attribute name="Class-Path" value="."/>
+			</manifest>
+			<fileset dir="bin"/>
+			<zipfileset excludes="META-INF/*.SF" src="lib/openfast.jar"/>
+		</jar>
+	</target>
+
 	<target name="debugjar" depends="debugcompile">
-	        <jar destfile="OpenFastPlanRunner.jar" filesetmanifest="mergewithoutmain">
-	            <manifest>
-	                <attribute name="Main-Class" value="com.google.code.fastwireshark.Main"/>
-	                <attribute name="Class-Path" value="."/>
-	            </manifest>
-	            <fileset dir="bin"/>
-	            <zipfileset excludes="META-INF/*.SF" src="lib/openfast-0.9.8.jar"/>
-	        </jar>
-	    </target>
+		<jar destfile="OpenFastPlanRunner.jar" filesetmanifest="mergewithoutmain">
+			<manifest>
+				<attribute name="Main-Class" value="com.google.code.fastwireshark.Main"/>
+				<attribute name="Class-Path" value="."/>
+			</manifest>
+			<fileset dir="bin"/>
+			<zipfileset excludes="META-INF/*.SF" src="lib/openfast.jar"/>
+		</jar>
+	</target>
 </project>
