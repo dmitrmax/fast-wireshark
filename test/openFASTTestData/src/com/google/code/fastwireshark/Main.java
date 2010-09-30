@@ -10,8 +10,10 @@ import com.google.code.fastwireshark.data.DataPlan;
 import com.google.code.fastwireshark.io.AsciiBinaryOutputStream;
 import com.google.code.fastwireshark.io.BinaryOutputStream;
 import com.google.code.fastwireshark.io.MessageTemplateRepository;
+import com.google.code.fastwireshark.io.UDPLoopBackOutputStream;
 import com.google.code.fastwireshark.io.XMLDataPlanLoader;
 import com.google.code.fastwireshark.runner.DataPlanRunner;
+import com.google.code.fastwireshark.util.Constants;
 
 
 
@@ -29,6 +31,7 @@ public class Main {
 			public List<String> templateFiles;
 			public String dataPlanFile;
 			public boolean binaryOutput;
+			public int port = -1;
 
 			/**
 			 * Parses out the command line arguments and sets the public fields
@@ -51,7 +54,11 @@ public class Main {
 					} else
 					if(cur.equals("-b")){
 						if(binaryOutput){throw new RuntimeException("Multiple definitions of binary data"); }
-							binaryOutput = true;
+						binaryOutput = true;
+					} else
+					if(cur.equals("-n")){
+						if(port > 0){throw new RuntimeException("Multiple port definitions");}
+						port = Integer.valueOf(args[++i]);
 					}
 				}
 				if(templateFiles == null){
@@ -68,6 +75,9 @@ public class Main {
 			 * LOAD TEMPLATE 
 			 */
 			OutputStream out;
+			if(cargs.port > 0){
+				out = new UDPLoopBackOutputStream(Constants.MAX_PACKET_SIZE, cargs.port);
+			} else
 			if(cargs.binaryOutput){
 				out = new BinaryOutputStream(System.out, false);
 			} else {
@@ -95,8 +105,6 @@ public class Main {
 			DataPlanRunner runner = new DataPlanRunner();
 			runner.setMessageOutputStream(messageOut);
 			runner.runDataPlan(dp);
-			// Flush the stream in the case that it is buffered
-			out.flush();
 		} catch (Throwable e){
 			e.printStackTrace();
 		}

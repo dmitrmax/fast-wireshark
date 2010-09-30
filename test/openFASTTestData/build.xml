@@ -16,6 +16,11 @@
 		<javac srcdir="src" destdir="bin" classpathref="libraries"/>
 	</target>
 	
+	<target name="debugcompile">
+			<mkdir dir="bin"/>
+			<javac srcdir="src" destdir="bin" classpathref="libraries" debug="true"/>
+		</target>
+	
     <target name="jar" depends="compile">
         <jar destfile="OpenFastPlanRunner.jar" filesetmanifest="mergewithoutmain">
             <manifest>
@@ -26,4 +31,15 @@
             <zipfileset excludes="META-INF/*.SF" src="lib/openfast-0.9.8.jar"/>
         </jar>
     </target>
+	
+	<target name="debugjar" depends="debugcompile">
+	        <jar destfile="OpenFastPlanRunner.jar" filesetmanifest="mergewithoutmain">
+	            <manifest>
+	                <attribute name="Main-Class" value="com.google.code.fastwireshark.Main"/>
+	                <attribute name="Class-Path" value="."/>
+	            </manifest>
+	            <fileset dir="bin"/>
+	            <zipfileset excludes="META-INF/*.SF" src="lib/openfast-0.9.8.jar"/>
+	        </jar>
+	    </target>
 </project>

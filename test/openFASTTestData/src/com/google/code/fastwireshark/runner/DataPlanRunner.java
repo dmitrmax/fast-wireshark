@@ -1,5 +1,6 @@
 package com.google.code.fastwireshark.runner;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Iterator;
 import java.util.List;
@@ -55,12 +56,19 @@ public class DataPlanRunner implements Constants{
 	/**
 	 * Runs a MessagePlan
 	 * Creates a message based on the plan template, then populates the fields, then writes it using the Runner's MessageOutputStream 
+	 * The MessageOutputStream is then flushed to force the message out.
 	 * @param mp The Message Plan to run
 	 */
 	private void runMessagePlan(MessagePlan mp){
 		Message m = new Message(mp.getTemplate());
 		populateFields(m,mp.getValues());
 		messageOut.writeMessage(m);
+		try {
+			messageOut.getUnderlyingStream().flush();
+		} catch (IOException e) {
+			System.err.println("Error writing message: " + m);
+			e.printStackTrace();
+		}
 	}
 	
 	/**

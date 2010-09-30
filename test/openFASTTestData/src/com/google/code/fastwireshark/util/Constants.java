@@ -16,4 +16,6 @@ public interface Constants {
 	public static final String UNICODE = "unicode";
 	public static final String ASCII = "ascii";
 	
+	public static final int MAX_PACKET_SIZE = 1024;
+	
 }
