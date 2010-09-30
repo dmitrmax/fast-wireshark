@@ -10,13 +10,19 @@
 			<constant value="1337" />
 		</int32>
 	</template>
-	
-	<randomThing name="blah">
-		<rand/>
-	</randomThing>
+
 
 	<template name="t_uint32" id="1">
 		<uInt32 id="1" name="uint32" />
+    <group name="a group">
+      <uInt32 id="1" name="uint32" />
+      <int32 id="1" name="int32">
+			  <copy />
+		  </int32>
+      <int32 id="1" name="int32">
+			  <constant value="1337" />
+		  </int32>
+    </group>
 	</template>
 	
 	<template name="t_int64" id="2">

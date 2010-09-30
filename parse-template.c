@@ -224,6 +224,15 @@ GNode* new_parsed_field (xmlNodePtr xmlnode)
   }
 
 
+  /* Try group */
+  if(!found && field_type_match(xmlnode, FieldTypeGroup)){
+    tfield->type = FieldTypeGroup;
+    found = TRUE;
+    valid = TRUE;
+    parser_walk_children (xmlnode->xmlChildrenNode, tnode, 0);
+  }
+
+
   /* If we retrieved built up the field,
    * fill its attributes.
    */
