@@ -55,6 +55,8 @@ void dissect_ascii_string (const GNode* tnode,
                            DissectPosition* position, GNode* dnode);
 void dissect_byte_vector (const GNode* tnode,
                           DissectPosition* position, GNode* dnode);
+void dissect_group (const GNode* tnode,
+                    DissectPosition* position, GNode* dnode);
 
 #endif
 

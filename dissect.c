@@ -26,12 +26,15 @@
     offjmp  = 0; \
   } while (0)
 
+
 /*! \brief  Shift the byte position of a dissection.
  * \sa ShiftBuffer
  */
-#define ShiftBytes(positon) \
-  ShiftBuffer(position->offjmp, position->offset, \
-              position->nbytes, position->bytes)
+static void ShiftBytes(DissectPosition* position)
+{
+  ShiftBuffer(position->offjmp, position->offset,
+              position->nbytes, position->bytes);
+}
 
 
 /*! \brief  Claim and retrieve a bit in the PMAP.
@@ -176,7 +179,7 @@ GNode* dissect_type (const GNode* tnode,
     &dissect_ascii_string,
     &dissect_byte_vector, /* Unicode string. */
     &dissect_byte_vector,
-    0, /* &dissect_group, */
+    &dissect_group,
     0, /* &dissect_sequence, */
     0
   };
@@ -441,6 +444,30 @@ void dissect_byte_vector (const GNode* tnode,
                           (guint8*) fdata->value);
     }
     ShiftBytes(position);
+  }
+  else {
+    DBG0("Only simple types are implemented.");
+  }
+}
+
+/*! \brief  Given a byte stream, dissect a group.
+ *
+ * \param tnode  Template tree node.
+ * \param position  Position in the packet.
+ * \param dnode  Dissect tree node.
+ */
+void dissect_group (const GNode* tnode,
+                    DissectPosition* position, GNode* dnode)
+{
+  SetupDissectStack(ftype, fdata,  tnode, dnode);
+
+  if (ftype->mandatory && !ftype->op) {
+
+    fdata->start = position->offset;
+
+    /* Recurse down the tree, building onto dnode. */
+    dissector_walk (tnode->children, position, dnode, 0);
+    fdata->nbytes = position->offset - fdata->start;
   }
   else {
     DBG0("Only simple types are implemented.");

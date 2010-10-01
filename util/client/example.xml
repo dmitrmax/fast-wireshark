@@ -11,6 +11,10 @@
     <decimal/>
     <string/>
     <string charset="unicode"/>
+    <group>
+        <string/>
+        <decimal/>
+    </group>
   </template>
 
 </templates>

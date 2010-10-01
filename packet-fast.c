@@ -271,6 +271,7 @@ void display_message (tvbuff_t* tvb, proto_tree* tree,
 void display_fields (tvbuff_t* tvb, proto_tree* tree,
                      const GNode* tnode, const GNode* dnode)
 {
+  /* TODO: Make sure dnode doesn't call a segfault if it's NULL/malformed. */
   while (tnode) {
     const FieldType* ftype;
     const FieldData* fdata;
@@ -385,10 +386,23 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
           }
           break;
         case FieldTypeGroup:
+          {
+            proto_item* item;
+            proto_tree* subtree;
+            item = proto_tree_add_none_format(tree, hf_fast_group, tvb,
+                                              fdata->start, fdata->nbytes,
+                                              "group:");
+
+            subtree = proto_item_add_subtree(item, ett_fast);
+            display_fields (tvb, subtree, tnode->children, dnode->children);
+          }
+          /* break; */
         case FieldTypeSequence:
           DBG1("Unimplemented display field type %u", ftype->type);
+          break;
         default:
           DBG1("Bad field type %u", ftype->type);
+          break;
       }
     }
     else {

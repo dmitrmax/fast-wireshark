@@ -188,7 +188,7 @@ void decode_ascii_string (guint nbytes, const guint8* bytes,
  *
  * \param nbytes  Number of bytes to decode.
  * \param bytes  Bytes to decode.
- * \param str  Return value. Must be preallocated to at least /nbytes/.
+ * \param vec  Return value. Must be preallocated to at least /nbytes/.
  */
 void decode_byte_vector (guint nbytes, const guint8* bytes,
                          guint8* vec)
