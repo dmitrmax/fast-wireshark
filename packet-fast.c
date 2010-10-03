@@ -266,7 +266,7 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
     BAILOUT(;,"Data node is null!");
   }
   while (tnode) {
-    int header_field;
+    int header_field = -1;
     const FieldType* ftype;
     const FieldData* fdata;
     ftype = (FieldType*) tnode->data;
@@ -362,7 +362,7 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
             guint8* str;
             str = (guint8*) g_malloc ((1+2*fdata->nbytes) * sizeof(guint8));
             if (str) {
-              int i;
+              guint i;
               const guint8* bytes;
               bytes = (guint8*) fdata->value;
               for (i = 0; i < fdata->nbytes; ++i) {
