@@ -17,6 +17,9 @@ fi
         --ascii "hello" \
         --bytevec "EB8675309AFB" \
         --ascii  "ABCD" \
-        --int32  2 \
-        --int32  3
+        --int32  2 --int32  3 \
+        --uint32 3 \
+        --int32 55 --ascii "Sequence member 1." \
+        --int32 56 --ascii "Sequence member 2." \
+        --int32 57 --ascii "Sequence member 3."
 

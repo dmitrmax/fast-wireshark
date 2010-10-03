@@ -21,6 +21,7 @@ static gboolean field_type_match (xmlNodePtr node,
                                   FieldTypeIdentifier type);
 static gboolean parse_operator (xmlNodePtr xmlnode, FieldType * tfield);
 static gboolean parse_decimal (xmlNodePtr xmlnode, FieldType * tfield, GNode * tnode);
+static gboolean parse_sequence (xmlNodePtr xmlnode, FieldType* tfield, GNode* tnode);
 static gboolean operator_type_match (xmlNodePtr node, FieldOperatorIdentifier type);
 
 /*! \brief  Convert an XML file into an internal representation of
@@ -154,25 +155,11 @@ GNode* new_parsed_field (xmlNodePtr xmlnode)
   GNode* tnode;
   FieldType* tfield;
 
-  /* Assure we can allocate the needed structures. */
-  tfield = g_malloc (sizeof (FieldType));
-  if (!tfield) {
-    DBG0("Error allocating memory.");
-    return 0;
-  }
-  tnode = g_node_new (tfield);
+  tnode = create_field (FieldTypeInvalid, FieldOperatorNone);
   if (!tnode) {
-    DBG0("Error allocating memory.");
-    g_free (tfield);
     return 0;
   }
-
-  /* Initialize the field. */
-  tfield->name      = 0;
-  tfield->id        = 0;
-  tfield->mandatory = TRUE;
-  tfield->op        = FieldOperatorNone;
-  tfield->value     = 0;
+  tfield = (FieldType*) tnode->data;
 
   /* Try the integers. */
   if (!found) {
@@ -232,6 +219,11 @@ GNode* new_parsed_field (xmlNodePtr xmlnode)
     parser_walk_children (xmlnode->xmlChildrenNode, tnode, 0);
   }
 
+  /* Try sequence */
+  if(!found && field_type_match(xmlnode, FieldTypeSequence)){
+    found = TRUE;
+    valid = parse_sequence (xmlnode, tfield, tnode);
+  }
 
   /* If we retrieved built up the field,
    * fill its attributes.
@@ -258,8 +250,8 @@ GNode* new_parsed_field (xmlNodePtr xmlnode)
  * \param  A pointer to the template within the parse tree.
  * \return  True if sucessfully parsed
  */
-gboolean parse_decimal (xmlNodePtr xmlnode, FieldType * tfield, GNode * tnode){
-
+gboolean parse_decimal (xmlNodePtr xmlnode, FieldType * tfield, GNode * tnode)
+{
     GNode* exptNode;
     GNode* mantNode;
     FieldType * expt;
@@ -296,6 +288,29 @@ gboolean parse_decimal (xmlNodePtr xmlnode, FieldType * tfield, GNode * tnode){
 
   return TRUE;
 }
+
+
+/*! \brief  Fill in a sequence field in the parse tree.
+ * \param  The XML node which /should/ be a sequence field.
+ * \param  A pointer to the template within the parse tree.
+ * \return  True if sucessfully parsed
+ */
+gboolean parse_sequence (xmlNodePtr xmlnode, FieldType* tfield, GNode* tnode)
+{
+  GNode* group_tnode;
+  tfield->type = FieldTypeSequence;
+
+  group_tnode = create_field (FieldTypeGroup, FieldOperatorNone);
+  if (!group_tnode) {
+    return FALSE;
+  }
+  g_node_insert_after (tnode, 0, group_tnode);
+
+  /* Descend the tree on the group. */
+  parser_walk_children (xmlnode->xmlChildrenNode, group_tnode, 0);
+  return TRUE;
+}
+
 
 /*! \brief  Fill in a field in the parse tree with operator info.
  * \param  The XML node which /should/ be a field.

@@ -24,7 +24,8 @@ enum field_type_identifier_enum
   FieldTypeByteVector,
   FieldTypeGroup,
   FieldTypeSequence,
-  FieldTypeEnumLimit
+  FieldTypeEnumLimit,
+  FieldTypeInvalid
 };
 typedef enum field_type_identifier_enum FieldTypeIdentifier;
 

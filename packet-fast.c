@@ -40,16 +40,7 @@ G_MODULE_EXPORT const gchar version[] = "0.1";
 /*! Global id of our protocol plugin used by Wireshark. */
 static int proto_fast = -1;
 /* Initialize the protocol and registered fields. */
-static int hf_fast_uint32   = -1;
-static int hf_fast_int32    = -1;
-static int hf_fast_uint64   = -1;
-static int hf_fast_int64    = -1;
-static int hf_fast_decimal  = -1;
-static int hf_fast_ascii    = -1;
-static int hf_fast_unicode  = -1;
-static int hf_fast_bytevec  = -1;
-static int hf_fast_group    = -1;
-static int hf_fast_sequence = -1;
+static int hf_fast[FieldTypeEnumLimit];
 static int hf_fast_tid      = -1;
 
 /* Initialize the subtree pointer. */
@@ -99,17 +90,17 @@ void proto_register_fast ()
   /* Header fields which always exist. */
   static hf_register_info hf[] =
   {
-    { &hf_fast_uint32,   { "uInt32",     "fast.uint32",   FT_UINT32, BASE_DEC,   NULL, 0, "", HFILL } },
-    { &hf_fast_uint64,   { "uInt64",     "fast.uint64",   FT_UINT64, BASE_DEC,   NULL, 0, "", HFILL } },
-    { &hf_fast_int32,    { "int32",      "fast.int32",    FT_INT32,  BASE_DEC,   NULL, 0, "", HFILL } },
-    { &hf_fast_int64,    { "int64",      "fast.int64",    FT_INT64,  BASE_DEC,   NULL, 0, "", HFILL } },
-    { &hf_fast_decimal,  { "decimal",    "fast.decimal",  FT_NONE,   BASE_NONE,  NULL, 0, "", HFILL } },
-    { &hf_fast_ascii,    { "ascii",      "fast.ascii",    FT_NONE,   BASE_NONE,  NULL, 0, "", HFILL } },
-    { &hf_fast_unicode,  { "unicode",    "fast.unicode",  FT_NONE,   BASE_NONE,  NULL, 0, "", HFILL } },
-    { &hf_fast_bytevec,  { "byteVector", "fast.bytevec",  FT_NONE,   BASE_NONE,  NULL, 0, "", HFILL } },
-    { &hf_fast_group,    { "group",      "fast.group",    FT_NONE,   BASE_NONE,  NULL, 0, "", HFILL } },
-    { &hf_fast_sequence, { "sequence",   "fast.sequence", FT_NONE,   BASE_NONE,  NULL, 0, "", HFILL } },
-    { &hf_fast_tid,      { "tid",        "fast.tid",      FT_UINT32, BASE_DEC,   NULL, 0, "", HFILL } }
+    { &hf_fast[FieldTypeUInt32],        { "uInt32",     "fast.uint32",   FT_UINT32, BASE_DEC,   NULL, 0, "", HFILL } },
+    { &hf_fast[FieldTypeUInt64],        { "uInt64",     "fast.uint64",   FT_UINT64, BASE_DEC,   NULL, 0, "", HFILL } },
+    { &hf_fast[FieldTypeInt32],         { "int32",      "fast.int32",    FT_INT32,  BASE_DEC,   NULL, 0, "", HFILL } },
+    { &hf_fast[FieldTypeInt64],         { "int64",      "fast.int64",    FT_INT64,  BASE_DEC,   NULL, 0, "", HFILL } },
+    { &hf_fast[FieldTypeDecimal],       { "decimal",    "fast.decimal",  FT_NONE,   BASE_NONE,  NULL, 0, "", HFILL } },
+    { &hf_fast[FieldTypeAsciiString],   { "ascii",      "fast.ascii",    FT_NONE,   BASE_NONE,  NULL, 0, "", HFILL } },
+    { &hf_fast[FieldTypeUnicodeString], { "unicode",    "fast.unicode",  FT_NONE,   BASE_NONE,  NULL, 0, "", HFILL } },
+    { &hf_fast[FieldTypeByteVector],    { "byteVector", "fast.bytevec",  FT_NONE,   BASE_NONE,  NULL, 0, "", HFILL } },
+    { &hf_fast[FieldTypeGroup],         { "group",      "fast.group",    FT_NONE,   BASE_NONE,  NULL, 0, "", HFILL } },
+    { &hf_fast[FieldTypeSequence],      { "sequence",   "fast.sequence", FT_NONE,   BASE_NONE,  NULL, 0, "", HFILL } },
+    { &hf_fast_tid,                     { "tid",        "fast.tid",      FT_UINT32, BASE_DEC,   NULL, 0, "", HFILL } }
   };
   /* Subtree array. */
   static gint *ett[] = {
@@ -271,31 +262,37 @@ void display_message (tvbuff_t* tvb, proto_tree* tree,
 void display_fields (tvbuff_t* tvb, proto_tree* tree,
                      const GNode* tnode, const GNode* dnode)
 {
-  /* TODO: Make sure dnode doesn't call a segfault if it's NULL/malformed. */
+  if (!dnode) {
+    BAILOUT(;,"Data node is null!");
+  }
   while (tnode) {
+    int header_field;
     const FieldType* ftype;
     const FieldData* fdata;
     ftype = (FieldType*) tnode->data;
     fdata = (FieldData*) dnode->data;
+    if (ftype->type < FieldTypeEnumLimit) {
+      header_field = hf_fast[ftype->type];
+    }
     if (fdata->value || dnode->children) {
       switch (ftype->type) {
         case FieldTypeUInt32:
-          proto_tree_add_uint(tree, hf_fast_uint32, tvb,
+          proto_tree_add_uint(tree, header_field, tvb,
                               fdata->start, fdata->nbytes,
                               *(guint32*) fdata->value);
           break;
         case FieldTypeUInt64:
-          proto_tree_add_uint64(tree, hf_fast_uint64, tvb,
+          proto_tree_add_uint64(tree, header_field, tvb,
                                 fdata->start, fdata->nbytes,
                                 *(guint64*) fdata->value);
           break;
         case FieldTypeInt32:
-          proto_tree_add_int(tree, hf_fast_int32, tvb,
+          proto_tree_add_int(tree, header_field, tvb,
                              fdata->start, fdata->nbytes,
                              *(gint32*) fdata->value);
           break;
         case FieldTypeInt64:
-          proto_tree_add_int64(tree, hf_fast_int64, tvb,
+          proto_tree_add_int64(tree, header_field, tvb,
                                fdata->start, fdata->nbytes,
                                *(gint64*) fdata->value);
           break;
@@ -314,7 +311,7 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
               mant = *(gint64*) ((FieldData*) node->data) -> value;
             }
 
-            proto_tree_add_none_format(tree, hf_fast_decimal, tvb,
+            proto_tree_add_none_format(tree, header_field, tvb,
                                        fdata->start, fdata->nbytes,
                                        "decimal: %" G_GINT64_MODIFIER "de%d",
                                        mant, expt);
@@ -327,14 +324,14 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
             if (str) {
               memcpy (str, fdata->value, fdata->nbytes * sizeof(guint8));
               str[fdata->nbytes] = 0;
-              proto_tree_add_none_format(tree, hf_fast_ascii, tvb,
+              proto_tree_add_none_format(tree, header_field, tvb,
                                          fdata->start, fdata->nbytes,
                                          "ascii: %s", str);
               g_free (str);
             }
             else {
               DBG0("Error allocating memory.");
-              proto_tree_add_none_format(tree, hf_fast_ascii, tvb,
+              proto_tree_add_none_format(tree, header_field, tvb,
                                          fdata->start, fdata->nbytes,
                                          "ascii: %s", "");
             }
@@ -347,14 +344,14 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
             if (str) {
               memcpy (str, fdata->value, fdata->nbytes * sizeof(guint8));
               str[fdata->nbytes] = 0;
-              proto_tree_add_none_format(tree, hf_fast_unicode, tvb,
+              proto_tree_add_none_format(tree, header_field, tvb,
                                          fdata->start, fdata->nbytes,
                                          "unicode: %s", str);
               g_free (str);
             }
             else {
               DBG0("Error allocating memory.");
-              proto_tree_add_none_format(tree, hf_fast_unicode, tvb,
+              proto_tree_add_none_format(tree, header_field, tvb,
                                          fdata->start, fdata->nbytes,
                                          "unicode: %s", "");
             }
@@ -372,14 +369,14 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
                 g_snprintf ((gchar*)(2*i + str), 2*sizeof(guint8),
                             "%x", bytes[i]);
               }
-              proto_tree_add_none_format(tree, hf_fast_bytevec, tvb,
+              proto_tree_add_none_format(tree, header_field, tvb,
                                          fdata->start, fdata->nbytes,
                                          "byteVector: %s", str);
               g_free (str);
             }
             else {
               DBG0("Error allocating memory.");
-              proto_tree_add_none_format(tree, hf_fast_bytevec, tvb,
+              proto_tree_add_none_format(tree, header_field, tvb,
                                          fdata->start, fdata->nbytes,
                                          "byteVector: %s", "");
             }
@@ -389,16 +386,33 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
           {
             proto_item* item;
             proto_tree* subtree;
-            item = proto_tree_add_none_format(tree, hf_fast_group, tvb,
+            item = proto_tree_add_none_format(tree, header_field, tvb,
                                               fdata->start, fdata->nbytes,
                                               "group:");
 
             subtree = proto_item_add_subtree(item, ett_fast);
             display_fields (tvb, subtree, tnode->children, dnode->children);
           }
-          /* break; */
+          break;
         case FieldTypeSequence:
-          DBG1("Unimplemented display field type %u", ftype->type);
+          {
+            proto_item* item;
+            proto_tree* subtree;
+            GNode* group_dnode;
+            item = proto_tree_add_none_format(tree, header_field, tvb,
+                                              fdata->start, fdata->nbytes,
+                                              "sequence:");
+
+            subtree = proto_item_add_subtree(item, ett_fast);
+            /* Loop thru each child group in the data tree,
+             * using the same child group in the type tree.
+             */
+            for (group_dnode = dnode->children;
+                 group_dnode;
+                 group_dnode = group_dnode->next) {
+              display_fields (tvb, subtree, tnode->children, group_dnode);
+            }
+          }
           break;
         default:
           DBG1("Bad field type %u", ftype->type);
@@ -407,8 +421,7 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
     }
     else {
       /* The field is empty. */
-      /* TODO Don't use hf_fast_ascii, displays as fast.ascii field. */
-      proto_tree_add_none_format(tree, hf_fast_ascii, tvb,
+      proto_tree_add_none_format(tree, header_field, tvb,
                                  fdata->start, fdata->nbytes,
                                  "(empty) %s:", field_typename(ftype->type));
     }

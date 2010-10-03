@@ -180,7 +180,7 @@ GNode* dissect_type (const GNode* tnode,
     &dissect_byte_vector, /* Unicode string. */
     &dissect_byte_vector,
     &dissect_group,
-    0, /* &dissect_sequence, */
+    &dissect_sequence,
     0
   };
   const FieldType* ftype;
@@ -467,6 +467,40 @@ void dissect_group (const GNode* tnode,
 
     /* Recurse down the tree, building onto dnode. */
     dissector_walk (tnode->children, position, dnode, 0);
+    fdata->nbytes = position->offset - fdata->start;
+  }
+  else {
+    DBG0("Only simple types are implemented.");
+  }
+}
+
+
+/*! \brief  Given a byte stream, dissect a sequence.
+ *
+ * \param tnode  Template tree node.
+ * \param position  Position in the packet.
+ * \param dnode  Dissect tree node.
+ */
+void dissect_sequence (const GNode* tnode,
+                       DissectPosition* position, GNode* dnode)
+{
+  SetupDissectStack(ftype, fdata,  tnode, dnode);
+
+  if (ftype->mandatory && !ftype->op) {
+    guint32 size;
+    guint32 i;
+    GNode* parent;
+
+    fdata->start = position->offset;
+
+    dissect_uint32 (tnode, position, dnode);
+    size = *(guint32*)fdata->value;
+
+    parent = dnode;
+    dnode  = 0;
+    for (i = 0; i < size; ++i) {
+      dnode = dissect_type (tnode->children, position, parent, dnode);
+    }
     fdata->nbytes = position->offset - fdata->start;
   }
   else {
