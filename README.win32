@@ -1,0 +1,19 @@
+
+------------------------------------------------------------------------------
+-- Building
+
+- Get Wireshark source.
+Move it to ../wireshark relative to this directory.
+  nmake -f Makefile.nmake distclean
+  nmake -f Makefile.nmake config.h
+
+- Build the plugin.
+Set up your MSVC 2008 environment.
+  paths.bat
+Generate an NMake Makefile.
+  cmaker.bat
+Build the plugin.
+  nmake
+Install it.
+  nmake install
+
