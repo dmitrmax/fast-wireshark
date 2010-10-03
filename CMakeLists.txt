@@ -6,13 +6,13 @@ project (FastWireshark)
 set (plugin_name fast)
 set (wireshark_src ../wireshark)
 
-#set (CMAKE_BUILD_TYPE RELEASE)
-
 if (UNIX)
-  set (cflags "-ansi -pedantic -Wall -fPIC")
   set (install_dir "$ENV{HOME}/.wireshark/plugins")
+  set (cflags "-ansi -pedantic -Wall -fPIC")
 else ()
   set (install_dir "$ENV{HOMEPATH}/Application Data/Wireshark/plugins")
+  # Always build as release mode. Wireshark was built the same way.
+  set (CMAKE_BUILD_TYPE RELEASE)
   ### These defines and cflags copied from wireshark's config.nmake.
   list (APPEND plugin_defines "MSVC_VARIANT=MSVC2008")
   list (APPEND plugin_defines "MSC_VER_REQUIRED=1500")

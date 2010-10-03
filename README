@@ -1,4 +1,6 @@
 
+INFORMATION HERE IS OUTDATED
+See README.nix or README.win32 for current build instructions.
 
 -------------
 - Key Variables
@@ -51,54 +53,6 @@ Wireshark must be listening on something other than loopback on the other
 host. This is particularly useful for seeing the mock FAST traffic dissected
 on a Windows machine.
 
--------------
-- Building
--------------
-
-Before you can build the plugin, you will need a built version of the
-Wireshark source tree somewhere.  You can get it from:
-http://www.wireshark.org/download.html
-
-Extract the package to some folder somewhere, then run:
-./configure; make
-
-note that you DO NOT need to run 'make install' unless you don't have a
-version of wireshark isntalled already, obviously.
-If you do install from source, remember to do a 'sudo ldconfig' afterwards
-to refresh your shared object cache or wireshark will not be able to find
-all its shared objects.
-
-It should work normally, unless it needs a package that you don't have, in
-which case, install it!
-
--------------
-
-Then in your source folder of this project, run our configure script.
-It takes two parameters, the path to the root folder of the wireshark
-source you just built, and a path to the place you want the output shared
-object to be placed at:
-
-./configure path_to_wireshark_source [path_to_so_output_folder]
-
-The output path will default to ~/.wireshark/plugins, as this is the typical
-place for wireshark's plugin folder to be located
-
--------------
-
-Then you can run make:
-make
-
-Note that typically, Wireshark's plugin folder is ~/.wireshark/plugins
-so you can just have the .so built there and it should work
-
-Another note:
-make clean
-will clean up the detritus of the build process, but not the important
-output files or the Makefile
-make distclean
-will clean up the detritus of the build process (INCLUDING the output .so file)
-and remove the generated Makefile, so you will have to run configure to be
-able to build again.
 
 -------------
 Building under windows
@@ -145,19 +99,4 @@ nmake -f makefile.nmake
 This will make the files. As a windows use you are are wanting the .dll made by this process.
 Take it, and put it in the /plugins/version/folder of your wireshark folder, where the
 rest of the external plugin dlls exist, and run wireshark. Wireshark will do the rest itself.
-
-
--------------
-- Linux Capture Permissions
--------------
-
-I couldn't seem to get wireshark to recognize user-added plugins when it
-was running as root, which is a bad idea anyway...
-The way i got wireshark to capture any interface as non-root was to allow
-the dumpcap program access to listen on any network interfaces:
-sudo setcap 'CAP_NET_RAW+eip CAP_NET_ADMIN+eip' `which dumpcap`
-
-However this is also not the most secure thing in the world.  A good summary
-of different approaches is on wiresharks wiki here:
-http://wiki.wireshark.org/CaptureSetup/CapturePrivileges
 

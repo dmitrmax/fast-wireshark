@@ -1,19 +1,65 @@
 
-------------------------------------------------------------------------------
--- Building
+______________________________________________________________________________
+--- Building
 
-- Get Wireshark source.
+
+>-> Setup your build/run environment.
+Set up your MSVC 2008 environment (plus other stuff).
+This is important for all steps, even for running Wireshark.
+  cd /path/to/plugin/source
+  paths.bat
+
+
+>-> Get Wireshark source.
 Move it to ../wireshark relative to this directory.
+Basically, follow the steps here to build Wireshark:
+http://www.wireshark.org/docs/wsdg_html_chunked/ChSetupWin32.html
+
+  nmake -f Makefile.nmake setup
   nmake -f Makefile.nmake distclean
   nmake -f Makefile.nmake config.h
+  nmake -f Makefile.nmake all
 
-- Build the plugin.
-Set up your MSVC 2008 environment.
-  paths.bat
+That last one may fail, but the .dll we need may have been made.
+
+
+>-> Unscrewup the libraries.
+Get in a cygwin shell.
+  cd /cygdrive/c
+  mkdir dev
+  cd wireshark-win32-libs-1.4
+  cp -r gtk2/* ../dev
+  wget http://xmlsoft.org/sources/win32/libxml2-2.7.6.win32.zip
+  wget http://xmlsoft.org/sources/win32/iconv-1.9.2.win32.zip
+  unzip libxml2-2.7.6.win32.zip
+  unzip iconv-1.9.2.win32.zip
+  cp -r libxml2-2.7.6.win32/* ../dev
+  cp -r iconv-1.9.2.win32/* ../dev
+  cd ../dev/include
+There's some extra cruft here.
+  mv glib-2.0/* ./
+  rmdir glib-2.0
+
+If you're working with Wireshark 1.4, don't be slick and get a newer LibXML2,
+there are compatibility issues with Wireshark's Zlib.
+
+
+>-> Build the plugin.
+Go back to your cmd.exe. (Are your paths still set up? Better be.)
+  cd /path/to/plugin/src
 Generate an NMake Makefile.
   cmaker.bat
 Build the plugin.
   nmake
 Install it.
   nmake install
+
+
+>-> Running Wireshark
+With your paths still set up.
+  "C:/Program Files/Wireshark/Wireshark.exe"
+
+
+______________________________________________________________________________
+--- EOF
 
