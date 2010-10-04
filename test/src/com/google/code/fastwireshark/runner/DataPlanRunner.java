@@ -124,8 +124,7 @@ public class DataPlanRunner implements Constants{
 					gv.setDecimal(i, (BigDecimal)o);
 				}
 			} else
-			if(((Scalar)f).getType().getName().equals(STRING) ||
-			   ((Scalar)f).getType().getName().equals(UNICODE) ||
+			if(((Scalar)f).getType().getName().equals(UNICODE) ||
 			   ((Scalar)f).getType().getName().equals(ASCII)){
 					gv.setString(i, (String)o);
 			}

@@ -12,7 +12,6 @@ public interface Constants {
 	public static final String INT64 = "int64";
 	public static final String UINT64 = "uInt64";
 	public static final String DECIMAL = "decimal";
-	public static final String STRING = "string";
 	public static final String UNICODE = "unicode";
 	public static final String ASCII = "ascii";
 	public static final String GROUP = "group";

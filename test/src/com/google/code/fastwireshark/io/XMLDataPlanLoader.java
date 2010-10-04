@@ -100,8 +100,7 @@ public class XMLDataPlanLoader extends DefaultHandler implements Constants{
 				curValues.add(null);
 			}
 		} else
-		if(qName.equalsIgnoreCase(STRING)||
-		   qName.equalsIgnoreCase(ASCII) ||
+		if(qName.equalsIgnoreCase(ASCII) ||
 		   qName.equalsIgnoreCase(UNICODE)) {
 			if(attributes.getValue(VALUE) != null){
 				curValues.add(attributes.getValue(VALUE));
