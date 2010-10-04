@@ -64,10 +64,10 @@ public class XMLDataPlanLoader extends DefaultHandler implements Constants{
 			if(curValues != null){
 				throw new RuntimeException("Starting another message without finishing the old one");
 			}
-			if(attributes.getValue("templateID") != null){
+			if(attributes.getValue(TEMPLATE_ID) != null){
 				curMessageTemplate = MessageTemplateRepository.getTemplateByID(Integer.valueOf(attributes.getValue("templateID")));
 			} else
-			if(attributes.getValue("templateName") != null){
+			if(attributes.getValue(TEMPLATE_NAME) != null){
 				curMessageTemplate = MessageTemplateRepository.getTemplateByName(attributes.getValue("templateName"));
 			} else {
 				if(curMessageTemplate == null){
@@ -79,23 +79,23 @@ public class XMLDataPlanLoader extends DefaultHandler implements Constants{
 		} else
 		if(qName.equalsIgnoreCase(INT32) ||
 		   qName.equalsIgnoreCase(UINT32)){
-			if(attributes.getValue("value") != null){
-				curValues.add(Integer.valueOf(attributes.getValue("value")));
+			if(attributes.getValue(VALUE) != null){
+				curValues.add(Integer.valueOf(attributes.getValue(VALUE)));
 			} else {
 				curValues.add(null);
 			}
 		} else
 		if(qName.equalsIgnoreCase(INT64) ||
 		   qName.equalsIgnoreCase(UINT64)){
-			if(attributes.getValue("value") != null){
-				curValues.add(Long.valueOf(attributes.getValue("value")));
+			if(attributes.getValue(VALUE) != null){
+				curValues.add(Long.valueOf(attributes.getValue(VALUE)));
 			} else {
 				curValues.add(null);
 			}
 		} else
 		if(qName.equalsIgnoreCase(DECIMAL)) {
-			if(attributes.getValue("value") != null){
-				curValues.add(new BigDecimal(attributes.getValue("value")));
+			if(attributes.getValue(VALUE) != null){
+				curValues.add(new BigDecimal(attributes.getValue(VALUE)));
 			} else {
 				curValues.add(null);
 			}
@@ -103,13 +103,14 @@ public class XMLDataPlanLoader extends DefaultHandler implements Constants{
 		if(qName.equalsIgnoreCase(STRING)||
 		   qName.equalsIgnoreCase(ASCII) ||
 		   qName.equalsIgnoreCase(UNICODE)) {
-			if(attributes.getValue("value") != null){
-				curValues.add(attributes.getValue("value"));
+			if(attributes.getValue(VALUE) != null){
+				curValues.add(attributes.getValue(VALUE));
 			} else {
 				curValues.add(null);
 			}
 		} else
-		if(qName.equalsIgnoreCase(GROUP)) {
+		if(qName.equalsIgnoreCase(GROUP) ||
+		   qName.equalsIgnoreCase(SEQUENCE)) {
 			valueStack.push(curValues);
 			curValues = new ArrayList<Object>();
 		}
@@ -121,7 +122,8 @@ public class XMLDataPlanLoader extends DefaultHandler implements Constants{
 			plan.addMessagePlan(new MessagePlan(curMessageTemplate, curValues));
 			curValues = null;
 		} else 
-		if(qName.equalsIgnoreCase(GROUP)){
+		if(qName.equalsIgnoreCase(GROUP) ||
+		   qName.equalsIgnoreCase(SEQUENCE)){
 			List<Object> temp = curValues;
 			curValues = valueStack.pop();
 			curValues.add(temp);

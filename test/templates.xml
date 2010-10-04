@@ -73,4 +73,12 @@
 		</group>
 	</template>
 	
+	<template name="t_int32_sequence" id="15">
+		<int32 id="1" name="int32" />
+		<sequence name="sequence">
+			<int32 id="2" name="int32"/>
+		</sequence>
+		<int32 id="3" name="int32" />
+	</template>
+	
 </templates>

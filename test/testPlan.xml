@@ -13,6 +13,22 @@
 			<int32 value="42" />
 		</group>
 	</Message>
+	
+	<Message templateName="t_int32_sequence">
+		<int32 value="-0" />
+		<sequence>
+			<group>
+				<int32 value="42" />
+			</group>
+			<group>
+				<int32 value="128" />
+			</group>
+			<group>
+				<int32 value="42" />
+			</group>
+		</sequence>
+		<int32 value="43" />
+	</Message>
 
 	<Message templateName="t_uint32">
 		<uint32 value="128" />

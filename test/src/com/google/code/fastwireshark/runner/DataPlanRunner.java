@@ -8,9 +8,11 @@ import java.util.List;
 import org.openfast.GroupValue;
 import org.openfast.Message;
 import org.openfast.MessageOutputStream;
+import org.openfast.SequenceValue;
 import org.openfast.template.Field;
 import org.openfast.template.Group;
 import org.openfast.template.Scalar;
+import org.openfast.template.Sequence;
 
 import com.google.code.fastwireshark.data.DataPlan;
 import com.google.code.fastwireshark.data.MessagePlan;
@@ -85,6 +87,17 @@ public class DataPlanRunner implements Constants{
 		for(int i = gv instanceof Message ? 1 : 0 ; i <= values.size() + (gv instanceof Message ? 0 : -1) ; i++){
 			Object o = iter.next();
 			Field f = gv.getGroup().getField(i);
+			if(f instanceof Sequence){
+				Sequence s = (Sequence)f;
+				SequenceValue sv = new SequenceValue(s);
+				List<List<Object>> seqValues = (List<List<Object>>) o;
+				for(List<Object> l : seqValues){
+					GroupValue sgv = new GroupValue(s.getGroup());
+					populateGroup(sgv,l);
+					sv.add(sgv);
+				}
+				gv.setFieldValue(i, sv);
+			} else
 			if(f instanceof Group){
 				Group g = (Group)f;
 				GroupValue ggv = new GroupValue(g);
