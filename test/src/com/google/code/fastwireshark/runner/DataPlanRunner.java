@@ -5,9 +5,11 @@ import java.math.BigDecimal;
 import java.util.Iterator;
 import java.util.List;
 
+import org.openfast.GroupValue;
 import org.openfast.Message;
 import org.openfast.MessageOutputStream;
 import org.openfast.template.Field;
+import org.openfast.template.Group;
 import org.openfast.template.Scalar;
 
 import com.google.code.fastwireshark.data.DataPlan;
@@ -61,7 +63,7 @@ public class DataPlanRunner implements Constants{
 	 */
 	private void runMessagePlan(MessagePlan mp){
 		Message m = new Message(mp.getTemplate());
-		populateFields(m,mp.getValues());
+		populateGroup(m,mp.getValues());
 		messageOut.writeMessage(m);
 		try {
 			messageOut.getUnderlyingStream().flush();
@@ -72,41 +74,47 @@ public class DataPlanRunner implements Constants{
 	}
 	
 	/**
-	 * Populates the fields in a message with those in the map
-	 * @param message Message to populate
-	 * @param values Values to put into message
+	 * Populate the fields in a group with those in a list
+	 * @param gv The group to populate
+	 * @param values The list of values to use to populate
 	 */
-	private void populateFields(Message message,List<Object> values )
-	{
+	@SuppressWarnings("unchecked")
+	private void populateGroup(GroupValue gv, List<Object> values){
 		Iterator<Object> iter = values.iterator();
-		for(int i = 1 ; i <= values.size() ; i++){
+		//The message is special and needs to have its first value skipped, this causes all other instances to require one less in the loop
+		for(int i = gv instanceof Message ? 1 : 0 ; i <= values.size() + (gv instanceof Message ? 0 : -1) ; i++){
 			Object o = iter.next();
-			Field f = message.getTemplate().getField(i);
-			
+			Field f = gv.getGroup().getField(i);
+			if(f instanceof Group){
+				Group g = (Group)f;
+				GroupValue ggv = new GroupValue(g);
+				populateGroup(ggv,(List<Object>)o);
+				gv.setFieldValue(i, ggv);
+			} else
 			if(((Scalar)f).getType().getName().equals(INT32) ||
 			   ((Scalar)f).getType().getName().equals(UINT32)){
-				message.setInteger(i, (Integer)o);
+				gv.setInteger(i, (Integer)o);
 			} else
 			if(((Scalar)f).getType().getName().equals(INT64) ||
 			   ((Scalar)f).getType().getName().equals(UINT64)){
-				message.setLong(i, (Long)o);
+				gv.setLong(i, (Long)o);
 			} else
 			if(((Scalar)f).getType().getName().equals(DECIMAL)){
-				//Decimal can be of differing arguments, further determine correct type
+			//Decimal can be of differing arguments, further determine correct type
 				if(o instanceof Double){
-					message.setDecimal(i, (Double)o);
+					gv.setDecimal(i, (Double)o);
 				} else 
 				if(o instanceof Float){
-					message.setDecimal(i, (Float)o);
+					gv.setDecimal(i, (Float)o);
 				} else 
 				if(o instanceof BigDecimal){
-					message.setDecimal(i, (BigDecimal)o);
+					gv.setDecimal(i, (BigDecimal)o);
 				}
 			} else
 			if(((Scalar)f).getType().getName().equals(STRING) ||
 			   ((Scalar)f).getType().getName().equals(UNICODE) ||
 			   ((Scalar)f).getType().getName().equals(ASCII)){
-				message.setString(i, (String)o);
+					gv.setString(i, (String)o);
 			}
 		}
 	}

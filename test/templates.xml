@@ -66,4 +66,11 @@
 		<uInt32 id="1" presence="mandatory" name="Flag"> <default value="0"/> </uInt32>
 	</template>
 	
+	<template name="t_int32_group" id="14">
+		<int32 id="1" name="int32" />
+		<group name="group">
+			<int32 id="3" name="int32" />
+		</group>
+	</template>
+	
 </templates>

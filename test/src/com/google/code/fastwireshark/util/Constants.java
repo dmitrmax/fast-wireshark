@@ -15,6 +15,9 @@ public interface Constants {
 	public static final String STRING = "string";
 	public static final String UNICODE = "unicode";
 	public static final String ASCII = "ascii";
+	public static final String GROUP = "group";
+	public static final String MESSAGE = "message";
+	public static final String PLAN = "plan";
 	
 	public static final int MAX_PACKET_SIZE = 1024;
 	

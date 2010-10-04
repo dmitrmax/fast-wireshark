@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
@@ -24,6 +25,7 @@ public class XMLDataPlanLoader extends DefaultHandler implements Constants{
 	private DataPlan plan;
 	private MessageTemplate curMessageTemplate;
 	private List<Object> curValues;
+	private Stack<List<Object>> valueStack;
 	
 	/**
 	 * Attempts to load the data plan from the specified XML file.
@@ -52,13 +54,13 @@ public class XMLDataPlanLoader extends DefaultHandler implements Constants{
 	
 	@Override
 	public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException{
-		if(qName.equalsIgnoreCase("Plan")){
+		if(qName.equalsIgnoreCase(PLAN)){
 			if(plan != null){
 				throw new RuntimeException("Multiple Plans in one file");
 			}
 			plan = new DataPlan();
 		} else 
-		if(qName.equalsIgnoreCase("Message")){
+		if(qName.equalsIgnoreCase(MESSAGE)){
 			if(curValues != null){
 				throw new RuntimeException("Starting another message without finishing the old one");
 			}
@@ -73,6 +75,7 @@ public class XMLDataPlanLoader extends DefaultHandler implements Constants{
 				}
 			}
 			curValues = new ArrayList<Object>();
+			valueStack = new Stack<List<Object>>();
 		} else
 		if(qName.equalsIgnoreCase(INT32) ||
 		   qName.equalsIgnoreCase(UINT32)){
@@ -105,14 +108,23 @@ public class XMLDataPlanLoader extends DefaultHandler implements Constants{
 			} else {
 				curValues.add(null);
 			}
+		} else
+		if(qName.equalsIgnoreCase(GROUP)) {
+			valueStack.push(curValues);
+			curValues = new ArrayList<Object>();
 		}
 	}
 	
 	@Override
 	public void endElement(String uri, String localName, String qName) throws SAXException {
-		if(qName.equalsIgnoreCase("Message")){
+		if(qName.equalsIgnoreCase(MESSAGE)){
 			plan.addMessagePlan(new MessagePlan(curMessageTemplate, curValues));
 			curValues = null;
+		} else 
+		if(qName.equalsIgnoreCase(GROUP)){
+			List<Object> temp = curValues;
+			curValues = valueStack.pop();
+			curValues.add(temp);
 		}
 	}
 	
