@@ -3,10 +3,9 @@
  * \brief  Debugging output functions.
  */
 
-#include "fast.h"
+#include "debug.h"
 
-#include <stdarg.h>
-#include <stdio.h>
+#include <glib/gprintf.h>
 
 /*! \brief  Print debugging info.
  * \param file  Filename of caller.
@@ -27,7 +26,7 @@ void debug_out(const char* file,
 
   va_start(args,fmt);
 
-  vfprintf(stderr,buf,args);
+  g_vfprintf(stderr,buf,args);
 
   va_end(args);
 }
