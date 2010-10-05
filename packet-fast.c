@@ -171,7 +171,7 @@ void proto_reg_handoff_fast ()
   /* Read templates file. */
   if (initialized && config_template_xml_path) {
     GNode* templates;
-    printf("Using xml file %s ...\n",config_template_xml_path);
+    fprintf(stderr, "Using xml file %s ...\n",config_template_xml_path);
     templates = parse_templates_xml (config_template_xml_path);
     if (templates) {
       add_templates(templates);

@@ -56,7 +56,7 @@ GNode* parse_templates_xml(const char* filename)
   if (!templates)  BAILOUT(0, "Error creating root of templates tree.");
 	
 	/* Check if root is of type "templates". */
-	if (xmlStrcmp(cur->name, (const xmlChar *) "templates")) {
+	if (xmlStrcmp(cur->name, (xmlChar*) "templates")) {
 		fprintf(stderr,"document of the wrong type, root node != templates\n");
 		xmlFreeDoc(doc);
 		return 0;
@@ -351,7 +351,7 @@ gboolean parse_operator (xmlNodePtr xmlnode, FieldType * tfield){
       }
 			
 			/* get value of operator if given */
-			prop = xmlGetProp(xmlnode, (const xmlChar*)"value");
+			prop = xmlGetProp(xmlnode, (xmlChar*)"value");
 			if(prop!=NULL){
 				tfield->value = prop;
 			} else {
