@@ -156,10 +156,6 @@ void proto_reg_handoff_fast ()
 
   if (!initialized) {
     fast_handle = create_dissector_handle(&dissect_fast, proto_fast);
-
-    /* TODO: REMOVEME */
-    /* Hard coded template setup. */
-    /* add_templates (FAST_setup()); */
   }
   else {
     dissector_delete(portField, currentPort, fast_handle);
@@ -340,10 +336,12 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
         case FieldTypeUnicodeString:
           {
             guint8* str;
-            str = (guint8*) g_malloc ((1+fdata->nbytes) * sizeof(guint8));
+            const SizedData* vec;
+            vec = (SizedData*) fdata->value;
+            str = (guint8*) g_malloc ((1+vec->nbytes) * sizeof(guint8));
             if (str) {
-              memcpy (str, fdata->value, fdata->nbytes * sizeof(guint8));
-              str[fdata->nbytes] = 0;
+              memcpy (str, vec->bytes, vec->nbytes * sizeof(guint8));
+              str[vec->nbytes] = 0;
               proto_tree_add_none_format(tree, header_field, tvb,
                                          fdata->start, fdata->nbytes,
                                          "unicode: %s", str);
@@ -360,14 +358,14 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
         case FieldTypeByteVector:
           {
             guint8* str;
-            str = (guint8*) g_malloc ((1+2*fdata->nbytes) * sizeof(guint8));
+            const SizedData* vec;
+            vec = (SizedData*) fdata->value;
+            str = (guint8*) g_malloc ((1+2*vec->nbytes) * sizeof(guint8));
             if (str) {
               guint i;
-              const guint8* bytes;
-              bytes = (guint8*) fdata->value;
-              for (i = 0; i < fdata->nbytes; ++i) {
-                g_snprintf ((gchar*)(2*i + str), 2*sizeof(guint8),
-                            "%x", bytes[i]);
+              for (i = 0; i < vec->nbytes; ++i) {
+                g_snprintf ((gchar*)(2*i + str), 3*sizeof(guint8),
+                            "%x", vec->bytes[i]);
               }
               proto_tree_add_none_format(tree, header_field, tvb,
                                          fdata->start, fdata->nbytes,

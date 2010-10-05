@@ -35,7 +35,7 @@ list (APPEND plugin_defines "HAVE_CONFIG_H")
 
 set (plugin_srcs
   debug.c decode.c dissect.c packet-fast.c
-  parse-template.c setup.c template.c)
+  parse-template.c template.c)
 
 list (APPEND CMAKE_MODULE_PATH ${wireshark_src}/cmake/modules)
 

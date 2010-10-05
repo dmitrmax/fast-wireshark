@@ -30,6 +30,15 @@ struct dissect_position_struct
 typedef struct dissect_position_struct DissectPosition;
 
 
+/*! \brief  Hold a size prefixed data chunk. */
+struct sized_data_struct
+{
+  guint nbytes;
+  guint8* bytes;
+};
+typedef struct sized_data_struct SizedData;
+
+
 gboolean dissect_shift_pmap (DissectPosition* position);
 const GNode* dissect_fast_bytes (guint nbytes, const guint8* bytes,
                                  GNode* parent);

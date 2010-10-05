@@ -422,7 +422,8 @@ void dissect_byte_vector (const GNode* tnode,
   SetupDissectStack(ftype, fdata,  tnode, dnode);
 
   if (ftype->mandatory && !ftype->op) {
-    guint vecsize;
+    SizedData* vec;
+
     fdata->start = position->offset;
     fdata->nbytes = 0;
 
@@ -430,19 +431,30 @@ void dissect_byte_vector (const GNode* tnode,
     position->offjmp = count_stop_bit_encoded (position->nbytes,
                                                position->bytes);
     fdata->nbytes += position->offjmp;
-    vecsize = decode_uint32 (position->offjmp,
-                             position->bytes);
+
+    vec = g_malloc (sizeof (SizedData));
+    if (!vec)  BAILOUT(;,"Could not allocate memory.");
+
+    vec->nbytes = decode_uint32 (position->offjmp,
+                                 position->bytes);
     ShiftBytes(position);
 
     /* Get the byte vector. */
-    position->offjmp = vecsize;
-    fdata->nbytes += position->offjmp;
-    fdata->value = g_malloc (position->offjmp * sizeof(guint8));
-    if (fdata->value) {
-      decode_byte_vector (position->offjmp,
+    position->offjmp = vec->nbytes;
+    fdata->nbytes += vec->nbytes;
+
+    vec->bytes = g_malloc (vec->nbytes * sizeof(guint8));
+
+    if (vec->bytes) {
+      decode_byte_vector (vec->nbytes,
                           position->bytes,
-                          (guint8*) fdata->value);
+                          vec->bytes);
+      fdata->value = vec;
     }
+    else {
+      g_free (vec);
+    }
+
     ShiftBytes(position);
   }
   else {
