@@ -14,15 +14,25 @@
  */
 int ArgParseBailOut(const char* arg, const char* reason)
 {
-  fprintf (stderr, "Usage:\n");
-  fprintf (stderr, "  rwcompare [-p <port>] [--tshark <TShark executable>]\n");
-  fprintf (stderr, "            <template file> <plan file> <pcap file>\n");
+  FILE* out;
+  out = stderr;
+
+  fputs ("Usage:\n", out);
+  fputs ("  rwcompare [p <port>]\n", out);
+  fputs ("            [tshark <TShark executable>]\n", out);
+  fputs ("            [tmpl <template file>]\n", out);
+  fputs ("            [pcap <pcap file>]\n", out);
+  fputs ("            [expect <plan file>]\n", out);
+  fputs ("            [pdml <pdml output file>]\n", out);
+  fputs ("            [plan <plan output file>]\n", out);
+  fputs ("  rwcompare plans <plan file> <plan file>\n", out);
+
   if (reason) {
     if (arg) {
-      fprintf (stderr, "Error: arg(%s)  %s\n", arg, reason);
+      fprintf (out, "Error: arg(%s)  %s\n", arg, reason);
     }
     else {
-      fprintf (stderr, "Error:  %s\n", reason);
+      fprintf (out, "Error:  %s\n", reason);
     }
   }
   return EXIT_FAILURE;
@@ -34,42 +44,93 @@ int ArgParseBailOut(const char* arg, const char* reason)
 int main (const int argc, const char* const* argv)
 {
   const char* template_filename = 0;
-  const char* plan_filename = 0;
   const char* pcap_filename = 0;
+  const char* expect_filename = 0;
+  char* pdml_filename = 0;
+  char* plan_filename = 0;
   const char* tshark_exe = "tshark";
   int port = 1337;
+  gboolean givenp_pdml = FALSE;
+  gboolean givenp_plan = FALSE;
+  gboolean goodp = TRUE;
   int argi;
-  gboolean havep_more_flags = TRUE;
 
   /* Loop thru arguments to set internal data. */
   for (argi = 1; argi < argc; ++argi) {
     const char* arg = argv[argi];
-    if (arg[0] != '-' || !havep_more_flags) {
-      if (!template_filename)   template_filename = argv[argi];
-      else if (!plan_filename)  plan_filename     = argv[argi];
-      else if (!pcap_filename)  pcap_filename     = argv[argi];
-      else return ArgParseBailOut(arg, "Too many filenames.");
-    }
-    else if (!strcmp("--", arg)) {
-      havep_more_flags = FALSE;
-    }
-    else if (argc == argi+1) {
+    if (argc == argi+1) {
       return ArgParseBailOut(arg, "Trailing flag without a value.");
     }
-    else if (!strcmp("-p", arg)) {
+    else if (!strcmp("p", arg)) {
       port = atoi (argv[++argi]);
     }
-    else if (!strcmp("--tshark", arg)) {
+    else if (!strcmp("tshark", arg)) {
       tshark_exe = argv[++argi];
+    }
+    else if (!strcmp("tmpl", arg)) {
+      template_filename = argv[++argi];
+    }
+    else if (!strcmp("pcap", arg)) {
+      pcap_filename = argv[++argi];
+    }
+    else if (!strcmp("expect", arg)) {
+      expect_filename = argv[++argi];
+    }
+    else if (!strcmp("pdml", arg)) {
+      pdml_filename = g_strdup (argv[++argi]);
+      givenp_pdml = TRUE;
+    }
+    else if (!strcmp("plan", arg)) {
+      plan_filename = g_strdup (argv[++argi]);
+      givenp_plan = TRUE;
+    }
+    else if (argi == 1 && !strcmp("plans", arg)) {
+      if (3+ argi != argc) {
+        return ArgParseBailOut(arg, "Require exactly two plan files.");
+      }
+      plan_filename = g_strdup (argv[++argi]);
+      expect_filename = g_strdup (argv[++argi]);
     }
     else {
       return ArgParseBailOut(arg, "Unknown argument.");
     }
   }
 
-  if (!(template_filename && plan_filename && pcap_filename)) {
-    return ArgParseBailOut(0, "Need more filenames.");
+
+  /* Run TShark. */
+  if (goodp && template_filename && pcap_filename) {
+    if (!givenp_pdml) {
+      pdml_filename = g_strdup_printf ("%s-pdml.xml", pcap_filename);
+    }
+    goodp = run_tshark (tshark_exe,
+                        pcap_filename,
+                        template_filename,
+                        port,
+                        pdml_filename);
   }
+
+  /* Generate a plan file. */
+  if (goodp && pdml_filename) {
+    if (!givenp_plan) {
+      plan_filename = g_strdup_printf ("%s-plan.xml", pcap_filename);
+    }
+    /* TODO */
+    goodp = FALSE;
+  }
+
+  /* Compare the two plan files. */
+  if (goodp && plan_filename && expect_filename) {
+    /* TODO */
+    goodp = FALSE;
+  }
+
+  /* Remove intermediary files if not given. */
+  if (pdml_filename && !givenp_pdml)  remove (pdml_filename);
+  if (plan_filename && !givenp_plan)  remove (plan_filename);
+
+  /* Free some heap-allocated strings. */
+  if (pdml_filename)  g_free (pdml_filename);
+  if (plan_filename)  g_free (plan_filename);
 
   /* xmlDocPtr doc; */
   /* xmlNodePtr node; */
@@ -78,6 +139,9 @@ int main (const int argc, const char* const* argv)
 
   /* doc = xmlParseFile(filename); */
 
+  if (!goodp) {
+    return EXIT_FAILURE;
+  }
   return EXIT_SUCCESS;
 }
 
