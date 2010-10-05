@@ -118,6 +118,7 @@ int main (const int argc, const char* const* argv)
 
   /* Compare the two plan files. */
   if (goodp && plan_filename && expect_filename) {
+    xmlLineNumbersDefault(1);
     goodp = equiv_plan_files (plan_filename, expect_filename);
   }
 
@@ -280,21 +281,30 @@ gboolean equiv_plan_files (const char* plan_filename,
 
 
 /*! \brief  Compare two XML trees representing Plan Files.
+ *
+ * Also print some info about where the difference is.
+ *
  * \return  TRUE iff equivalent.
  */
 gboolean equiv_plan_xml (xmlNodePtr cnode,
                          xmlNodePtr enode)
 {
+  gboolean equivp = TRUE;
   cnode = next_xml_node (cnode);
   enode = next_xml_node (enode);
   while (cnode && enode) {
-    gboolean equivp = TRUE;
     xmlChar* cprop;
     xmlChar* eprop;
 
     /* Assure field names are the same. */
     equivp = !xmlStrcasecmp(cnode->name, enode->name);
-    if (!equivp)  return FALSE;
+    if (!equivp) {
+      fprintf (stderr,
+               "Field mismatch on line %ld (plan) and line %ld (expect).\n",
+               xmlGetLineNo (cnode),
+               xmlGetLineNo (enode));
+      return FALSE;
+    }
 
     /* Assure equivalent values. */
     cprop = xmlGetProp (cnode, (xmlChar*)"value");
@@ -307,7 +317,13 @@ gboolean equiv_plan_xml (xmlNodePtr cnode,
       if (cprop)  xmlFree (cprop);
       if (eprop)  xmlFree (eprop);
       /* Bail out if no good. */
-      if (!equivp)  return FALSE;
+      if (!equivp) {
+        fprintf (stderr,
+                 "Value mismatch on line %ld (plan) and line %ld (expect).\n",
+                 xmlGetLineNo (cnode),
+                 xmlGetLineNo (enode));
+        return FALSE;
+      }
     }
 
     /* Assure equivalent children. */
@@ -319,7 +335,14 @@ gboolean equiv_plan_xml (xmlNodePtr cnode,
   }
 
   /* Neither must have any more valid nodes. */
-  if (cnode || enode) {
+  if (cnode) {
+    fprintf (stderr, "More plan nodes (line %ld) than expected.\n",
+             xmlGetLineNo (cnode));
+    return FALSE;
+  }
+  if (enode) {
+    fprintf (stderr, "Fewer plan nodes than expected (line %ld).\n",
+             xmlGetLineNo (enode));
     return FALSE;
   }
   return TRUE;
