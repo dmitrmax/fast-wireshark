@@ -23,7 +23,6 @@ int ArgParseBailOut(const char* arg, const char* reason)
   fputs ("            [expect <plan file>]\n", out);
   fputs ("            [pdml <pdml output file>]\n", out);
   fputs ("            [plan <plan output file>]\n", out);
-  fputs ("  rwcompare plans <plan file> <plan file>\n", out);
 
   if (reason) {
     if (arg) {
@@ -53,6 +52,10 @@ int main (const int argc, const char* const* argv)
   gboolean goodp = TRUE;
   int argi;
 
+  if (argc == 1) {
+    return ArgParseBailOut(0,0);
+  }
+
   /* Loop thru arguments to set internal data. */
   for (argi = 1; argi < argc; ++argi) {
     const char* arg = argv[argi];
@@ -81,13 +84,6 @@ int main (const int argc, const char* const* argv)
     else if (!strcmp("plan", arg)) {
       plan_filename = g_strdup (argv[++argi]);
       givenp_plan = TRUE;
-    }
-    else if (argi == 1 && !strcmp("plans", arg)) {
-      if (3+ argi != argc) {
-        return ArgParseBailOut(arg, "Require exactly two plan files.");
-      }
-      plan_filename = g_strdup (argv[++argi]);
-      expect_filename = g_strdup (argv[++argi]);
     }
     else {
       return ArgParseBailOut(arg, "Unknown argument.");
