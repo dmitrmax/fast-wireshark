@@ -64,11 +64,11 @@ public class XMLDataPlanLoader extends DefaultHandler implements Constants{
 			if(curValues != null){
 				throw new RuntimeException("Starting another message without finishing the old one");
 			}
-			if(attributes.getValue(TEMPLATE_ID) != null){
-				curMessageTemplate = MessageTemplateRepository.getTemplateByID(Integer.valueOf(attributes.getValue("templateID")));
+			if(attributes.getValue(VALUE) != null){
+				curMessageTemplate = MessageTemplateRepository.getTemplateByID(Integer.valueOf(attributes.getValue(VALUE)));
 			} else
 			if(attributes.getValue(TEMPLATE_NAME) != null){
-				curMessageTemplate = MessageTemplateRepository.getTemplateByName(attributes.getValue("templateName"));
+				curMessageTemplate = MessageTemplateRepository.getTemplateByName(attributes.getValue(TEMPLATE_NAME));
 			} else {
 				if(curMessageTemplate == null){
 					throw new RuntimeException("First Message lacks a template");

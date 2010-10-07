@@ -3,7 +3,7 @@
 		   ns="http://www.fixprotocol.org/ns/fix">
 		   
 	<template name="t_int32" id="0">
-		<int32 id="1" name="int32" />
+		<int32 id="1" name="int32"/>
 	</template>
 	
 	<template name="t_uint32" id="1">

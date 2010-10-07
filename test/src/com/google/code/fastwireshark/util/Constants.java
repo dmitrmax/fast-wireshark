@@ -22,6 +22,6 @@ public interface Constants {
 	public static final String TEMPLATE_NAME = "templateName";
 	public static final String VALUE = "value";
 	
-	public static final int MAX_PACKET_SIZE = 1024;
+	public static final int MAX_PACKET_SIZE = 1024*1024*10;
 	
 }
