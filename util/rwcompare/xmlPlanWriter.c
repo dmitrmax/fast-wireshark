@@ -53,7 +53,7 @@ int writeMessage(const xmlChar* tid){
   }
 
   /* Add an attribute with name "templateID" and value tid to Message. */
-  rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "templateID", BAD_CAST tid);
+  rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "value", BAD_CAST tid);
   if (rc < 0) {
     fprintf(stderr, "Error adding message attribute\n");
     return false;
