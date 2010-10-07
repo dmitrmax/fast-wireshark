@@ -131,8 +131,12 @@ gint32 decode_int32 (guint nbytes, const guint8* bytes)
 
   /* If we have a sign bit, */
   if (bytes[0] & (StopByte >> 1)) {
-    /* sign extend /n/. */
-    n |= ~(gint32)0 << number_decoded_bits (nbytes);
+    guint nbits;
+    nbits = number_decoded_bits (nbytes);
+    if (nbits < 32) {
+      /* sign extend /n/. */
+      n |= ~(gint32)0 << nbits;
+    }
   }
   return n;
 }
@@ -157,8 +161,12 @@ gint64 decode_int64 (guint nbytes, const guint8* bytes)
 
   /* If we have a sign bit, */
   if (bytes[0] & (StopByte >> 1)) {
-    /* sign extend /n/. */
-    n |= ~(gint64)0 << number_decoded_bits (nbytes);
+    guint nbits;
+    nbits = number_decoded_bits (nbytes);
+    if (nbits < 64) {
+      /* sign extend /n/. */
+      n |= ~(gint64)0 << nbits;
+    }
   }
   return n;
 }
