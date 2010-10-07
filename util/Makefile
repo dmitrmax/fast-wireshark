@@ -10,7 +10,7 @@ LFLAGS = -lxml2 -lglib-2.0
 OBJCC = $(CC) -c $(CFLAGS) $(DFLAGS) $(IFLAGS)
 EXECC = $(CC) $(CFLAGS) $(LFLAGS)
 
-EXEC = bin/client bin/server bin/rwcompare bin/pdmlParser
+EXEC = bin/client bin/server bin/rwcompare
 
 .PHONY: all
 all: $(EXEC)
@@ -24,10 +24,7 @@ bin/client: client/client.o client/encode.o
 bin/server: server/server.o
 	$(EXECC) -o $@ $^
 
-bin/rwcompare: rwcompare/rwcompare.o
-	$(EXECC) -o $@ $^
-
-bin/pdmlParser: pdmlParser/pdmlParser.o pdmlParser/xmlPlanWriter.o
+bin/rwcompare: rwcompare/rwcompare.o rwcompare/pdmlParser.o rwcompare/xmlPlanWriter.o
 	$(EXECC) -o $@ $^
 
 .PHONY: clean

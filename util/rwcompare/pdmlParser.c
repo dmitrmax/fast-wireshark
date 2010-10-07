@@ -33,7 +33,7 @@ int parseField(xmlDocPtr doc, xmlNodePtr xmlnode){
   
 
   /* Get field type */
-  fullname = xmlGetProp( xmlnode, "name");
+  fullname = xmlGetProp( xmlnode, (const xmlChar *)"name");
   type = getFieldType(fullname);
   if(type==NULL){
     fprintf(stderr, "ERROR: field type wrong, not in format fast.x (ex. fast.int32)\n");
@@ -68,7 +68,7 @@ int parseField(xmlDocPtr doc, xmlNodePtr xmlnode){
   /* else treat as normal field */
 
   /*Get value of field */
-  value = xmlGetProp( xmlnode, "show");
+  value = xmlGetProp( xmlnode, (const xmlChar *)"show");
 
   /* write field */
   rc = writeField(type, value);
@@ -107,9 +107,8 @@ int parseTemplate(xmlDocPtr doc, xmlNodePtr xmlnode){
 
   int rc;
   xmlChar *tid;
-  xmlChar *prop;
 
-  tid = xmlGetProp( xmlnode, "show");
+  tid = xmlGetProp( xmlnode, (const xmlChar *)"show");
   if(tid==NULL){
     fprintf(stderr, "ERROR: no template id\n");
   }
@@ -142,7 +141,7 @@ int parseFastPacket(xmlDocPtr doc, xmlNodePtr xmlnode){
 
     /* Look for template fields */
     if (xmlStrcmp(xmlnode->name, (const xmlChar *)"field")==0){
-      prop = xmlGetProp( xmlnode, "name");
+      prop = xmlGetProp( xmlnode, (const xmlChar *)"name");
       if(xmlStrcmp(prop, (const xmlChar *)"fast.tid")==0){
         if(!parseTemplate(doc, xmlnode)){
           return false;
@@ -172,7 +171,7 @@ int parsePacket (xmlDocPtr doc, xmlNodePtr xmlnode) {
     }
 
     if (xmlStrcmp(xmlnode->name, (const xmlChar *)"proto")==0){
-      prop = xmlGetProp( xmlnode, "name");
+      prop = xmlGetProp( xmlnode, (const xmlChar *)"name");
       if(xmlStrcmp(prop, (const xmlChar *)"fast")==0){
         if(!parseFastPacket(doc, xmlnode)){
           return false;
@@ -187,7 +186,7 @@ int parsePacket (xmlDocPtr doc, xmlNodePtr xmlnode) {
 }
 
 /* Parse the pdml file looking for packets */
-int parseDoc(char *docname) {
+int parseDoc(const char *docname) {
 
 	xmlDocPtr doc; /* pointer to XML document */
 	xmlNodePtr xmlnode; /* pointer to current node within document */
@@ -230,37 +229,27 @@ int parseDoc(char *docname) {
 	return true;
 }
 
-int main(int argc, char **argv) {	
+gboolean generatePlanFromPDML(const char * pdmlFilename, const char * outputPlanFilename){
 
 	int sucess;
-	char *docname;
-  char *output;
   parsedFastPackets = 0;
-		
-	if (argc <= 2) {
-		printf("Usage: %s inputXML outputXML\n", argv[0]);
-    return(1);
-	}
-
-	
-	docname = argv[1];
-  output = argv[2];
   
-  if(initXMLWriter(output)){
+  if(initXMLWriter(outputPlanFilename)){
 
-	  sucess = parseDoc(docname);
+	  sucess = parseDoc(pdmlFilename);
   
 	  if(sucess){
-		  printf("Sucessfuly parsed xml doc %s\n", docname);
+		  printf("Sucessfuly parsed xml doc %s\n", pdmlFilename);
       printf("Found %d fast packets\n", parsedFastPackets);
       closeAndWriteXMLOutput();
+			return true;
 	  } else {
-		  fprintf(stderr,"Failed to parse %s\n", docname);
-      return 0;
+		  fprintf(stderr,"Failed to parse %s\n", pdmlFilename);
+      return false;
 	  }
   }
 
-	return (0);
+	return false;
 }
 
 /* Check if parser should ignore given node */

@@ -18,7 +18,7 @@
 xmlTextWriterPtr writer;
 
 
-int initXMLWriter(char *output);
+int initXMLWriter(const char *output);
 int writeMessage(const xmlChar* tid);
 int closeMessage();
 int writeGroup();

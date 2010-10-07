@@ -108,8 +108,8 @@ int main (const int argc, const char* const* argv)
     if (!givenp_plan) {
       plan_filename = g_strdup_printf ("%s-plan.xml", pcap_filename);
     }
-    /* TODO */
-    goodp = FALSE;
+    
+		goodp = generatePlanFromPDML(pdml_filename, plan_filename);
   }
 
   /* Compare the two plan files. */

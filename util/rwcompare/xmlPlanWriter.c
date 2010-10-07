@@ -3,10 +3,9 @@
 
 
 /* Setup the xmlwriter to generate the plan file */
-int initXMLWriter(char *output){
+int initXMLWriter(const char *output){
 
   int rc;
-  xmlChar *tmp;
 
   /* Create a new XmlWriter for docname, with no compression. */
   writer = xmlNewTextWriterFilename(output, 0);

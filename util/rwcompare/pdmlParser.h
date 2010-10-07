@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <libxml/xmlmemory.h>
 #include <libxml/parser.h>
+#include <glib.h>
 #include "xmlPlanWriter.h"
 
 
@@ -17,8 +18,9 @@ int walkFields(xmlDocPtr doc, xmlNodePtr xmlnode);
 int parseTemplate(xmlDocPtr doc, xmlNodePtr xmlnode);
 int parseFastPacket(xmlDocPtr doc, xmlNodePtr xmlnode);
 int parsePacket (xmlDocPtr doc, xmlNodePtr xmlnode);
-int parseDoc(char *docname);
+int parseDoc(const char *docname);
 int ignoreXmlNode(xmlNodePtr xmlnode);
+gboolean generatePlanFromPDML(const char * pdmlFilename, const char * outputPlanFilename);
 
 
 #endif

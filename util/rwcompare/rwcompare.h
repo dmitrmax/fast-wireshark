@@ -4,6 +4,7 @@
 
 #include <glib.h>
 #include <libxml/parser.h>
+#include "pdmlParser.h"
 
 int ArgParseBailOut(const char* arg, const char* reason);
 gboolean run_gather (guint argc, const char* const* argv, char** output);
