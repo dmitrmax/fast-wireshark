@@ -109,7 +109,7 @@ int main (const int argc, const char* const* argv)
       plan_filename = g_strdup_printf ("%s-plan.xml", pcap_filename);
     }
     
-		goodp = generatePlanFromPDML(pdml_filename, plan_filename);
+    goodp = generatePlanFromPDML(pdml_filename, plan_filename);
   }
 
   /* Compare the two plan files. */
@@ -272,6 +272,12 @@ gboolean equiv_plan_files (const char* plan_filename,
   if (comput_doc)  xmlFreeDoc(comput_doc);
   if (expect_doc)  xmlFreeDoc(expect_doc);
 
+  if (equivp) {
+    fprintf (stderr, "Plan matches expected.\n");
+  }
+  else {
+    fprintf (stderr, "Plan does not match expected.\n");
+  }
   return equivp;
 }
 
