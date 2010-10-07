@@ -77,7 +77,13 @@ public class Main {
 				}
 			}
 		}
-		CommandLineArguments cargs = new CommandLineArguments(args);
+		CommandLineArguments cargs = null;
+		try{
+			cargs = new CommandLineArguments(args);
+		} catch (RuntimeException e){
+			System.err.println(e.getMessage());
+			System.exit(1);
+		}
 		try{
 			/*
 			 * LOAD TEMPLATE 
@@ -114,7 +120,7 @@ public class Main {
 			runner.setMessageOutputStream(messageOut);
 			runner.runDataPlan(dp);
 		} catch (Throwable e){
-			System.err.println(e.getMessage());
+			e.printStackTrace();
 		}
 
 	}
