@@ -1,0 +1,25 @@
+<plan>
+    <message value="5">
+        <ascii value="abcdefghijklmnopqrstuvwxyz"/>
+    </message>
+    <message>
+        <ascii value="Hello Word!"/>
+    </message>
+    <message>
+        <ascii value="Four score and seven years ago our fathers brought forth on this continent, a new nation, conceived in Liberty, and dedicated to the proposition that all men are created equ" />
+    </message>
+    <message value="9">
+        <unicode value="abcdefghijklmnopqrstuvwxyz"/>
+    </message>
+    <message>
+        <unicode value="Hello Word!"/>
+    </message>
+    <message>
+        <unicode value="Four score and seven years ago our fathers brought forth on this continent, a new nation, conceived in Liberty, and dedicated to the proposition that all men are created equ" />
+    </message>
+    <Message value="6">
+		<ascii value="Four score and seven years ago our fathers brought forth on this continent, a new nation, conceived in Liberty, and dedicated to the proposition that all men are created equ" />
+		<unicode value="al. Now we are engaged in a great civil war, testing whether that nation, or any nation so conceived and so dedicated, can long endure. We are met on a great battle-field o" />
+		<ascii value="f that war. We have come to dedicate a portion of that field, as a final resting place for those who here gave their lives that that nation might live. It is altogether fittin" />
+	</Message>
+</plan>

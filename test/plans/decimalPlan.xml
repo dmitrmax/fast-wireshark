@@ -1,0 +1,27 @@
+<plan>
+    <message value="4">
+        <decimal value="0"/>
+    </message>
+    <message>
+        <decimal value="2147483647"/>
+    </message>
+    <message>
+        <decimal value="-2147483648"/>
+    </message>
+    <message>
+        <decimal value="5.5"/>
+    </message>
+    <message>
+        <decimal value="-5.5"/>
+    </message>
+    <message>
+        <decimal value=".55"/>
+    </message>
+    <message>
+        <decimal value="-.55"/>
+    </message>
+    <message>
+        <decimal value="500"/>
+    </message>
+    
+</plan>

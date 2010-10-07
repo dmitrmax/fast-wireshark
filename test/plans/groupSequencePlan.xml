@@ -1,0 +1,67 @@
+<plan>
+    <message value="7">
+    	<int32 value="42" />
+    	<group>
+    		<int32 value="43" />
+    	</group>
+    </message>
+    
+    <message value="8">
+    	<int32 value="42" />
+    	<sequence>
+    		<group>
+    			<int32 value="43" />
+    		</group>
+    		<group>
+    			<int32 value="44" />
+    		</group>
+    		<group>
+    			<int32 value="45" />
+    		</group>
+    	</sequence>
+    	<int32 value="46" />
+    </message>
+    
+	<message value="10">
+		<int32 value="0" />
+		<sequence>
+			<group>
+				<int32 value="1" />
+				<sequence>
+					<group>
+						<int32 value="2" />
+						<group>
+							<int32 value="3" />
+						</group>
+					</group>
+					<group>
+						<int32 value="4" />
+						<group>
+							<int32 value="5" />
+						</group>
+					</group>
+				</sequence>
+			</group>
+			<group>
+				<int32 value="6" />
+				<sequence>
+					<group>
+						<int32 value="7" />
+						<group>
+							<int32 value="8" />
+						</group>
+					</group>
+					<group>
+						<int32 value="9" />
+						<group>
+							<int32 value="10" />
+						</group>
+					</group>
+				</sequence>
+			</group>
+		</sequence>
+		<int32 value="11" />
+	</message>
+    			
+    
+</plan>

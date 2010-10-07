@@ -26,10 +26,12 @@
 		<string charset="ascii" id="1" name="string" />
 	</template>
 	
+
+	
 	<template name="t_ascii_unicode_string" id="6">
 		<string charset="ascii" id="2" name="a" />
-		<string charset="unicode" id="2" name="u" />
-		<string charset="ascii" id="2" name="s" />
+		<string charset="unicode" id="3" name="u" />
+		<string charset="ascii" id="4" name="s" />
 	</template>
 	
 	<template name="t_int32_group" id="7">
@@ -45,6 +47,24 @@
 			<int32 id="2" name="int32"/>
 		</sequence>
 		<int32 id="3" name="int32" />
+	</template>
+	
+	<template name="t_ascii" id="9">
+		<string charset="unicode" id="1" name="string" />
+	</template>
+	
+	<template name="t_sequence_sequence_group" id="10">
+		<int32 id="1" name="int32_0" />
+		<sequence name="sequence" >
+			<int32 id="2" name="int32_1" />
+			<sequence name="sequence2" >
+				<int32 id="2" name="int32_2" />
+				<group name="group" >
+					<int32 id="2" name="int32_3" />
+				</group>
+			</sequence>
+		</sequence>
+		<int32 id="3" name="int32_4" />
 	</template>
 	
 </templates>

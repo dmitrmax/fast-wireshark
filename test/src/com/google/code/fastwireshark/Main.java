@@ -38,7 +38,15 @@ public class Main {
 			 * @param args The command line arguments from main
 			 */
 			public CommandLineArguments(String [] args){
-
+				if(args.length == 0){
+					System.out.println("Usage:\n" +
+							"\t[-t <templateFile>[ <templateFile2>...]]\n" +
+							"\t[-p <planFile>]\n" +
+							"\t[-b]\n" +
+							"\t[-n <port>]"
+							);
+					System.exit(0);
+				}
 				for(int i = 0 ; i < args.length ; i++){
 					String cur = args[i];
 					if(cur.equals("-t")){
@@ -106,7 +114,7 @@ public class Main {
 			runner.setMessageOutputStream(messageOut);
 			runner.runDataPlan(dp);
 		} catch (Throwable e){
-			e.printStackTrace();
+			System.err.println(e.getMessage());
 		}
 
 	}
