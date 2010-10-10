@@ -1,5 +1,5 @@
 
-add_executable (rwcompare pdmlParser.c rwcompare.c xmlPlanWriter.c)
+add_executable (rwcompare pdmlParser.c run-exe.c rwcompare.c xmlPlanWriter.c)
 
 include_directories (${GLIB2_INCLUDE_DIRS})
 include_directories (${LIBXML2_INCLUDE_DIR}) 

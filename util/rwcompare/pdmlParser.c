@@ -33,14 +33,14 @@ int parseField(xmlDocPtr doc, xmlNodePtr xmlnode){
   
 
   /* Get field type */
-  fullname = xmlGetProp( xmlnode, (const xmlChar *)"name");
+  fullname = xmlGetProp( xmlnode, (xmlChar *)"name");
   type = getFieldType(fullname);
   if(type==NULL){
     fprintf(stderr, "ERROR: field type wrong, not in format fast.x (ex. fast.int32)\n");
     return false;
   }
 
-  if(xmlStrcmp(type, (const xmlChar *)"group")==0){
+  if(xmlStrcmp(type, (xmlChar *)"group")==0){
     /* parse and write group */
     rc = writeGroup();
     if(rc==false) return false;
@@ -52,7 +52,7 @@ int parseField(xmlDocPtr doc, xmlNodePtr xmlnode){
     if(rc==false) return false;
 
     return true;
-  } else if(xmlStrcmp(type, (const xmlChar *)"sequence")==0){
+  } else if(xmlStrcmp(type, (xmlChar *)"sequence")==0){
     /* parse and write sequence */
     rc = writeSequence();
     if(rc==false) return false;
@@ -68,7 +68,7 @@ int parseField(xmlDocPtr doc, xmlNodePtr xmlnode){
   /* else treat as normal field */
 
   /*Get value of field */
-  value = xmlGetProp( xmlnode, (const xmlChar *)"show");
+  value = xmlGetProp( xmlnode, (xmlChar *)"show");
 
   /* write field */
   rc = writeField(type, value);
@@ -90,7 +90,7 @@ int walkFields(xmlDocPtr doc, xmlNodePtr xmlnode){
       continue;
     }
 
-    if (xmlStrcmp(xmlnode->name, (const xmlChar *)"field")==0){
+    if (xmlStrcmp(xmlnode->name, (xmlChar *)"field")==0){
       if(!parseField(doc, xmlnode)){
         return false;
       }
@@ -108,7 +108,7 @@ int parseTemplate(xmlDocPtr doc, xmlNodePtr xmlnode){
   int rc;
   xmlChar *tid;
 
-  tid = xmlGetProp( xmlnode, (const xmlChar *)"show");
+  tid = xmlGetProp( xmlnode, (xmlChar *)"show");
   if(tid==NULL){
     fprintf(stderr, "ERROR: no template id\n");
   }
@@ -140,9 +140,9 @@ int parseFastPacket(xmlDocPtr doc, xmlNodePtr xmlnode){
     }
 
     /* Look for template fields */
-    if (xmlStrcmp(xmlnode->name, (const xmlChar *)"field")==0){
-      prop = xmlGetProp( xmlnode, (const xmlChar *)"name");
-      if(xmlStrcmp(prop, (const xmlChar *)"fast.tid")==0){
+    if (xmlStrcmp(xmlnode->name, (xmlChar *)"field")==0){
+      prop = xmlGetProp( xmlnode, (xmlChar *)"name");
+      if(xmlStrcmp(prop, (xmlChar *)"fast.tid")==0){
         if(!parseTemplate(doc, xmlnode)){
           return false;
         }
@@ -170,9 +170,9 @@ int parsePacket (xmlDocPtr doc, xmlNodePtr xmlnode) {
       continue;
     }
 
-    if (xmlStrcmp(xmlnode->name, (const xmlChar *)"proto")==0){
-      prop = xmlGetProp( xmlnode, (const xmlChar *)"name");
-      if(xmlStrcmp(prop, (const xmlChar *)"fast")==0){
+    if (xmlStrcmp(xmlnode->name, (xmlChar *)"proto")==0){
+      prop = xmlGetProp( xmlnode, (xmlChar *)"name");
+      if(xmlStrcmp(prop, (xmlChar *)"fast")==0){
         if(!parseFastPacket(doc, xmlnode)){
           return false;
         }
@@ -211,7 +211,7 @@ int parseDoc(const char *docname) {
 
 		if(!ignoreXmlNode(xmlnode)){
 		
-      if ((!xmlStrcmp(xmlnode->name, (const xmlChar *)"packet"))){
+      if ((!xmlStrcmp(xmlnode->name, (xmlChar *)"packet"))){
 			  /* parse template, and check if parse failed */
 			  if(!parsePacket(doc, xmlnode)){
 				  xmlFreeDoc(doc);
