@@ -18,13 +18,12 @@ if (UNIX)
   if (NOT CMAKE_BUILD_TYPE)
     set (CMAKE_BUILD_TYPE DEBUG)
   endif ()
-  set (CMAKE_C_FLAGS_DEBUG "-ansi -pedantic -Wall")
+  set (CMAKE_C_FLAGS "-Wall")
+  set (CMAKE_C_FLAGS_DEBUG "-ansi -pedantic")
 else ()
   set (install_dir "$ENV{HOMEPATH}/Application Data/Wireshark/plugins")
   # Always build as release mode. Wireshark was built the same way.
-  if (NOT CMAKE_BUILD_TYPE)
-    set (CMAKE_BUILD_TYPE RELEASE)
-  endif ()
+  set (CMAKE_BUILD_TYPE RELEASE)
   ### These defines and cflags copied from wireshark's config.nmake.
   list (APPEND plugin_defines "MSVC_VARIANT=MSVC2008")
   list (APPEND plugin_defines "MSC_VER_REQUIRED=1500")
@@ -32,14 +31,8 @@ else ()
   list (APPEND plugin_defines "_CRT_NONSTDC_NO_DEPRECATE")
   list (APPEND plugin_defines "WIN32_LEAN_AND_MEAN")
   list (APPEND plugin_defines "_NEED_VAR_IMPORT")
-  set (plugin_cflags "/Zi /W3 /MP")
+  set (CMAKE_C_FLAGS "/Zi /W3 /MP")
   set (plugin_lflags "/NOLOGO /INCREMENTAL:no /DYNAMICBASE /MANIFEST:no")
-
-  set (wireshark_libs ${wireshark_src}/epan/libwireshark)
-  set (pfx "C:/dev") # Hardcoded >:(
-  list (APPEND CMAKE_PREFIX_PATH "${pfx}")
-  list (APPEND CMAKE_PREFIX_PATH "${pfx}/lib/glib-2.0")
-  set (pfx "")
 endif ()
 
 # We ALWAYS must have Wireshark's config.h.
@@ -47,35 +40,47 @@ list (APPEND plugin_defines "HAVE_CONFIG_H")
 
 list (APPEND CMAKE_MODULE_PATH ${wireshark_src}/cmake/modules)
 
+# Useage:
+#   staticlibify (LIBXML2_STATIC_LIBRARIES ${LIBXML2_LIBRARIES})
 macro (staticlibify destlibs)
   foreach (lib ${ARGN})
+    message ("${lib}")
     string (REGEX REPLACE
       "\\${CMAKE_SHARED_LIBRARY_SUFFIX}$"
       "${CMAKE_STATIC_LIBRARY_SUFFIX}"
       staticlib "${lib}")
     list (APPEND ${destlibs} ${staticlib})
-    #message ("${staticlib}")
+    message ("${staticlib}")
   endforeach ()
 endmacro ()
 
-find_package (LibXml2 REQUIRED)
-find_package (GLIB2 REQUIRED)
-find_package (ZLIB REQUIRED)
-find_library (MATH_LIBRARIES m)
+if (UNIX)
+  set (wireshark_libs "")
+  find_package (LibXml2 REQUIRED)
+else ()
+  set (pfx "C:/dev") # Hardcoded >:(
+  list (APPEND CMAKE_PREFIX_PATH "${pfx}")
+  list (APPEND CMAKE_PREFIX_PATH "${pfx}/lib/glib-2.0")
+  set (wireshark_libs "${wireshark_src}/epan/libwireshark.lib")
+  find_package (LibXml2 REQUIRED)
+  set (LIBXML2_LIBRARIES "")
+  list (APPEND LIBXML2_LIBRARIES "${pfx}/lib/libxml2_a.lib")
+  list (APPEND LIBXML2_LIBRARIES "${pfx}/lib/iconv_a.lib")
+  set (pfx "")
+endif ()
 
-staticlibify (LIBXML2_STATIC_LIBRARIES ${LIBXML2_LIBRARIES})
-staticlibify (GLIB2_STATIC_LIBRARIES ${GLIB2_LIBRARIES})
-staticlibify (ZLIB_STATIC_LIBRARIES ${ZLIB_LIBRARIES})
-staticlibify (MATH_STATIC_LIBRARIES ${MATH_LIBRARIES})
+find_package (GLIB2 REQUIRED)
+
 
 include_directories (${wireshark_src}) 
 include_directories (${GLIB2_INCLUDE_DIRS})
 include_directories (${LIBXML2_INCLUDE_DIR}) 
 
+
 add_library (plugin SHARED ${plugin_srcs})
 target_link_libraries (plugin ${wireshark_libs})
-target_link_libraries (plugin ${LIBXML2_STATIC_LIBRARIES})
-target_link_libraries (plugin ${GLIB2_STATIC_LIBRARIES})
+target_link_libraries (plugin ${LIBXML2_LIBRARIES})
+target_link_libraries (plugin ${GLIB2_LIBRARIES})
 
 set_target_properties(plugin PROPERTIES
   OUTPUT_NAME "${plugin_name}"

@@ -2,10 +2,10 @@
     <message value="0">
         <int32 value="0"/>
     </message>
-    <message>
+    <message value="0">
         <int32 value="2147483647"/>
     </message>
-    <message>
+    <message value="0">
         <int32 value="-2147483648"/>
     </message>
     <message value="1">
@@ -14,10 +14,10 @@
     <message>
         <uint32 value="1"/>
     </message>
-    <message>
+    <message value="1">
         <uint32 value="2147483647"/>
     </message>
-    <message>
-        <int32 value="15"/>
+    <message value="1">
+        <uint32 value="15"/>
     </message>
 </plan>
