@@ -2,19 +2,19 @@
     <message value="5">
         <ascii value="abcdefghijklmnopqrstuvwxyz"/>
     </message>
-    <message>
+    <message value="5">
         <ascii value="Hello Word!"/>
     </message>
-    <message>
+    <message value="5">
         <ascii value="Four score and seven years ago our fathers brought forth on this continent, a new nation, conceived in Liberty, and dedicated to the proposition that all men are created equ" />
     </message>
     <message value="9">
         <unicode value="abcdefghijklmnopqrstuvwxyz"/>
     </message>
-    <message>
+    <message value="9">
         <unicode value="Hello Word!"/>
     </message>
-    <message>
+    <message value="9">
         <unicode value="Four score and seven years ago our fathers brought forth on this continent, a new nation, conceived in Liberty, and dedicated to the proposition that all men are created equ" />
     </message>
     <Message value="6">

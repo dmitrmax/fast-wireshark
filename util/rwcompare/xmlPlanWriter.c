@@ -176,9 +176,10 @@ void closeAndWriteXMLOutput(){
   rc = xmlTextWriterEndDocument(writer);
   if (rc < 0) {
     printf("testXmlwriterFilename: Error at xmlTextWriterEndDocument\n");
-    return;
   }
 
-  xmlFreeTextWriter(writer);
-
+  if (writer) {
+    xmlFreeTextWriter(writer);
+  }
+  writer = 0;
 }

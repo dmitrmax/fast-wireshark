@@ -12,6 +12,7 @@ set (plugin_srcs
 
 set (plugin_name fast)
 set (wireshark_src "${CMAKE_CURRENT_SOURCE_DIR}/../wireshark")
+set (exe_dir "${CMAKE_CURRENT_SOURCE_DIR}/bin")
 
 if (UNIX)
   set (install_dir "$ENV{HOME}/.wireshark/plugins")
@@ -19,7 +20,7 @@ if (UNIX)
     set (CMAKE_BUILD_TYPE DEBUG)
   endif ()
   set (CMAKE_C_FLAGS "-Wall")
-  set (CMAKE_C_FLAGS_DEBUG "-ansi -pedantic")
+  set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -ansi -pedantic")
 else ()
   set (install_dir "$ENV{HOMEPATH}/Application Data/Wireshark/plugins")
   # Always build as release mode. Wireshark was built the same way.
@@ -100,4 +101,26 @@ set (CPACK_PACKAGE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/COPYING")
 set (CPACK_NSIS_URL_INFO_ABOUT "http://code.google.com/p/fast-wireshark")
 
 include (CPack)
+
+
+enable_testing ()
+
+set (test_dir "test")
+set (tshark "tshark")
+set (port "5000")
+set (rwcompare "${exe_dir}/rwcompare")
+set (plan_runner "${test_dir}/OpenFastPlanRunner.jar")
+
+macro (regression_test test_name template plan)
+  add_test ("${test_name}"
+    "${rwcompare}"
+    "port" "${port}" "tshark" "${tshark}"
+    "runner" "${plan_runner}"
+    "tmpl" "${template}" "expect" "${plan}")
+endmacro ()
+
+regression_test (IntegerFields "${test_dir}/templates.xml" "${test_dir}/plans/intPlan.xml")
+regression_test (DecimalFields "${test_dir}/templates.xml" "${test_dir}/plans/decimalPlan.xml")
+regression_test (StringFields "${test_dir}/templates.xml" "${test_dir}/plans/stringPlan.xml")
+regression_test (GroupSequence "${test_dir}/templates.xml" "${test_dir}/plans/groupSequencePlan.xml")
 

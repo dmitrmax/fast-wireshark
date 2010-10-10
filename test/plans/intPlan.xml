@@ -11,7 +11,7 @@
     <message value="1">
         <uint32 value="0"/>
     </message>
-    <message>
+    <message value="1">
         <uint32 value="1"/>
     </message>
     <message value="1">

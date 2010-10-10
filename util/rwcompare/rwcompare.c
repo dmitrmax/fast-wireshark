@@ -19,7 +19,8 @@ int ArgParseBailOut(const char* arg, const char* reason)
   out = stderr;
 
   fputs ("Usage:\n", out);
-  fputs ("  rwcompare [p <port>]\n", out);
+  fputs ("  rwcompare [p[ort] <port>]\n", out);
+  fputs ("            [runner <PlanRunner jar>]\n", out);
   fputs ("            [tshark <TShark executable>]\n", out);
   fputs ("            [tmpl <template file>]\n", out);
   fputs ("            [pcap <pcap file>]\n", out);
@@ -44,12 +45,14 @@ int ArgParseBailOut(const char* arg, const char* reason)
 int main (const int argc, const char* const* argv)
 {
   const char* template_filename = 0;
-  const char* pcap_filename = 0;
   const char* expect_filename = 0;
+  char* pcap_filename = 0;
   char* pdml_filename = 0;
   char* plan_filename = 0;
+  const char* plan_runner_jar = 0;
   const char* tshark_exe = "tshark";
   int port = 5000;
+  gboolean givenp_pcap = FALSE;
   gboolean givenp_pdml = FALSE;
   gboolean givenp_plan = FALSE;
   gboolean goodp = TRUE;
@@ -65,8 +68,11 @@ int main (const int argc, const char* const* argv)
     if (argc == argi+1) {
       return ArgParseBailOut(arg, "Trailing flag without a value.");
     }
-    else if (!strcmp("p", arg)) {
+    else if (!strcmp("p", arg) || !strcmp("port", arg)) {
       port = atoi (argv[++argi]);
+    }
+    else if (!strcmp("runner", arg)) {
+      plan_runner_jar = argv[++argi];
     }
     else if (!strcmp("tshark", arg)) {
       tshark_exe = argv[++argi];
@@ -75,7 +81,8 @@ int main (const int argc, const char* const* argv)
       template_filename = argv[++argi];
     }
     else if (!strcmp("pcap", arg)) {
-      pcap_filename = argv[++argi];
+      pcap_filename = g_strdup (argv[++argi]);
+      givenp_pcap = TRUE;
     }
     else if (!strcmp("expect", arg)) {
       expect_filename = argv[++argi];
@@ -94,20 +101,65 @@ int main (const int argc, const char* const* argv)
   }
 
 
-  /* Run TShark. */
-  if (goodp && template_filename && pcap_filename) {
+  /* Run a TShark capture session. */
+  if (goodp && template_filename) {
+    fputs (">-> Run TShark.\n", stderr);
+    if (!givenp_pcap) {
+      pcap_filename = g_strdup_printf ("%s.pcap", expect_filename);
+    }
     if (!givenp_pdml) {
       pdml_filename = g_strdup_printf ("%s-pdml.xml", pcap_filename);
     }
-    goodp = run_tshark (tshark_exe,
-                        pcap_filename,
+
+    if (plan_runner_jar && expect_filename) {
+      /* Do an actual capture. */
+      unsigned duration = 5;
+      GThread* thread;
+      g_thread_init (0);
+      if (template_filename && pcap_filename) {
+        thread = spawn_tshark (tshark_exe,
+                               pcap_filename,
+                               template_filename,
+                               port,
+                               pdml_filename,
+                               duration);
+      }
+      else {
+        thread = spawn_tshark (tshark_exe,
+                               pcap_filename,
+                               0, 0, 0, /* Do not call dissector. */
+                               duration);
+      }
+      g_usleep (2*G_USEC_PER_SEC);
+      goodp = run_plan (plan_runner_jar,
                         template_filename,
-                        port,
-                        pdml_filename);
+                        expect_filename,
+                        port);
+      if (!g_thread_join (thread)) {
+        goodp = FALSE;
+      }
+    }
+
+    else if (template_filename && givenp_pcap) {
+      /* Run TShark. */
+      if (goodp && template_filename && pcap_filename) {
+        goodp = run_tshark (tshark_exe,
+                            pcap_filename,
+                            template_filename,
+                            port,
+                            pdml_filename,
+                            0);
+      }
+    }
+    else {
+      fputs ("Why did you provide a template file?\n", stderr);
+      goodp = FALSE;
+    }
   }
 
   /* Generate a plan file. */
   if (goodp && pdml_filename) {
+    fputs (">-> Generate Plan file from PDML.\n", stderr);
     if (!givenp_plan) {
       plan_filename = g_strdup_printf ("%s-plan.xml", pcap_filename);
     }
@@ -117,15 +169,18 @@ int main (const int argc, const char* const* argv)
 
   /* Compare the two plan files. */
   if (goodp && plan_filename && expect_filename) {
+    fputs (">-> Compare Plan file with expected.\n", stderr);
     xmlLineNumbersDefault(1);
     goodp = equiv_plan_files (plan_filename, expect_filename);
   }
 
   /* Remove intermediary files if not given. */
+  if (pcap_filename && !givenp_pcap)  remove (pcap_filename);
   if (pdml_filename && !givenp_pdml)  remove (pdml_filename);
   if (plan_filename && !givenp_plan)  remove (plan_filename);
 
   /* Free some heap-allocated strings. */
+  if (pcap_filename)  g_free (pcap_filename);
   if (pdml_filename)  g_free (pdml_filename);
   if (plan_filename)  g_free (plan_filename);
 
@@ -206,6 +261,10 @@ gboolean equiv_plan_xml (xmlNodePtr cnode,
     if (cprop || eprop) {
       if (cprop && eprop) {
         equivp = !xmlStrcmp (cprop, eprop);
+      }
+      else {
+        /* One of the values didn't exist. */
+        equivp = FALSE;
       }
       if (cprop)  xmlFree (cprop);
       if (eprop)  xmlFree (eprop);
