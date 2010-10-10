@@ -3,8 +3,10 @@
  * \brief  Handle template storage/lookups.
  */
 
-#include "template.h"
+#include "debug.h"
 #include "decode.h"
+
+#include "template.h"
 
 static GHashTable* template_table = 0;
 static GNode* template_tree = 0;

@@ -20,12 +20,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <glib.h>
 #include <gmodule.h>
 #include <epan/prefs.h>
 #include <epan/packet.h>
 
+#include "debug.h"
 #include "dissect.h"
-#include "fast.h"
 #include "parse-template.h"
 #include "template.h"
 

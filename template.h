@@ -10,7 +10,7 @@
 
 #ifndef TEMPLATE_H_INCLUDED_
 #define TEMPLATE_H_INCLUDED_
-#include "fast.h"
+#include <glib.h>
 
 enum field_type_identifier_enum
 { 

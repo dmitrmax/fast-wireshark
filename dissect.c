@@ -3,10 +3,11 @@
  * \brief  Handle payload dissection independent of Wireshark.
  */
 
-#include "dissect.h"
-#include "fast.h"
-#include "template.h"
+#include "debug.h"
 #include "decode.h"
+#include "template.h"
+
+#include "dissect.h"
 
 /*! \brief  Shift a buffer by a certain amount.
  *

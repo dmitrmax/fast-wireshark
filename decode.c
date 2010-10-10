@@ -3,6 +3,8 @@
  * \brief  Decode simple data types directly.
  */
 
+#include <string.h>
+
 #include "decode.h"
 
 #define StopByte 0x80

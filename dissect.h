@@ -2,7 +2,7 @@
 #ifndef DISSECT_H_INCLUDED_
 #define DISSECT_H_INCLUDED_
 
-#include <gmodule.h>
+#include <glib.h>
 
 /*! \brief  Identify the position of this field in the stream.
  */

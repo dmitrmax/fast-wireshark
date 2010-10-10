@@ -6,9 +6,10 @@
 #include <libxml/xmlmemory.h>
 #include <libxml/parser.h>
 
-#include "fast.h"
-#include "parse-template.h"
+#include "debug.h"
 #include "template.h"
+
+#include "parse-template.h"
 
 /* Private (static) headers. */
 static GNode* parseTemplate (xmlNodePtr cur);

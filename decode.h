@@ -6,7 +6,7 @@
 #ifndef DECODE_H_INCLUDED_
 #define DECODE_H_INCLUDED_
 
-#include "fast.h"
+#include <glib.h>
 
 guint count_stop_bit_encoded (guint nbytes, const guint8* bytes);
 guint number_decoded_bits (guint nbytes);

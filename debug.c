@@ -3,9 +3,9 @@
  * \brief  Debugging output functions.
  */
 
-#include "debug.h"
-
 #include <glib/gprintf.h>
+
+#include "debug.h"
 
 /*! \brief  Print debugging info.
  * \param file  Filename of caller.
