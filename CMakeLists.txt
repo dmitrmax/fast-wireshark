@@ -107,11 +107,10 @@ enable_testing ()
 
 set (test_dir "test")
 set (tshark "tshark")
-set (port "5000")
 set (rwcompare "${exe_dir}/rwcompare")
 set (plan_runner "${test_dir}/OpenFastPlanRunner.jar")
 
-macro (regression_test test_name template plan)
+macro (regression_test test_name port template plan)
   add_test ("${test_name}"
     "${rwcompare}"
     "port" "${port}" "tshark" "${tshark}"
@@ -119,8 +118,8 @@ macro (regression_test test_name template plan)
     "tmpl" "${template}" "expect" "${plan}")
 endmacro ()
 
-regression_test (IntegerFields "${test_dir}/templates.xml" "${test_dir}/plans/intPlan.xml")
-regression_test (DecimalFields "${test_dir}/templates.xml" "${test_dir}/plans/decimalPlan.xml")
-regression_test (StringFields "${test_dir}/templates.xml" "${test_dir}/plans/stringPlan.xml")
-regression_test (GroupSequence "${test_dir}/templates.xml" "${test_dir}/plans/groupSequencePlan.xml")
+regression_test (IntegerFields "5000" "${test_dir}/templates.xml" "${test_dir}/plans/intPlan.xml")
+regression_test (DecimalFields "5001" "${test_dir}/templates.xml" "${test_dir}/plans/decimalPlan.xml")
+regression_test (StringFields  "5002" "${test_dir}/templates.xml" "${test_dir}/plans/stringPlan.xml")
+regression_test (GroupSequence "5003" "${test_dir}/templates.xml" "${test_dir}/plans/groupSequencePlan.xml")
 
