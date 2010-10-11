@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 import java.util.Iterator;
 import java.util.List;
 
+import org.openfast.DecimalValue;
 import org.openfast.GroupValue;
 import org.openfast.Message;
 import org.openfast.MessageOutputStream;
@@ -121,7 +122,10 @@ public class DataPlanRunner implements Constants{
 					gv.setDecimal(i, (Float)o);
 				} else 
 				if(o instanceof BigDecimal){
-					gv.setDecimal(i, (BigDecimal)o);
+					BigDecimal b = (BigDecimal)o;
+					DecimalValue dv = new DecimalValue(b.unscaledValue().longValue(),-b.scale());
+//					gv.setDecimal(i, (BigDecimal)o);
+					gv.setFieldValue(i, dv);
 				}
 			} else
 			if(((Scalar)f).getType().getName().equals(UNICODE) ||
