@@ -49,12 +49,15 @@ typedef void FieldValue;
 struct field_type_struct
 {
   char* name;
-  /*! \brief  Template id. Typed for the hash lookup. */
+  /*! \brief  Field id. Typed for the hash lookup. */
   gint id;
   gboolean mandatory;
   FieldTypeIdentifier type;
   FieldOperatorIdentifier op;
   FieldValue* value;
+  /*! \brief Name of the dictionary used for this field */
+  char * dictionary;
+  
 };
 typedef struct field_type_struct FieldType;
 
