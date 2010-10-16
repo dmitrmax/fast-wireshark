@@ -33,21 +33,24 @@ static void set_dictionary_pointers(GNode* node);
 void set_dictionaries(GNode* template_tree){
   GNode* template = 0;
   if(!dictionaries_table) {
-    dictionaries_table = g_hash_table_new(&g_str_hash, NULL);
+    dictionaries_table = g_hash_table_new(&g_str_hash, &g_str_equal);
   }
   /* If we fail to make the table bail */
   if(!dictionaries_table) { BAILOUT(;,"Dictionary lookup table not created."); }
   template = g_node_first_child(template_tree);
   /* Create the gobal dictionary */
   get_dictionary(GLOBAL_DICTIONARY);
+  
   /* 
    * Loop through all the templates, add and remove template dictionaries from the dictionary
    * reference for each template_tree
    */
   while(template){
+    
     get_dictionary(TEMPLATE_DICTIONARY);
     set_dictionary_pointers(template);
     remove_dictionary(TEMPLATE_DICTIONARY);
+    template = g_node_next_sibling(template);
   }
   
 
@@ -57,7 +60,7 @@ GHashTable* get_dictionary(char* name){
   GHashTable* dictionary = 0;
   dictionary = g_hash_table_lookup(dictionaries_table, name);
   if(!dictionary){
-    dictionary = g_hash_table_new(&g_str_hash, NULL);
+    dictionary = g_hash_table_new(&g_str_hash, &g_str_equal);
     g_hash_table_insert(dictionaries_table, name, dictionary);
   }
   return dictionary;
@@ -73,7 +76,8 @@ void set_dictionary_pointers(GNode* node){
   GNode* child = 0;
   FieldType* field_type = 0;
   field_type = (FieldType*)(node->data);
-  field_type->dictionary_ptr = get_dictionary(field_type->dictionary);
+  /* TODO: Debug code in the tiernary operator: remove everything after and including '?' */
+  field_type->dictionary_ptr = get_dictionary(field_type->dictionary?field_type->dictionary:GLOBAL_DICTIONARY);
   child = g_node_first_child(node);
   /* Recurse into child nodes */
   while(child){

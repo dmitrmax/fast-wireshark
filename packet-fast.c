@@ -29,6 +29,7 @@
 #include "dissect.h"
 #include "parse-template.h"
 #include "template.h"
+#include "dictionaries.h"
 
 /*! \brief  If not build statically, define a version.
  *
@@ -174,6 +175,7 @@ void proto_reg_handoff_fast ()
     GNode* templates;
     fprintf(stderr, "Using xml file %s ...\n",config_template_xml_path);
     templates = parse_templates_xml (config_template_xml_path);
+    set_dictionaries(templates);
     if (templates) {
       add_templates(templates);
     }

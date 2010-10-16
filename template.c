@@ -110,6 +110,8 @@ GNode* create_field (FieldTypeIdentifier type,
   field->type      = type;
   field->op        = op;
   field->value     = 0;
+  field->dictionary = 0;
+  field->dictionary_ptr = 0;
 
   return node;
 }
