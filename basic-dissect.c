@@ -57,6 +57,25 @@ gboolean dissect_shift_pmap (DissectPosition* position)
   return result;
 }
 
+/*! \brief  Detect and skip null values.
+ * \param position  The dissector's currect position.
+ * \return  TRUE if a null value was detected and skipped.
+ */
+gboolean dissect_shift_null(DissectPosition* position)
+{
+  gboolean ret = FALSE;
+  if(position->nbytes > 0) {
+    if(0x80 == position->bytes[position->offset]) {
+      ret = TRUE;
+      position->offjmp = 1;
+      ShiftBytes(position);    
+    }
+  }
+  else {
+    DBG0("index out of bounds (nbytes == 0)");
+  }
+  return ret;
+}
 
 /*! \brief  Given a byte stream, dissect an unsigned 32bit integer.
  * \param position  Position in the packet.

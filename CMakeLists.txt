@@ -123,4 +123,5 @@ regression_test (IntegerFields "5000" "${test_dir}/templates.xml" "${test_dir}/p
 regression_test (DecimalFields "5001" "${test_dir}/templates.xml" "${test_dir}/plans/decimalPlan.xml")
 regression_test (StringFields  "5002" "${test_dir}/templates.xml" "${test_dir}/plans/stringPlan.xml")
 regression_test (GroupSequence "5003" "${test_dir}/templates.xml" "${test_dir}/plans/groupSequencePlan.xml")
+regression_test (IntegerOptionalFields "5004" "${test_dir}/templates.xml" "${test_dir}/plans/intOptionalPlan.xml")
 

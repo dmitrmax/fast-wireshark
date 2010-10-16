@@ -406,10 +406,10 @@ void set_field_attributes (xmlNodePtr xmlnode, FieldType* tfield, char * diction
   /* Presence. */
   str = xmlGetProp(xmlnode, (xmlChar*) "presence");
   if (str) {
-    if (xmlStrcasecmp(str, (xmlChar*) "optional")) {
+    if (0 == xmlStrcasecmp(str, (xmlChar*) "optional")) {
       tfield->mandatory = FALSE;
     }
-    else if (xmlStrcasecmp(str, (xmlChar*) "mandatory")) {
+    else if (0 == xmlStrcasecmp(str, (xmlChar*) "mandatory")) {
       tfield->mandatory = TRUE;
     }
     else {

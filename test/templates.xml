@@ -67,4 +67,8 @@
 		<int32 id="3" name="int32_4" />
 	</template>
 	
+	<template name="t_uint32_optional" id="11">
+		<uInt32 id="1" presence="optional" name="uint32" />
+	</template>	
+	
 </templates>

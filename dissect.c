@@ -8,7 +8,7 @@
 #include "template.h"
 
 #include "dissect.h"
-
+  
 /*! \brief Dissect a FAST message by the bytes.
  * \param nbytes  Total number of bytes in the message.
  * \param bytes  The FAST message, sized to /nbytes/.
@@ -196,11 +196,59 @@ void dissect_uint32 (const GNode* tnode,
 {
   SetupDissectStack(ftype, fdata,  tnode, dnode);
 
-  if (ftype->mandatory && !ftype->op) {
-    basic_dissect_uint32 (position, fdata);
+  /* MANDATORY, NO OPERATOR */
+  if (ftype->mandatory) {
+  
+    switch(ftype->op) {
+      case FieldOperatorNone:
+        basic_dissect_uint32(position, fdata);
+        break;
+      
+      case FieldOperatorConstant:
+      
+      case FieldOperatorDefault:
+      case FieldOperatorCopy:
+      case FieldOperatorIncrement:
+        
+      case FieldOperatorDelta:
+        
+      case FieldOperatorTail:
+      default:
+        DBG0("Only simple types are implemented.");
+        break;
+    }
+
   }
+  /* OPTIONAL */
   else {
-    DBG0("Only simple types are implemented.");
+    gboolean null_shifted = FALSE;   
+    
+    switch(ftype->op) {
+      case FieldOperatorNone:
+        null_shifted = dissect_shift_null(position);
+        
+        if(!null_shifted) {
+          basic_dissect_uint32(position, fdata);
+          *(guint32 *) fdata->value -= 1;
+        }        
+        else {
+          /* TODO implement storage of 'empty' value in dictionary */
+        }
+        break;
+      
+      case FieldOperatorConstant:
+      
+      case FieldOperatorDefault:
+      case FieldOperatorCopy:
+      case FieldOperatorIncrement:
+        
+      case FieldOperatorDelta:
+        
+      case FieldOperatorTail:
+      default:
+        DBG0("Only simple types are implemented.");
+        break;
+    } 
   }
 }
 
