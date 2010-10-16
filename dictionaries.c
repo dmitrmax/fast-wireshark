@@ -21,14 +21,14 @@ static GHashTable* get_dictionary(char* name);
  * reference to it.
  * \param name The name of the dictionary to remove
  */
-static GHashTable* remove_dictionary(char* name);
+static void remove_dictionary(char* name);
 
 /*!
  * \brief Traverses the template tree and sets the dictionary that should be used at each field.
  * \param node The current node in the tree
  * \param current_dictionary The most specific dictionary at this point
  */
-static void set_dictionary_pointers(GNode* node, GHashTable* current_dictionary);
+static void set_dictionary_pointers(GNode* node);
 
 void set_dictionaries(GNode* template_tree){
   GNode* template = 0;
@@ -38,13 +38,15 @@ void set_dictionaries(GNode* template_tree){
   /* If we fail to make the table bail */
   if(!dictionaries_table) { BAILOUT(;,"Dictionary lookup table not created."); }
   template = g_node_first_child(template_tree);
+  /* Create the gobal dictionary */
+  get_dictionary(GLOBAL_DICTIONARY);
   /* 
    * Loop through all the templates, add and remove template dictionaries from the dictionary
    * reference for each template_tree
    */
   while(template){
     get_dictionary(TEMPLATE_DICTIONARY);
-    set_dictionary_pointers(template, get_dictionary(GLOBAL_DICTIONARY);
+    set_dictionary_pointers(template);
     remove_dictionary(TEMPLATE_DICTIONARY);
   }
   
@@ -67,19 +69,15 @@ void remove_dictionary(char* name){
   }
 }
 
-void set_dictionary_pointers(GNode* node, GHashTable* current_dictionary){
+void set_dictionary_pointers(GNode* node){
   GNode* child = 0;
   FieldType* field_type = 0;
   field_type = (FieldType*)(node->data);
-  /* If this field has an explicit dictionary use it */
-  if(field_type->dictionary){
-    current_dictionary = get_dictionary(field_type->dictionary);
-  }
-  fild_type->dictionary_ptr = current_dictionary;
+  field_type->dictionary_ptr = get_dictionary(field_type->dictionary);
   child = g_node_first_child(node);
   /* Recurse into child nodes */
   while(child){
-    set_dictionary_pointers(child, current_dictionary);
+    set_dictionary_pointers(child);
     child = g_node_next_sibling(child);
   }
 }
