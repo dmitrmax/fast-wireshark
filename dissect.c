@@ -9,54 +9,6 @@
 
 #include "dissect.h"
 
-/*! \brief  Shift a buffer by a certain amount.
- *
- * All arguments are modified accordingly.
- *
- * \param offjmp  The amount to move forward in the buffer.
- * \param offset  Distance into the buffer currently.
- * \param nbytes  Number of indices remaining in the buffer.
- * \param bytes  Buffer that is offset by /offset/ from its real start.
- * \sa ShiftBytes
- */
-#define ShiftBuffer(offjmp, offset, nbytes, bytes) \
-  do { \
-    offset += offjmp; \
-    nbytes -= offjmp; \
-    bytes   = offjmp + bytes; \
-    offjmp  = 0; \
-  } while (0)
-
-
-/*! \brief  Shift the byte position of a dissection.
- * \sa ShiftBuffer
- */
-static void ShiftBytes(DissectPosition* position)
-{
-  ShiftBuffer(position->offjmp, position->offset,
-              position->nbytes, position->bytes);
-}
-
-
-/*! \brief  Claim and retrieve a bit in the PMAP.
- * \param position  The dissector's currect position.
- * \return  TRUE or FALSE depending on the PMAP bit value.
- */
-gboolean dissect_shift_pmap (DissectPosition* position)
-{
-  gboolean result = FALSE;
-  if (position->pmap_idx < position->pmap_len) {
-    result = position->pmap[position->pmap_idx];
-    position->pmap_idx += 1;
-  }
-  else {
-    DBG2("PMAP index out of bounds at %u (length %u).",
-         position->pmap_idx,
-         position->pmap_len);
-  }
-  return result;
-}
-
 /*! \brief Dissect a FAST message by the bytes.
  * \param nbytes  Total number of bytes in the message.
  * \param bytes  The FAST message, sized to /nbytes/.
@@ -245,16 +197,7 @@ void dissect_uint32 (const GNode* tnode,
   SetupDissectStack(ftype, fdata,  tnode, dnode);
 
   if (ftype->mandatory && !ftype->op) {
-    position->offjmp = count_stop_bit_encoded (position->nbytes,
-                                               position->bytes);
-    fdata->start = position->offset;
-    fdata->nbytes = position->offjmp;
-    fdata->value = g_malloc (sizeof (guint32));
-    if (fdata->value) {
-      *(guint32*)fdata->value = decode_uint32 (position->offjmp,
-                                               position->bytes);
-    }
-    ShiftBytes(position);
+    basic_dissect_uint32 (position, fdata);
   }
   else {
     DBG0("Only simple types are implemented.");
@@ -273,16 +216,7 @@ void dissect_uint64 (const GNode* tnode,
   SetupDissectStack(ftype, fdata,  tnode, dnode);
 
   if (ftype->mandatory && !ftype->op) {
-    position->offjmp = count_stop_bit_encoded (position->nbytes,
-                                               position->bytes);
-    fdata->start = position->offset;
-    fdata->nbytes = position->offjmp;
-    fdata->value = g_malloc (sizeof (guint64));
-    if (fdata->value) {
-      *(guint64*)fdata->value = decode_uint64 (position->offjmp,
-                                               position->bytes);
-    }
-    ShiftBytes(position);
+    basic_dissect_uint64 (position, fdata);
   }
   else {
     DBG0("Only simple types are implemented.");
@@ -300,16 +234,7 @@ void dissect_int32 (const GNode* tnode,
   SetupDissectStack(ftype, fdata,  tnode, dnode);
 
   if (ftype->mandatory && !ftype->op) {
-    position->offjmp = count_stop_bit_encoded (position->nbytes,
-                                               position->bytes);
-    fdata->start = position->offset;
-    fdata->nbytes = position->offjmp;
-    fdata->value = g_malloc (sizeof (gint32));
-    if (fdata->value) {
-      *(gint32*)fdata->value = decode_int32 (position->offjmp,
-                                             position->bytes);
-    }
-    ShiftBytes(position);
+    basic_dissect_int32 (position, fdata);
   }
   else {
     DBG0("Only simple types are implemented.");
@@ -328,16 +253,7 @@ void dissect_int64 (const GNode* tnode,
   SetupDissectStack(ftype, fdata,  tnode, dnode);
 
   if (ftype->mandatory && !ftype->op) {
-    position->offjmp = count_stop_bit_encoded (position->nbytes,
-                                               position->bytes);
-    fdata->start = position->offset;
-    fdata->nbytes = position->offjmp;
-    fdata->value = g_malloc (sizeof (gint64));
-    if (fdata->value) {
-      *(gint64*)fdata->value = decode_int64 (position->offjmp,
-                                             position->bytes);
-    }
-    ShiftBytes(position);
+    basic_dissect_int64 (position, fdata);
   }
   else {
     DBG0("Only simple types are implemented.");
@@ -394,17 +310,7 @@ void dissect_ascii_string (const GNode* tnode,
   SetupDissectStack(ftype, fdata,  tnode, dnode);
 
   if (ftype->mandatory && !ftype->op) {
-    position->offjmp = count_stop_bit_encoded (position->nbytes,
-                                               position->bytes);
-    fdata->start = position->offset;
-    fdata->nbytes = position->offjmp;
-    fdata->value = g_malloc (position->offjmp * sizeof(guint8));
-    if (fdata->value) {
-      decode_ascii_string (position->offjmp,
-                           position->bytes,
-                           (guint8*) fdata->value);
-    }
-    ShiftBytes(position);
+    basic_dissect_ascii_string (position, fdata);
   }
   else {
     DBG0("Only simple types are implemented.");

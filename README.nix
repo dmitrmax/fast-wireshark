@@ -6,7 +6,7 @@ ______________________________________________________________________________
 >-> Get dependencies.
 Last time I checked, this is all you need from a bare debian-based system.
   apt-get install build-essential bison flex \
-                  libglib2.0-dev libpcap-dev \
+                  libgtk2.0-dev libpcap-dev \
                   libxml2-dev cmake
 
 You may want to get Wireshark too.

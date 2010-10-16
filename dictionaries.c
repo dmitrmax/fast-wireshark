@@ -65,7 +65,7 @@ GHashTable* get_dictionary(char* name){
 
 void remove_dictionary(char* name){
   if(!g_hash_table_remove(dictionaries_table, name)){
-    DEBUG1("Attempt to remove non-existant dictionary: %s", name);
+    DBG1("Attempt to remove non-existant dictionary: %s", name);
   }
 }
 
@@ -81,3 +81,4 @@ void set_dictionary_pointers(GNode* node){
     child = g_node_next_sibling(child);
   }
 }
+
