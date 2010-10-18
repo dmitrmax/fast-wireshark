@@ -68,7 +68,7 @@
 	</template>
 	
 	<template name="t_uint32_optional" id="11">
-		<uInt32 id="1" presence="optional" name="uint32" />
+		<uInt32 id="1" name="uint32" presence="optional" />
 	</template>	
 	
 </templates>

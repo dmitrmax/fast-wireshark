@@ -1,0 +1,23 @@
+<plan>
+    <message value="0">
+        <int32 value="0"/>
+    </message>
+    <message value="0">
+        <int32 value="2147483647"/>
+    </message>
+    <message value="0">
+        <int32 value="-2147483648"/>
+    </message>
+    <message value="11">
+        <uint32 value="0"/>
+    </message>
+    <message value="11">
+        <uint32 value="1"/>
+    </message>
+    <message value="11">
+        <uint32 value="2147483646"/>
+    </message>
+    <message value="11">
+        <uint32 value="15"/>
+    </message>
+</plan>
