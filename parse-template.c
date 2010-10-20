@@ -370,7 +370,10 @@ gboolean parse_operator (xmlNodePtr xmlnode, FieldType * tfield){
 			/* get value of operator if given */
 			prop = xmlGetProp(xmlnode, (xmlChar*)"value");
 			if(prop!=NULL){
-				tfield->value = prop;
+			  if(FieldTypeUInt32 == tfield->type ) {
+			    tfield->value = g_malloc(sizeof(guint32));
+  				*(guint32*)tfield->value = atoi((char*)prop);
+  			}
 			} else {
 				tfield->value = NULL;			
 			}

@@ -71,4 +71,8 @@
 		<uInt32 id="1" name="uint32" presence="optional" />
 	</template>	
 	
+	<template name="t_uint32_opt_const" id="12">
+	  <uInt32 id="1" presence="optional" name="const"> <constant value="123"/> </uInt32>
+	</template>
+	
 </templates>

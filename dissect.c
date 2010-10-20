@@ -214,6 +214,7 @@ void dissect_uint32 (const GNode* tnode,
         
       case FieldOperatorTail:
       default:
+        /* TODO implement this stuff once dictionaries are implemented */
         DBG0("Only simple types are implemented.");
         break;
     }
@@ -222,29 +223,37 @@ void dissect_uint32 (const GNode* tnode,
   /* OPTIONAL */
   else {
     gboolean null_shifted = FALSE;   
+    gboolean presence_bit = FALSE;
     
     switch(ftype->op) {
-      case FieldOperatorNone:
+      
+      case FieldOperatorConstant:
+        presence_bit = dissect_shift_pmap(position);
+        
+        if(presence_bit && NULL != ftype->value) {
+          fdata->value = g_malloc (sizeof (guint32));
+          *(guint32 *) fdata->value = *(guint32 *) ftype->value;
+        }
+        break;
+        
+      case FieldOperatorNone:      
+      case FieldOperatorDefault:
+      case FieldOperatorCopy:
+      case FieldOperatorIncrement:
+      case FieldOperatorDelta:
+      case FieldOperatorTail:
         null_shifted = dissect_shift_null(position);
         
         if(!null_shifted) {
           basic_dissect_uint32(position, fdata);
           *(guint32 *) fdata->value -= 1;
-        }        
-        else {
-          /* TODO implement storage of 'empty' value in dictionary */
+        }
+        else if(FieldOperatorDefault != ftype->op){
+          /* TODO implement storage of 'empty' value in dictionary
+                  (except for the default operator)                */
         }
         break;
-      
-      case FieldOperatorConstant:
-      
-      case FieldOperatorDefault:
-      case FieldOperatorCopy:
-      case FieldOperatorIncrement:
-        
-      case FieldOperatorDelta:
-        
-      case FieldOperatorTail:
+
       default:
         DBG0("Only simple types are implemented.");
         break;
