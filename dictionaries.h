@@ -36,8 +36,22 @@ typedef struct typed_value_struct TypedValue;
  * set.
  */
 void set_dictionaries(GNode* template_tree);
-GNode* get_dictionary_value(FieldType field_type);
-void set_dictionary_value(FieldType field_type, GNode* value);
+
+/*!
+ * \brief Retrieves the previous value of the given field
+ * Will do a deep copy of the stored value and return the copy.
+ * Caller is responsible for memory.
+ * \param field_type The field to retrieve the previous value of
+ */
+GNode* get_dictionary_value(FieldType* field_type);
+
+/*!
+ * \brief Sets the value of the field for future look up
+ * Will do a deep copy of the given value to remove external modification.
+ * \param field_type The field to set the value of
+ * \param value GNode containing the value to set
+ */
+void set_dictionary_value(FieldType* field_type, GNode* value);
 
 #endif
 
