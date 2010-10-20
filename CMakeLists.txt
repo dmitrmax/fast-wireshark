@@ -19,11 +19,14 @@ if (UNIX)
   set (install_dir "$ENV{HOME}/.wireshark/plugins")
   if (NOT CMAKE_BUILD_TYPE)
     set (CMAKE_BUILD_TYPE DEBUG)
+  else ()
+    set (install_dir "${CMAKE_INSTALL_PREFIX}/share/wireshark/plugins")
   endif ()
   set (CMAKE_C_FLAGS "-Wall")
   set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -ansi -pedantic")
 else ()
-  set (install_dir "$ENV{HOMEPATH}/Application Data/Wireshark/plugins")
+  #set (install_dir "$ENV{HOMEPATH}/Application Data/Wireshark/plugins")
+  set (install_dir "/Program Files/Wireshark/plugins")
   # Always build as release mode. Wireshark was built the same way.
   set (CMAKE_BUILD_TYPE RELEASE)
   ### These defines and cflags copied from wireshark's config.nmake.
@@ -90,14 +93,22 @@ set_target_properties(plugin PROPERTIES
   COMPILE_DEFINITIONS "${plugin_defines}"
   LINK_FLAGS "${plugin_lflags}")
 
-install (TARGETS plugin DESTINATION ${install_dir})
+set (CMAKE_INSTALL_PREFIX "${install_dir}" )
+install (TARGETS plugin DESTINATION "." COMPONENT plugin)
 
+# Override destination with CMAKE_INSTALL_PREFIX.
+set (CPACK_SET_DESTDIR true)
+
+set (CPACK_COMPONENTS_ALL plugin)
+
+set (CPACK_PACKAGE_NAME "fastshark")
 set (CPACK_PACKAGE_DESCRIPTION_SUMMARY "FAST Protocol for Wireshark")
 set (CPACK_PACKAGE_VENDOR "Some Students")
+set (CPACK_PACKAGE_CONTACT "http://code.google.com/p/fast-wireshark")
 set (CPACK_PACKAGE_VERSION_MAJOR "0")
 set (CPACK_PACKAGE_VERSION_MINOR "4")
 set (CPACK_PACKAGE_VERSION_PATCH "0")
-set (CPACK_PACKAGE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/COPYING")
+set (CPACK_RESOURCE_FILE_LICENSE "COPYING")
 
 set (CPACK_NSIS_URL_INFO_ABOUT "http://code.google.com/p/fast-wireshark")
 

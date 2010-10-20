@@ -53,5 +53,15 @@ http://wiki.wireshark.org/CaptureSetup/CapturePrivileges
 
 
 ______________________________________________________________________________
+--- Notes for maintainers
+
+  cmake -DCMAKE_BUILD_TYPE=Release -DCPACK_GENERATOR=DEB
+  make package
+
+This will create a debian package, distribute it to the masses.
+To change back into regular development mode you must rerun cmake.
+  cmake -DCMAKE_BUILD_TYPE=
+
+______________________________________________________________________________
 --- EOF
 
