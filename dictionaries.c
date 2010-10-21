@@ -20,7 +20,7 @@ static GHashTable* dictionaries_table = 0;
  * \param field_data The FieldData to be copied
  * \return A copy of field_data with num bytes and start byte set to 0
  */
-static FieldData* copy( FieldData* field_data, FieldType* field_type);
+static FieldData* copy( const FieldData* field_data, FieldType* field_type);
 static gpointer _copy_convert(gconstpointer, gpointer);
 
 /*!
@@ -101,9 +101,11 @@ void set_dictionary_pointers(GNode* node){
 GNode* get_dictionary_value(FieldType* field_type){
   GHashTable* dictionary = 0;
   GNode* prev_value = 0;
+  GNode* copy = 0;
   dictionary = (GHashTable*)field_type->dictionary_ptr;
   prev_value = (GNode*)g_hash_table_lookup(dictionary,field_type->name);
-  return g_node_copy_deep(prev_value, &_copy_convert, field_type);
+  copy = g_node_copy_deep(prev_value, &_copy_convert, field_type);
+  return copy;
 }
 
 void set_dictionary_value(FieldType* field_type, GNode* value){
@@ -127,7 +129,7 @@ void set_dictionary_value(FieldType* field_type, GNode* value){
   }
 }
 
-FieldData* copy(FieldData* field_data, FieldType* field_type){
+FieldData* copy(const FieldData* field_data, FieldType* field_type){
   FieldData* copy = 0;
   copy = g_malloc (sizeof (FieldData));
   copy->start = 0;
@@ -136,7 +138,7 @@ FieldData* copy(FieldData* field_data, FieldType* field_type){
   switch(field_type->type){
     case FieldTypeUInt32:
       copy->value = g_malloc (sizeof (guint32));
-      *((guint32*)copy->value) = *((guint32*)field_data->value);
+      *(guint32*)copy->value = *(guint32*)field_data->value;
     break;
     case FieldTypeUInt64:
     case FieldTypeInt32:

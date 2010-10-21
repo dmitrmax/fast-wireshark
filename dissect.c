@@ -6,7 +6,7 @@
 #include "debug.h"
 #include "decode.h"
 #include "template.h"
-
+#include "dictionaries.h"
 #include "dissect.h"
   
 /*! \brief Dissect a FAST message by the bytes.
@@ -167,7 +167,10 @@ GNode* dissect_type (const GNode* tnode,
 
   /* Call the dissect function. */
   (*dissect_fn_map[ftype->type]) (tnode, position, dnode_next);
-
+  if(!(dnode_next->parent)){
+    g_node_destroy(dnode_next);
+    dnode_next = dnode->next;
+  }
   return dnode_next;
 }
 
@@ -194,21 +197,44 @@ GNode* dissect_type (const GNode* tnode,
 void dissect_uint32 (const GNode* tnode,
                      DissectPosition* position, GNode* dnode)
 {
+  GNode * parent;
+  GNode * copy;
+  guint32 * uint32_val;
+  
   SetupDissectStack(ftype, fdata,  tnode, dnode);
+  
 
   /* MANDATORY, NO OPERATOR */
   if (ftype->mandatory) {
+    gboolean presence_bit;
   
     switch(ftype->op) {
       case FieldOperatorNone:
         basic_dissect_uint32(position, fdata);
         break;
       
+      
+      case FieldOperatorCopy:
+        presence_bit = dissect_shift_pmap(position);
+        if(presence_bit){
+          basic_dissect_uint32(position, fdata);   
+          
+          /* Send dnode to dictionary, dictionary will copy dnode */
+          
+          set_dictionary_value(ftype, dnode);
+        } else {
+          
+          copy = get_dictionary_value(ftype);
+          parent = dnode->parent;
+          g_node_insert_before(parent,dnode,copy);
+          g_node_unlink(dnode);
+        }  
+        break;
+        
+      case FieldOperatorIncrement:
       case FieldOperatorConstant:
       
       case FieldOperatorDefault:
-      case FieldOperatorCopy:
-      case FieldOperatorIncrement:
         
       case FieldOperatorDelta:
         
