@@ -98,7 +98,7 @@ void set_dictionary_pointers(GNode* node){
   }
 }
 
-GNode* get_dictionary_value(FieldType* field_type){
+GNode* get_dictionary_value(const FieldType* field_type){
   GHashTable* dictionary = 0;
   GNode* prev_value = 0;
   GNode* copy = 0;
@@ -108,7 +108,7 @@ GNode* get_dictionary_value(FieldType* field_type){
   return copy;
 }
 
-void set_dictionary_value(FieldType* field_type, GNode* value){
+void set_dictionary_value(const FieldType* field_type, GNode* value){
   GHashTable* dictionary = 0;
   GNode* prev_value = 0;
   GNode* new_value = 0;

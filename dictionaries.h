@@ -43,7 +43,7 @@ void set_dictionaries(GNode* template_tree);
  * Caller is responsible for memory.
  * \param field_type The field to retrieve the previous value of
  */
-GNode* get_dictionary_value(FieldType* field_type);
+GNode* get_dictionary_value(const FieldType* field_type);
 
 /*!
  * \brief Sets the value of the field for future look up
@@ -51,7 +51,7 @@ GNode* get_dictionary_value(FieldType* field_type);
  * \param field_type The field to set the value of
  * \param value GNode containing the value to set
  */
-void set_dictionary_value(FieldType* field_type, GNode* value);
+void set_dictionary_value(const FieldType* field_type, GNode* value);
 
 #endif
 

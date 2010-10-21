@@ -199,7 +199,6 @@ void dissect_uint32 (const GNode* tnode,
 {
   GNode * parent;
   GNode * copy;
-  guint32 * uint32_val;
   
   SetupDissectStack(ftype, fdata,  tnode, dnode);
   
@@ -207,20 +206,15 @@ void dissect_uint32 (const GNode* tnode,
   /* MANDATORY, NO OPERATOR */
   if (ftype->mandatory) {
     gboolean presence_bit;
-  
     switch(ftype->op) {
       case FieldOperatorNone:
         basic_dissect_uint32(position, fdata);
         break;
-      
-      
       case FieldOperatorCopy:
         presence_bit = dissect_shift_pmap(position);
         if(presence_bit){
           basic_dissect_uint32(position, fdata);   
-          
           /* Send dnode to dictionary, dictionary will copy dnode */
-          
           set_dictionary_value(ftype, dnode);
         } else {
           
