@@ -1,0 +1,66 @@
+<templates xmlns="http://www.fixprotocol.org/ns/template-definition" 
+       templateNs="http://www.fixprotocol.org/ns/templates/sample" 
+       ns="http://www.fixprotocol.org/ns/fix">
+         
+  <template name="empty" id="0" />
+         
+  <template name="template1" id="1" >
+    <uInt32 id="1" name="uint32a" presence="mandatory" />
+    <uInt32 id="2" name="uint32b" presence="mandatory">
+      <copy/>
+    </uInt32>
+    <uInt32 id="3" name="uint32c" dictionary="template" presence="mandatory">
+      <copy/>
+    </uInt32>
+    <uInt32 id="4" name="uint32d" dictionary="foo" presence="mandatory">
+      <copy/>
+    </uInt32>
+  </template>
+  
+  <template name="template2" id="2" >
+    <uInt32 id="1" name="uint32a" presence="mandatory" />
+    <uInt32 id="2" name="uint32b" presence="mandatory">
+      <copy/>
+    </uInt32>
+    <uInt32 id="3" name="uint32c" dictionary="template" presence="mandatory">
+      <copy/>
+    </uInt32>
+    <uInt32 id="4" name="uint32d" dictionary="foo" presence="mandatory">
+      <copy/>
+    </uInt32>
+  </template>
+  
+  <template name="templatefoo" id="3" dictionary="foo">
+    <uInt32 id="4" name="uint32d" presence="mandatory">
+      <copy/>
+    </uInt32>
+  </template>
+  
+  <template name="dictionaryTest" id="4" dictionary="template">
+    <uInt32 id="4" name="uint32a" presence="mandatory">
+      <copy/>
+    </uInt32>
+    <uInt32 id="4" name="uint32a" presence="mandatory">
+      <copy/>
+    </uInt32>
+    <uInt32 id="4" name="uint32a" presence="mandatory">
+      <copy/>
+    </uInt32>
+    <uInt32 id="4" name="uint32a" presence="mandatory">
+      <copy/>
+    </uInt32>
+    <uInt32 id="4" name="uint32a" presence="mandatory">
+      <copy/>
+    </uInt32>
+    <uInt32 id="4" name="uint32a" presence="mandatory">
+      <copy/>
+    </uInt32>
+    <uInt32 id="4" name="uint32a" presence="mandatory">
+      <copy/>
+    </uInt32>
+    <uInt32 id="4" name="uint32a" presence="mandatory">
+      <copy/>
+    </uInt32>
+  </template>
+  
+</templates>

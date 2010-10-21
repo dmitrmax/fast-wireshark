@@ -174,7 +174,8 @@ GNode* dissect_type (const GNode* tnode,
   (*dissect_fn_map[ftype->type]) (tnode, position, dnode_next);
   if(!(dnode_next->parent)){
     g_node_destroy(dnode_next);
-    dnode_next = dnode->next;
+    /* As we are building the tree, the last node added will the the one we just made */
+    dnode_next = g_node_last_child(parent);
   }
   return dnode_next;
 }
@@ -216,18 +217,23 @@ void dissect_uint32 (const GNode* tnode,
         break;
 
       case FieldOperatorCopy:
+        DBG0("Found field with copy");
         presence_bit = dissect_shift_pmap(position);
         if(presence_bit){
-          basic_dissect_uint32(position, fdata);   
+          DBG0("Field Pressent");
+          basic_dissect_uint32(position, fdata);
+          DBG0("Dissected field");
           /* Send dnode to dictionary, dictionary will copy dnode */
           set_dictionary_value(ftype, dnode);
         } else {
-          
+          DBG0("Field not pressent getting value from dict");
           copy = get_dictionary_value(ftype);
+          DBG1("got value from dict %d", *((guint32*)((FieldData*)copy->data)->value));
           parent = dnode->parent;
           g_node_insert_before(parent,dnode,copy);
           g_node_unlink(dnode);
-        }  
+        }
+        DBG0("Done with field");
         break;
         
       case FieldOperatorConstant:
