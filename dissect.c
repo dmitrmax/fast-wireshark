@@ -467,18 +467,20 @@ void dissect_byte_vector (const GNode* tnode,
 void dissect_group (const GNode* tnode,
                     DissectPosition* position, GNode* dnode)
 {
+  gboolean its_there = TRUE;
   SetupDissectStack(ftype, fdata,  tnode, dnode);
-
-  if (ftype->mandatory && !ftype->op) {
+  
+  if(!ftype->mandatory) {
+    its_there = dissect_shift_pmap(position);
+  }
+  
+  if (its_there) {
 
     fdata->start = position->offset;
 
     /* Recurse down the tree, building onto dnode. */
     dissector_walk (tnode->children, position, dnode, 0);
     fdata->nbytes = position->offset - fdata->start;
-  }
-  else {
-    DBG0("Only simple types are implemented.");
   }
 }
 
