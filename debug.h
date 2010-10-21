@@ -6,17 +6,11 @@
 #ifndef DEBUG_H_
 #define DEBUG_H_
 
-#include "template.h"
-
 void debug_out(const char*,
                const char*,
                int,
                const char* fmt,
                ...);
-
-void debug_print_field (FieldType* field, int indent);
-void debug_print_field_tree (GNode * node, int level);
-void debug_print_template_tree(GNode* template_tree);
 
 #ifdef _MSC_VER
 # define __func__ __FUNCTION__

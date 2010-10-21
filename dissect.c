@@ -165,6 +165,11 @@ GNode* dissect_type (const GNode* tnode,
   }
   g_node_insert_after(parent, dnode, dnode_next);
 
+  /* Initialize to sensible defaults. */
+  fdata->value  = NULL;
+  fdata->start  = position->offset;
+  fdata->nbytes = 0;
+
   /* Call the dissect function. */
   (*dissect_fn_map[ftype->type]) (tnode, position, dnode_next);
   if(!(dnode_next->parent)){
@@ -202,14 +207,14 @@ void dissect_uint32 (const GNode* tnode,
   
   SetupDissectStack(ftype, fdata,  tnode, dnode);
   
-
-  /* MANDATORY, NO OPERATOR */
+  /* MANDATORY */
   if (ftype->mandatory) {
     gboolean presence_bit;
     switch(ftype->op) {
       case FieldOperatorNone:
         basic_dissect_uint32(position, fdata);
         break;
+
       case FieldOperatorCopy:
         presence_bit = dissect_shift_pmap(position);
         if(presence_bit){
@@ -225,8 +230,14 @@ void dissect_uint32 (const GNode* tnode,
         }  
         break;
         
-      case FieldOperatorIncrement:
       case FieldOperatorConstant:
+        if(NULL != ftype->value) {
+          fdata->value = g_malloc (sizeof (guint32));
+          *(guint32 *) fdata->value = *(guint32 *) ftype->value;
+        }
+        break;
+
+      case FieldOperatorIncrement:
       
       case FieldOperatorDefault:
         
@@ -268,7 +279,8 @@ void dissect_uint32 (const GNode* tnode,
           basic_dissect_uint32(position, fdata);
           *(guint32 *) fdata->value -= 1;
         }
-        else if(FieldOperatorDefault != ftype->op){
+        else if(FieldOperatorDefault != ftype->op) {
+          fdata->nbytes = 1;
           /* TODO implement storage of 'empty' value in dictionary
                   (except for the default operator)                */
         }

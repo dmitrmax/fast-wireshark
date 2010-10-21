@@ -88,6 +88,9 @@ public class DataPlanRunner implements Constants{
 		for(int i = gv instanceof Message ? 1 : 0 ; i <= values.size() + (gv instanceof Message ? 0 : -1) ; i++){
 			Object o = iter.next();
 			Field f = gv.getGroup().getField(i);
+      if (o == null) {
+        // DO NOTHING!
+      } else
 			if(f instanceof Sequence){
 				Sequence s = (Sequence)f;
 				SequenceValue sv = new SequenceValue(s);

@@ -20,7 +20,13 @@
     <message value="11">
         <uint32 value="15"/>
     </message>
+    <message value="11">
+        <uint32/>
+    </message>
     <message value="12">
         <uint32 value="123" />
+    </message>
+    <message value="12">
+        <uint32/>
     </message>
 </plan>

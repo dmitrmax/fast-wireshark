@@ -1,4 +1,11 @@
 
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+#include "debug.h"
+#include "xmlPlanWriter.h"
+
 #include "pdmlParser.h"
 
 /* Get the typename of the field by
@@ -24,52 +31,30 @@ xmlChar * getFieldType(const xmlChar *fullname){
 }
 
 /* Parse a field */
-int parseField(xmlDocPtr doc, xmlNodePtr xmlnode){
+gboolean parseField(xmlDocPtr doc, xmlNodePtr xmlnode){
 
   int rc = TRUE;
   xmlChar *type;
   xmlChar *fullname;
-  
+  gboolean empty = FALSE;
+  xmlChar* prop;
+  const xmlChar* value;
 
   /* Get field type */
   fullname = xmlGetProp( xmlnode, (xmlChar *)"name");
   type = getFieldType(fullname);
   xmlFree(fullname);
   if(type==NULL){
-    fprintf(stderr, "ERROR: field type wrong, not in format fast.x (ex. fast.int32)\n");
-    return false;
+    BAILOUT(FALSE, "ERROR: field type wrong, not in format fast.x (ex. fast.int32).");
   }
 
-  if(xmlStrcasecmp(type, (xmlChar *)"group")==0){
-    /* parse and write group */
-    if (rc) {
-      rc = writeGroup();
-    }
-    if (rc) {
-      rc = walkFields(doc, xmlnode);
-    }
-    if (rc) {
-      rc = closeGroup();
-    }
-  } else if(xmlStrcasecmp(type, (xmlChar *)"sequence")==0){
-    /* parse and write sequence */
-    if (rc) {
-      rc = writeSequence();
-    }
-    if (rc) {
-      rc = walkFields(doc, xmlnode);
-    }
-    if (rc) {
-      rc = closeSequence();
-    }
+  /* Get value of field */
+  prop = xmlGetProp( xmlnode, (xmlChar *)"showname");
+  if (0 == xmlStrncmp(prop, (xmlChar*)"(empty)", 7)) {
+    empty = TRUE;
+    value = 0;
   }
   else {
-    /* Treat as normal field. */
-    xmlChar* prop;
-    const xmlChar* value;
-
-    /* Get value of field */
-    prop = xmlGetProp( xmlnode, (xmlChar *)"showname");
     value = xmlStrchr(prop, ':');
     if (value && value[1]) {
       value = value+2;
@@ -77,12 +62,31 @@ int parseField(xmlDocPtr doc, xmlNodePtr xmlnode){
     else {
       value = (xmlChar*) "";
     }
-
-    /* write field */
-    rc = writeField(type, value);
-    xmlFree(prop);
   }
 
+  if (xmlStrcasecmp(type, (xmlChar *)"tid") == 0) {
+    if (rc)  rc = writeNestedType((xmlChar*)"Message", value);
+    if (rc)  rc = walkFields(doc, xmlnode);
+    if (rc)  rc = closeNestedType("Message");
+  }
+  else if (xmlStrcasecmp(type, (xmlChar *)"group")==0){
+    /* parse and write group */
+    if (rc)  rc = writeNestedType((xmlChar*)"group", value);
+    if (rc)  rc = walkFields(doc, xmlnode);
+    if (rc)  rc = closeNestedType("group");
+  } else if (xmlStrcasecmp(type, (xmlChar *)"sequence")==0){
+    /* parse and write sequence */
+    if (rc)  rc = writeNestedType((xmlChar*)"sequence", value);
+    if (rc)  rc = walkFields(doc, xmlnode);
+    if (rc)  rc = closeNestedType("sequence");
+  }
+  else {
+    /* Treat as normal field. */
+    /* write field */
+    rc = writeField(type, value);
+  }
+
+  if (prop)  xmlFree(prop);
   xmlFree(type);
 
   return rc;
@@ -91,7 +95,7 @@ int parseField(xmlDocPtr doc, xmlNodePtr xmlnode){
 
 /* Walk through the childern of the given xmlnode
    and parse the fields */
-int walkFields(xmlDocPtr doc, xmlNodePtr xmlnode){
+gboolean walkFields(xmlDocPtr doc, xmlNodePtr xmlnode){
 
   /* loop through packet and find fields */
 	xmlnode = xmlnode->xmlChildrenNode;
@@ -103,47 +107,26 @@ int walkFields(xmlDocPtr doc, xmlNodePtr xmlnode){
 
     if (xmlStrcmp(xmlnode->name, (xmlChar *)"field")==0){
       if(!parseField(doc, xmlnode)){
-        return false;
+        return FALSE;
       }
     }  	
 
     xmlnode = xmlnode->next;
   }  
 
-  return true;
+  return TRUE;
 }
 
 /* Parse the template section of the fast packet info */
-int parseTemplate(xmlDocPtr doc, xmlNodePtr xmlnode){
+gboolean parseTemplate(xmlDocPtr doc, xmlNodePtr xmlnode){
 
-  int rc;
-  xmlChar *tid;
-
-  tid = xmlGetProp( xmlnode, (xmlChar *)"show");
-  if (tid) {
-    /* write message element to output file */
-    rc = writeMessage(tid);
-    xmlFree(tid);
-  }
-  else {
-    fprintf(stderr, "ERROR: no template id\n");
-  }
-
-  if(rc==false) return false;
-
-  rc = walkFields(doc, xmlnode);
-  if(rc==false) return false;
-  
-  rc = closeMessage();
-  if(rc==false) return false;
-
-  return true;
+  return parseField(doc, xmlnode);
 }
 
 /* Parse a fast section of a packet */
-int parseFastPacket(xmlDocPtr doc, xmlNodePtr xmlnode){
+gboolean parseFastPacket(xmlDocPtr doc, xmlNodePtr xmlnode){
 
-  int successp = TRUE;
+  gboolean successp = TRUE;
 
 	/* loop through packet and find fields */
 	xmlnode = xmlnode->xmlChildrenNode;
@@ -177,8 +160,8 @@ int parseFastPacket(xmlDocPtr doc, xmlNodePtr xmlnode){
 /*! \brief  Parse a Packet section of the XML document
  *          looking for fast info.
  */
-int parsePacket (xmlDocPtr doc, xmlNodePtr xmlnode) {
-  int successp = TRUE;
+gboolean parsePacket (xmlDocPtr doc, xmlNodePtr xmlnode) {
+  gboolean successp = TRUE;
   /* loop through packet and find fields */
   xmlnode = xmlnode->xmlChildrenNode;
   while (xmlnode != NULL && successp) {
@@ -204,24 +187,22 @@ int parsePacket (xmlDocPtr doc, xmlNodePtr xmlnode) {
 }
 
 /* Parse the pdml file looking for packets */
-int parseDoc(const char *docname) {
+gboolean parseDoc(const char *docname) {
 
 	xmlDocPtr doc; /* pointer to XML document */
 	xmlNodePtr xmlnode; /* pointer to current node within document */
 
 	doc = xmlParseFile(docname); /* attempt to parse xml file and get pointer to parsed document */
 	
-	if (doc == NULL ) {
-		fprintf(stderr,"Document not parsed successfully. \n");
-		return false;
+	if (doc == NULL) {
+    BAILOUT(FALSE, "Document not parsed successfully.");
 	}
 	
 	xmlnode = xmlDocGetRootElement(doc);  /* start at the root of the XML document */
 	
 	if (xmlnode == NULL) {
-		fprintf(stderr,"empty document\n");
 		xmlFreeDoc(doc);
-		return false;
+		BAILOUT(FALSE, "Empty document.");
 	}
 	
 	xmlnode = xmlnode->xmlChildrenNode;
@@ -233,7 +214,7 @@ int parseDoc(const char *docname) {
 			  /* parse template, and check if parse failed */
 			  if(!parsePacket(doc, xmlnode)){
 				  xmlFreeDoc(doc);
-				  return false;
+				  return FALSE;
         }
 		  } else {
 			  fprintf(stderr,"Warning: what is a %s?\n", xmlnode->name);
@@ -244,12 +225,12 @@ int parseDoc(const char *docname) {
 	}
 	
 	xmlFreeDoc(doc);
-	return true;
+	return TRUE;
 }
 
 gboolean generatePlanFromPDML(const char * pdmlFilename, const char * outputPlanFilename){
 
-	int success;
+	gboolean success;
   parsedFastPackets = 0;
   
   success = initXMLWriter(outputPlanFilename);
@@ -272,7 +253,7 @@ gboolean generatePlanFromPDML(const char * pdmlFilename, const char * outputPlan
 }
 
 /* Check if parser should ignore given node */
-int ignoreXmlNode(xmlNodePtr xmlnode){
+gboolean ignoreXmlNode(xmlNodePtr xmlnode){
   return (0 == xmlStrcasecmp(xmlnode->name, (xmlChar*) "text") ||
           0 == xmlStrcasecmp(xmlnode->name, (xmlChar*) "comment"));
 }

@@ -92,17 +92,17 @@ void proto_register_fast ()
   /* Header fields which always exist. */
   static hf_register_info hf[] =
   {
-    { &hf_fast[FieldTypeUInt32],        { "uInt32",     "fast.uint32",   FT_UINT32, BASE_DEC,   NULL, 0, "", HFILL } },
-    { &hf_fast[FieldTypeUInt64],        { "uInt64",     "fast.uint64",   FT_UINT64, BASE_DEC,   NULL, 0, "", HFILL } },
-    { &hf_fast[FieldTypeInt32],         { "int32",      "fast.int32",    FT_INT32,  BASE_DEC,   NULL, 0, "", HFILL } },
-    { &hf_fast[FieldTypeInt64],         { "int64",      "fast.int64",    FT_INT64,  BASE_DEC,   NULL, 0, "", HFILL } },
-    { &hf_fast[FieldTypeDecimal],       { "decimal",    "fast.decimal",  FT_NONE,   BASE_NONE,  NULL, 0, "", HFILL } },
-    { &hf_fast[FieldTypeAsciiString],   { "ascii",      "fast.ascii",    FT_NONE,   BASE_NONE,  NULL, 0, "", HFILL } },
-    { &hf_fast[FieldTypeUnicodeString], { "unicode",    "fast.unicode",  FT_NONE,   BASE_NONE,  NULL, 0, "", HFILL } },
-    { &hf_fast[FieldTypeByteVector],    { "byteVector", "fast.bytevec",  FT_NONE,   BASE_NONE,  NULL, 0, "", HFILL } },
-    { &hf_fast[FieldTypeGroup],         { "group",      "fast.group",    FT_NONE,   BASE_NONE,  NULL, 0, "", HFILL } },
-    { &hf_fast[FieldTypeSequence],      { "sequence",   "fast.sequence", FT_NONE,   BASE_NONE,  NULL, 0, "", HFILL } },
-    { &hf_fast_tid,                     { "tid",        "fast.tid",      FT_UINT32, BASE_DEC,   NULL, 0, "", HFILL } }
+    { &hf_fast[FieldTypeUInt32],        { "uInt32",     "fast.uint32",   FT_NONE, BASE_NONE, NULL, 0, "", HFILL } },
+    { &hf_fast[FieldTypeUInt64],        { "uInt64",     "fast.uint64",   FT_NONE, BASE_NONE, NULL, 0, "", HFILL } },
+    { &hf_fast[FieldTypeInt32],         { "int32",      "fast.int32",    FT_NONE, BASE_NONE, NULL, 0, "", HFILL } },
+    { &hf_fast[FieldTypeInt64],         { "int64",      "fast.int64",    FT_NONE, BASE_NONE, NULL, 0, "", HFILL } },
+    { &hf_fast[FieldTypeDecimal],       { "decimal",    "fast.decimal",  FT_NONE, BASE_NONE, NULL, 0, "", HFILL } },
+    { &hf_fast[FieldTypeAsciiString],   { "ascii",      "fast.ascii",    FT_NONE, BASE_NONE, NULL, 0, "", HFILL } },
+    { &hf_fast[FieldTypeUnicodeString], { "unicode",    "fast.unicode",  FT_NONE, BASE_NONE, NULL, 0, "", HFILL } },
+    { &hf_fast[FieldTypeByteVector],    { "byteVector", "fast.bytevec",  FT_NONE, BASE_NONE, NULL, 0, "", HFILL } },
+    { &hf_fast[FieldTypeGroup],         { "group",      "fast.group",    FT_NONE, BASE_NONE, NULL, 0, "", HFILL } },
+    { &hf_fast[FieldTypeSequence],      { "sequence",   "fast.sequence", FT_NONE, BASE_NONE, NULL, 0, "", HFILL } },
+    { &hf_fast_tid,                     { "tid",        "fast.tid",      FT_NONE, BASE_NONE, NULL, 0, "", HFILL } }
   };
   /* Subtree array. */
   static gint *ett[] = {
@@ -246,9 +246,9 @@ void display_message (tvbuff_t* tvb, proto_tree* tree,
     ftype = (FieldType*) tmpl->data;
     fdata = (FieldData*) parent->data;
 
-    item = proto_tree_add_uint(tree, hf_fast_tid, tvb,
-                               fdata->start, fdata->nbytes,
-                               ftype->id);
+    item = proto_tree_add_none_format(tree, hf_fast_tid, tvb,
+                                      fdata->start, fdata->nbytes,
+                                      "tid: %d", ftype->id);
 
     newtree = proto_item_add_subtree(item, ett_fast);
     display_fields(tvb, newtree,
@@ -276,24 +276,28 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
     if (fdata->value || dnode->children) {
       switch (ftype->type) {
         case FieldTypeUInt32:
-          proto_tree_add_uint(tree, header_field, tvb,
-                              fdata->start, fdata->nbytes,
-                              *(guint32*) fdata->value);
+          proto_tree_add_none_format(tree, header_field, tvb,
+                                     fdata->start, fdata->nbytes,
+                                     "uInt32: %u",
+                                     *(guint32*) fdata->value);
           break;
         case FieldTypeUInt64:
-          proto_tree_add_uint64(tree, header_field, tvb,
-                                fdata->start, fdata->nbytes,
-                                *(guint64*) fdata->value);
+          proto_tree_add_none_format(tree, header_field, tvb,
+                                     fdata->start, fdata->nbytes,
+                                     "uInt64: %" G_GINT64_MODIFIER "u",
+                                     *(guint64*) fdata->value);
           break;
         case FieldTypeInt32:
-          proto_tree_add_int(tree, header_field, tvb,
-                             fdata->start, fdata->nbytes,
-                             *(gint32*) fdata->value);
+          proto_tree_add_none_format(tree, header_field, tvb,
+                                     fdata->start, fdata->nbytes,
+                                     "int32: %d",
+                                     *(gint32*) fdata->value);
           break;
         case FieldTypeInt64:
-          proto_tree_add_int64(tree, header_field, tvb,
-                               fdata->start, fdata->nbytes,
-                               *(gint64*) fdata->value);
+          proto_tree_add_none_format(tree, header_field, tvb,
+                                     fdata->start, fdata->nbytes,
+                                     "int64: %" G_GINT64_MODIFIER "d",
+                                     *(gint64*) fdata->value);
           break;
         case FieldTypeDecimal:
           {

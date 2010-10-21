@@ -8,12 +8,13 @@ project (FastWireshark)
 
 set (plugin_srcs
   basic-dissect.c
-  debug.c decode.c dictionaries.c dissect.c
+  debug.c debug-tree.c decode.c dictionaries.c dissect.c
   packet-fast.c parse-template.c template.c)
 
 set (plugin_name fast)
 set (wireshark_src "${CMAKE_CURRENT_SOURCE_DIR}/../wireshark")
 set (exe_dir "${CMAKE_CURRENT_SOURCE_DIR}/bin")
+set (debug_include_dir "${CMAKE_CURRENT_SOURCE_DIR}")
 
 if (UNIX)
   set (install_dir "$ENV{HOME}/.wireshark/plugins")

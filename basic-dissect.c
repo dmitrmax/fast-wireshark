@@ -65,7 +65,7 @@ gboolean dissect_shift_null(DissectPosition* position)
 {
   gboolean ret = FALSE;
   if(position->nbytes > 0) {
-    if(0x80 == position->bytes[position->offset]) {
+    if(0x80 == position->bytes[0]) {
       ret = TRUE;
       position->offjmp = 1;
       ShiftBytes(position);    

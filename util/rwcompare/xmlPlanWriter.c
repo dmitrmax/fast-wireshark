@@ -1,23 +1,26 @@
 
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+#include "debug.h"
 #include "xmlPlanWriter.h"
 
 
 /* Setup the xmlwriter to generate the plan file */
-int initXMLWriter(const char *output){
+gboolean initXMLWriter(const char *output){
 
   int rc;
 
   /* Create a new XmlWriter for docname, with no compression. */
   writer = xmlNewTextWriterFilename(output, 0);
   if (writer == NULL) {
-    fprintf(stderr, "Error creating the xml writer\n");
-    return false;
+    BAILOUT(FALSE, "Error creating the xml writer.");
   }
 
   rc = xmlTextWriterSetIndent(writer, 1);
-  if(rc<0){
-    fprintf(stderr, "Error cannot enable indentation\n");
-    return false;
+  if (rc<0) {
+    BAILOUT(FALSE, "Error cannot enable indentation.");
   }
 
     /* Start the document with the xml default for the version,
@@ -25,157 +28,98 @@ int initXMLWriter(const char *output){
      * declaration. */
   rc = xmlTextWriterStartDocument(writer, NULL, OUTPUT_ENCODING, NULL);
   if (rc < 0) {
-    fprintf(stderr, "Error xmlTextWriterStartDocument\n");
-    return false;
+    BAILOUT(FALSE, "Error xmlTextWriterStartDocument.");
   }
 
   /* Add "Plan" as root element */
   rc = xmlTextWriterStartElement(writer, BAD_CAST "Plan");
   if (rc < 0) {
-    fprintf(stderr, "Error making Plan element\n");
-    return false;
+    BAILOUT(FALSE, "Error making Plan element\n");
   }
 
-  return true;
+  return TRUE;
 }
 
-/* Create a message element in the plan file
-  set templateID = tid */
-int writeMessage(const xmlChar* tid){
-  
+/*! \brief  Write a nested type.
+ * \param value  NULL if this is an empty field.
+ */
+gboolean writeNestedType(const xmlChar* type, const xmlChar* value)
+{
   int rc;
 
-  /* Start an element named "Message" as child of Plan. */
-  rc = xmlTextWriterStartElement(writer, BAD_CAST "Message");
+  rc = xmlTextWriterStartElement(writer, BAD_CAST type);
   if (rc < 0) {
-    fprintf(stderr, "Error making Message element\n");
-    return false;
+    DBG1("Error creating %s.", (char*) type);
+    return FALSE;
   }
 
-  /* Add an attribute with name "templateID" and value tid to Message. */
-  rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "value", BAD_CAST tid);
+  rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "value", BAD_CAST value);
   if (rc < 0) {
-    fprintf(stderr, "Error adding message attribute\n");
-    return false;
+    BAILOUT(FALSE, "Error adding value attribute.");
   }
 
-  return true;
+
+  return TRUE;
 }
 
-/* Close a message element in the plan file */
-int closeMessage(){
-  
-  int rc;
-
-  /* Close Message element. */
-  rc = xmlTextWriterEndElement(writer);
-  if (rc < 0) {
-    fprintf(stderr, "Error at closing message\n");
-    return false;
-  }
-
-  return true;
-}
-
-/* Write a group element in the plan file */
-int writeGroup(){
-  
-  int rc;
-
-  /* Start an element named "Message" as child of Plan. */
-  rc = xmlTextWriterStartElement(writer, BAD_CAST "group");
-  if (rc < 0) {
-    fprintf(stderr, "Error making group element\n");
-    return false;
-  }
-
-  return true;
-}
-
-/* Close a group element in the plan file */
-int closeGroup(){
-  
+/*! \brief  Close a nested type (message, group, sequence).
+ */
+gboolean closeNestedType(xmlChar* type)
+{
   int rc;
 
   /* Close Message element. */
   rc = xmlTextWriterEndElement(writer);
   if (rc < 0) {
-    fprintf(stderr, "Error closing group\n");
-    return false;
+    DBG1("Error closing %s.", (char*)type);
+    return FALSE;
   }
 
-  return true;
-}
-
-/* Write a sequence element in the plan file */
-int writeSequence(){
-  
-  int rc;
-
-  /* Start an element named "Message" as child of Plan. */
-  rc = xmlTextWriterStartElement(writer, BAD_CAST "sequence");
-  if (rc < 0) {
-    fprintf(stderr, "Error making sequence element\n");
-    return false;
-  }
-
-  return true;
-}
-
-/* Close a sequence element in the plan file */
-int closeSequence(){
-  
-  int rc;
-
-  /* Close Message element. */
-  rc = xmlTextWriterEndElement(writer);
-  if (rc < 0) {
-    fprintf(stderr, "Error closing sequence\n");
-    return false;
-  }
-
-  return true;
+  return TRUE;
 }
 
 /* Write a field to the plan file
   element will be named type with
   value attribute = value */ 
-int writeField(const xmlChar* type, const xmlChar* value){
+gboolean writeField(const xmlChar* type, const xmlChar* value){
 
   int rc;
 
   /* Start an element named "Message" as child of Plan. */
   rc = xmlTextWriterStartElement(writer, BAD_CAST type);
   if (rc < 0) {
-    fprintf(stderr, "Error writing field %s\n", type);
-    return false;
+    DBG1("Error writing field %s.", type);
+    return FALSE;
   }
 
-  /* Add an attribute with name "templateID" and value tid to Message. */
-  rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "value", BAD_CAST value);
-  if (rc < 0) {
-    fprintf(stderr, "Error writing field attribute for field %s\n", type);
-    return false;
+  if (value) {
+    /* Add an attribute with name "templateID" and value tid to Message. */
+    rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "value", BAD_CAST value);
+    if (rc < 0) {
+      DBG1("Error writing field attribute for field %s.", type);
+      return FALSE;
+    }
   }
 
   /* Close field element. */
   rc = xmlTextWriterEndElement(writer);
   if (rc < 0) {
-    fprintf(stderr, "Error at closing field %s\n", type);
-    return false;
+    DBG1("Error at closing field %s.", type);
+    return FALSE;
   }
 
-  return true;
+  return TRUE;
 }
 
 /* Close the plan file and write it to the output file */
-void closeAndWriteXMLOutput(){
+void closeAndWriteXMLOutput()
+{
 
   int rc;
 
   rc = xmlTextWriterEndDocument(writer);
   if (rc < 0) {
-    printf("testXmlwriterFilename: Error at xmlTextWriterEndDocument\n");
+    DBG1("Err, end document returned %d", rc);
   }
 
   if (writer) {
@@ -183,3 +127,4 @@ void closeAndWriteXMLOutput(){
   }
   writer = 0;
 }
+
