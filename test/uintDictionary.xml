@@ -37,28 +37,28 @@
   </template>
   
   <template name="dictionaryTest" id="4" dictionary="template">
-    <uInt32 id="4" name="uint32a" presence="mandatory">
+    <uInt32 id="0" name="uint32a" presence="mandatory" key="key">
       <copy/>
     </uInt32>
-    <uInt32 id="4" name="uint32a" presence="mandatory">
+    <uInt32 id="1" name="uint32b" presence="mandatory" key="key">
       <copy/>
     </uInt32>
-    <uInt32 id="4" name="uint32a" presence="mandatory">
+    <uInt32 id="2" name="uint32c" presence="mandatory" key="key">
       <copy/>
     </uInt32>
-    <uInt32 id="4" name="uint32a" presence="mandatory">
+    <uInt32 id="3" name="uint32d" presence="mandatory" key="key">
       <copy/>
     </uInt32>
-    <uInt32 id="4" name="uint32a" presence="mandatory">
+    <uInt32 id="4" name="uint32e" presence="mandatory" key="key">
       <copy/>
     </uInt32>
-    <uInt32 id="4" name="uint32a" presence="mandatory">
+    <uInt32 id="5" name="uint32f" presence="mandatory" key="key">
       <copy/>
     </uInt32>
-    <uInt32 id="4" name="uint32a" presence="mandatory">
+    <uInt32 id="6" name="uint32g" presence="mandatory" key="key">
       <copy/>
     </uInt32>
-    <uInt32 id="4" name="uint32a" presence="mandatory">
+    <uInt32 id="7" name="uint32h" presence="mandatory" key="key">
       <copy/>
     </uInt32>
   </template>

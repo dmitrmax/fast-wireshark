@@ -51,6 +51,7 @@ struct field_type_struct
   char* name;
   /*! \brief  Field id. Typed for the hash lookup. */
   gint id;
+  char* key;
   gboolean mandatory;
   FieldTypeIdentifier type;
   FieldOperatorIdentifier op;

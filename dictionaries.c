@@ -103,7 +103,7 @@ GNode* get_dictionary_value(const FieldType* field_type){
   GNode* prev_value = 0;
   GNode* copy = 0;
   dictionary = (GHashTable*)field_type->dictionary_ptr;
-  prev_value = (GNode*)g_hash_table_lookup(dictionary,field_type->name);
+  prev_value = (GNode*)g_hash_table_lookup(dictionary,field_type->key);
   copy = g_node_copy_deep(prev_value, &_copy_convert, field_type);
   return copy;
 }
@@ -113,7 +113,7 @@ void set_dictionary_value(const FieldType* field_type, GNode* value){
   GNode* prev_value = 0;
   GNode* new_value = 0;
   dictionary = (GHashTable*)field_type->dictionary_ptr;
-  prev_value = (GNode*)g_hash_table_lookup(dictionary,field_type->name);
+  prev_value = (GNode*)g_hash_table_lookup(dictionary,field_type->key);
   if(prev_value){
     /* 
      * This function will recurse the tree and free all the nodes,
@@ -123,7 +123,7 @@ void set_dictionary_value(const FieldType* field_type, GNode* value){
   }
   new_value = g_node_copy_deep(value, &_copy_convert, field_type);
   if(new_value){
-    g_hash_table_insert(dictionary,field_type->name,new_value);
+    g_hash_table_insert(dictionary,field_type->key,new_value);
   } else {
     DBG1("Failed to set value for field type: %s", field_type->name);
   }

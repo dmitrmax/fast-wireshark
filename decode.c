@@ -55,7 +55,7 @@ void decode_pmap (guint nbytes, const guint8* bytes,
   for (i = 0; i < nbytes; ++i) {
     for (j = 1; j < NBitsInByte; ++j) {
       guint pmap_idx;
-      pmap_idx = NBitsInByte * i + j -1;
+      pmap_idx = (NBitsInByte-1) * i + j -1;
       pmap_res[pmap_idx] = bytes[i] & (StopByte >> j);
     }
   }

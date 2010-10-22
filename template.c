@@ -106,6 +106,7 @@ GNode* create_field (FieldTypeIdentifier type,
 
   field->name      = 0;
   field->id        = 0;
+  field->key       = 0;
   field->mandatory = TRUE;
   field->type      = type;
   field->op        = op;

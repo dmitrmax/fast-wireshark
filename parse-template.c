@@ -406,6 +406,14 @@ void set_field_attributes (xmlNodePtr xmlnode, FieldType* tfield, char * diction
     tfield->id = atoi((char*)str);
   }
   xmlFree((void*)str);
+  /* Key. */
+  str = xmlGetProp(xmlnode, (xmlChar*) "key");
+  if (str) {
+    tfield->key = g_strdup ((char*)str);
+  } else if (tfield->name){
+    tfield->key = g_strdup (tfield->name);
+  }
+  xmlFree((void*)str);
   /* Presence. */
   str = xmlGetProp(xmlnode, (xmlChar*) "presence");
   if (str) {
