@@ -14,6 +14,7 @@ public interface Constants {
 	public static final String DECIMAL = "decimal";
 	public static final String UNICODE = "unicode";
 	public static final String ASCII = "ascii";
+	public static final String BYTEVECTOR = "byteVector";
 	public static final String GROUP = "group";
 	public static final String SEQUENCE = "sequence";
 	public static final String MESSAGE = "message";

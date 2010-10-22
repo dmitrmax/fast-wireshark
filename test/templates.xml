@@ -75,4 +75,9 @@
 	  <uInt32 id="1" presence="optional" name="const"> <constant value="123"/> </uInt32>
 	</template>
 	
+	<template name="t_byteVector" id="13">
+		<byteVector id="1" name="byteVector"/>
+	</template>
+
+	
 </templates>

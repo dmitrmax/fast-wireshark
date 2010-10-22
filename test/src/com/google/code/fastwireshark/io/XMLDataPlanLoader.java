@@ -108,6 +108,21 @@ public class XMLDataPlanLoader extends DefaultHandler implements Constants{
 				curValues.add(null);
 			}
 		} else
+		if(qName.equalsIgnoreCase(BYTEVECTOR)){
+			if(attributes.getValue(VALUE) != null){
+				String val = attributes.getValue(VALUE);
+				if(val.length() % 2 > 0){
+					throw new RuntimeException("Hex string is odd in length: " + val);
+				}
+				byte[] bytes = new byte[val.length()/2];
+				for(int i = 0 ; i < val.length() / 2 ; i++){
+					bytes[i] = hexToByte(val.charAt(i*2),val.charAt(i*2+1));
+				}
+				curValues.add(bytes);
+			} else {
+				curValues.add(null);
+			}
+		} else
 		if(qName.equalsIgnoreCase(GROUP) ||
 		   qName.equalsIgnoreCase(SEQUENCE)) {
 			valueStack.push(curValues);
@@ -129,5 +144,68 @@ public class XMLDataPlanLoader extends DefaultHandler implements Constants{
 		}
 	}
 	
+	/**
+	 * Converts two characters to a byte containing the hex conversion of one character
+	 * in the upper nibble and the other character's hex conversion in the lower nibble
+	 * @param upper Character to place in the upper nibble
+	 * @param lower Character to place in the lower nibble
+	 * @return Byte with both upper and lower nibbles set
+	 */
+	private byte hexToByte(char upper, char lower){
+		byte up = (byte)(charToNibble(upper)<<4);
+		byte low = charToNibble(lower) ;
+		return (byte)(up | low);
+	}
 	
+	/**
+	 * Converts a single character to a byte with the lower nibble to to the hex value
+	 * represented by the character
+	 * @param cha The character to convert
+	 * @return A byte containing the hex represented by the character
+	 * @throws IllegalArgumentException If cha is not in the range of hex: 0-9 | a-f
+	 */
+	private byte charToNibble(char cha){
+		switch (cha){
+		case '0':
+			return 0x0;
+		case '1':
+			return 0x1;
+		case '2':
+			return 0x2;
+		case '3':
+			return 0x3;
+		case '4':
+			return 0x4;
+		case '5':
+			return 0x5;
+		case '6':
+			return 0x6;
+		case '7':
+			return 0x7;
+		case '8':
+			return 0x8;
+		case '9':
+			return 0x9;
+		case 'a':
+		case 'A':
+			return 0xA;
+		case 'b':
+		case 'B':
+			return 0xB;
+		case 'c':
+		case 'C':
+			return 0xC;
+		case 'd':
+		case 'D':
+			return 0xD;
+		case 'e':
+		case 'E':
+			return 0xE;
+		case 'f':
+		case 'F':
+			return 0xF;
+		default:
+			throw new IllegalArgumentException("Invalid hex character: " + cha);
+		}
+	}
 }

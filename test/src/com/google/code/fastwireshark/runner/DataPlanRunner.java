@@ -134,6 +134,9 @@ public class DataPlanRunner implements Constants{
 			if(((Scalar)f).getType().getName().equals(UNICODE) ||
 			   ((Scalar)f).getType().getName().equals(ASCII)){
 					gv.setString(i, (String)o);
+			} else
+			if(((Scalar)f).getType().getName().equals(BYTEVECTOR)){
+					gv.setByteVector(i, (byte[])o);
 			}
 		}
 	}

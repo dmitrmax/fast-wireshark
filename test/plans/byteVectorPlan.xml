@@ -1,0 +1,14 @@
+<plan>
+    <message value="13">
+        <bytevector value="00112233445566778899aabbccddeeff"/>
+    </message>
+    <message value="13">
+        <bytevector value="0123456789abcdef"/>
+    </message>
+    <message value="13">
+        <bytevector value=""/>
+    </message>
+    <message value="13">
+        <bytevector value="ab"/>
+    </message>
+</plan>
