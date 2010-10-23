@@ -92,17 +92,17 @@ void proto_register_fast ()
   /* Header fields which always exist. */
   static hf_register_info hf[] =
   {
-    { &hf_fast[FieldTypeUInt32],        { "uInt32",     "fast.uint32",   FT_NONE, BASE_NONE, NULL, 0, "", HFILL } },
-    { &hf_fast[FieldTypeUInt64],        { "uInt64",     "fast.uint64",   FT_NONE, BASE_NONE, NULL, 0, "", HFILL } },
-    { &hf_fast[FieldTypeInt32],         { "int32",      "fast.int32",    FT_NONE, BASE_NONE, NULL, 0, "", HFILL } },
-    { &hf_fast[FieldTypeInt64],         { "int64",      "fast.int64",    FT_NONE, BASE_NONE, NULL, 0, "", HFILL } },
-    { &hf_fast[FieldTypeDecimal],       { "decimal",    "fast.decimal",  FT_NONE, BASE_NONE, NULL, 0, "", HFILL } },
-    { &hf_fast[FieldTypeAsciiString],   { "ascii",      "fast.ascii",    FT_NONE, BASE_NONE, NULL, 0, "", HFILL } },
-    { &hf_fast[FieldTypeUnicodeString], { "unicode",    "fast.unicode",  FT_NONE, BASE_NONE, NULL, 0, "", HFILL } },
-    { &hf_fast[FieldTypeByteVector],    { "byteVector", "fast.bytevec",  FT_NONE, BASE_NONE, NULL, 0, "", HFILL } },
-    { &hf_fast[FieldTypeGroup],         { "group",      "fast.group",    FT_NONE, BASE_NONE, NULL, 0, "", HFILL } },
-    { &hf_fast[FieldTypeSequence],      { "sequence",   "fast.sequence", FT_NONE, BASE_NONE, NULL, 0, "", HFILL } },
-    { &hf_fast_tid,                     { "tid",        "fast.tid",      FT_NONE, BASE_NONE, NULL, 0, "", HFILL } }
+    { &hf_fast[FieldTypeUInt32],        { "uInt32",     "fast.uint32",     FT_NONE, BASE_NONE, NULL, 0, "", HFILL } },
+    { &hf_fast[FieldTypeUInt64],        { "uInt64",     "fast.uint64",     FT_NONE, BASE_NONE, NULL, 0, "", HFILL } },
+    { &hf_fast[FieldTypeInt32],         { "int32",      "fast.int32",      FT_NONE, BASE_NONE, NULL, 0, "", HFILL } },
+    { &hf_fast[FieldTypeInt64],         { "int64",      "fast.int64",      FT_NONE, BASE_NONE, NULL, 0, "", HFILL } },
+    { &hf_fast[FieldTypeDecimal],       { "decimal",    "fast.decimal",    FT_NONE, BASE_NONE, NULL, 0, "", HFILL } },
+    { &hf_fast[FieldTypeAsciiString],   { "ascii",      "fast.ascii",      FT_NONE, BASE_NONE, NULL, 0, "", HFILL } },
+    { &hf_fast[FieldTypeUnicodeString], { "unicode",    "fast.unicode",    FT_NONE, BASE_NONE, NULL, 0, "", HFILL } },
+    { &hf_fast[FieldTypeByteVector],    { "byteVector", "fast.bytevector", FT_NONE, BASE_NONE, NULL, 0, "", HFILL } },
+    { &hf_fast[FieldTypeGroup],         { "group",      "fast.group",      FT_NONE, BASE_NONE, NULL, 0, "", HFILL } },
+    { &hf_fast[FieldTypeSequence],      { "sequence",   "fast.sequence",   FT_NONE, BASE_NONE, NULL, 0, "", HFILL } },
+    { &hf_fast_tid,                     { "tid",        "fast.tid",        FT_NONE, BASE_NONE, NULL, 0, "", HFILL } }
   };
   /* Subtree array. */
   static gint *ett[] = {
@@ -372,7 +372,7 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
               guint i;
               for (i = 0; i < vec->nbytes; ++i) {
                 g_snprintf ((gchar*)(2*i + str), 3*sizeof(guint8),
-                            "%x", vec->bytes[i]);
+                            "%02x", vec->bytes[i]);
               }
               proto_tree_add_none_format(tree, header_field, tvb,
                                          fdata->start, fdata->nbytes,
