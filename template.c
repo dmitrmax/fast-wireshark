@@ -110,7 +110,8 @@ GNode* create_field (FieldTypeIdentifier type,
   field->mandatory = TRUE;
   field->type      = type;
   field->op        = op;
-  field->value     = 0;
+  field->empty     = TRUE;
+  init_field_value(&field->value);
   field->dictionary = 0;
   field->dictionary_ptr = 0;
 

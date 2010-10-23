@@ -2,7 +2,7 @@
 #ifndef BASIC_DISSECT_H_INCLUDED_
 #define BASIC_DISSECT_H_INCLUDED_
 
-#include <glib.h>
+#include "basic-field.h"
 
 /*! \brief  Identify the position of this field in the stream.
  */
@@ -10,7 +10,8 @@ struct field_data_struct
 {
   guint start;
   guint nbytes;
-  void* value;
+  gboolean empty;
+  FieldValue value;
 };
 typedef struct field_data_struct FieldData;
 

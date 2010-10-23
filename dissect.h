@@ -4,15 +4,6 @@
 
 #include "basic-dissect.h"
 
-/*! \brief  Hold a size prefixed data chunk. */
-struct sized_data_struct
-{
-  guint nbytes;
-  guint8* bytes;
-};
-typedef struct sized_data_struct SizedData;
-
-
 const GNode* dissect_fast_bytes (guint nbytes, const guint8* bytes,
                                  GNode* parent);
 void dissector_walk (const GNode* tnode,

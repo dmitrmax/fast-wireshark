@@ -58,7 +58,7 @@ const GNode* dissect_fast_bytes (guint nbytes, const guint8* bytes,
   parent->data  = fdata;
   fdata->start  = position->offset;
   fdata->nbytes = 0;
-  fdata->value  = 0;
+  fdata->empty  = TRUE;
 
   /* Figure out current Template ID. */
   if (dissect_shift_pmap (position)) {
@@ -166,9 +166,10 @@ GNode* dissect_type (const GNode* tnode,
   g_node_insert_after(parent, dnode, dnode_next);
 
   /* Initialize to sensible defaults. */
-  fdata->value  = NULL;
   fdata->start  = position->offset;
   fdata->nbytes = 0;
+  fdata->empty  = TRUE;
+  init_field_value(&fdata->value);
 
   /* Call the dissect function. */
   (*dissect_fn_map[ftype->type]) (tnode, position, dnode_next);
@@ -203,9 +204,6 @@ GNode* dissect_type (const GNode* tnode,
 void dissect_uint32 (const GNode* tnode,
                      DissectPosition* position, GNode* dnode)
 {
-  GNode * parent;
-  GNode * copy;
-  
   SetupDissectStack(ftype, fdata,  tnode, dnode);
   
   /* MANDATORY */
@@ -218,23 +216,17 @@ void dissect_uint32 (const GNode* tnode,
 
       case FieldOperatorCopy:
         presence_bit = dissect_shift_pmap(position);
-        if(presence_bit){
+        if (presence_bit) {
           basic_dissect_uint32(position, fdata);
-          /* Send dnode to dictionary, dictionary will copy dnode */
-          set_dictionary_value(ftype, dnode);
+          set_dictionary_value(ftype, fdata);
         } else {
-          copy = get_dictionary_value(ftype);
-          parent = dnode->parent;
-          g_node_insert_before(parent,dnode,copy);
-          g_node_unlink(dnode);
+          /* TODO: Check return status. */
+          get_dictionary_value(ftype, fdata);
         }
         break;
         
       case FieldOperatorConstant:
-        if(NULL != ftype->value) {
-          fdata->value = g_malloc (sizeof (guint32));
-          *(guint32 *) fdata->value = *(guint32 *) ftype->value;
-        }
+        get_dictionary_value(ftype, fdata);
         break;
 
       case FieldOperatorIncrement:
@@ -261,9 +253,8 @@ void dissect_uint32 (const GNode* tnode,
       case FieldOperatorConstant:
         presence_bit = dissect_shift_pmap(position);
         
-        if(presence_bit && NULL != ftype->value) {
-          fdata->value = g_malloc (sizeof (guint32));
-          *(guint32 *) fdata->value = *(guint32 *) ftype->value;
+        if (presence_bit) {
+          get_dictionary_value(ftype, fdata);
         }
         break;
         
@@ -277,12 +268,15 @@ void dissect_uint32 (const GNode* tnode,
         
         if(!null_shifted) {
           basic_dissect_uint32(position, fdata);
-          *(guint32 *) fdata->value -= 1;
+          fdata->value.u32 -= 1;
         }
-        else if(FieldOperatorDefault != ftype->op) {
-          fdata->nbytes = 1;
-          /* TODO implement storage of 'empty' value in dictionary
-                  (except for the default operator)                */
+        else {
+          if(FieldOperatorDefault != ftype->op) {
+            fdata->nbytes = 1;
+            /* TODO implement storage of 'empty' value in dictionary
+             * (except for the default operator)
+             */
+          }
         }
         break;
 
@@ -380,7 +374,7 @@ void dissect_decimal (const GNode* tnode,
 
     /* Count how many bytes were used. */
     fdata->nbytes = position->offset - fdata->start;
-    fdata->value = 0;
+    fdata->empty = FALSE;
   }
   else {
     DBG0("Only simple types are implemented.");
@@ -419,6 +413,8 @@ void dissect_byte_vector (const GNode* tnode,
 
   if (ftype->mandatory && !ftype->op) {
     SizedData* vec;
+    vec = &fdata->value.bytevec;
+    fdata->empty = FALSE;
 
     fdata->start = position->offset;
     fdata->nbytes = 0;
@@ -428,9 +424,6 @@ void dissect_byte_vector (const GNode* tnode,
                                                position->bytes);
     fdata->nbytes += position->offjmp;
 
-    vec = g_malloc (sizeof (SizedData));
-    if (!vec)  BAILOUT(;,"Could not allocate memory.");
-
     vec->nbytes = decode_uint32 (position->offjmp,
                                  position->bytes);
     ShiftBytes(position);
@@ -439,16 +432,11 @@ void dissect_byte_vector (const GNode* tnode,
     position->offjmp = vec->nbytes;
     fdata->nbytes += vec->nbytes;
 
-    vec->bytes = g_malloc (vec->nbytes * sizeof(guint8));
+    vec->bytes = g_malloc ((1+vec->nbytes) * sizeof(guint8));
 
     if (vec->bytes) {
-      decode_byte_vector (vec->nbytes,
-                          position->bytes,
-                          vec->bytes);
-      fdata->value = vec;
-    }
-    else {
-      g_free (vec);
+      decode_byte_vector (vec->nbytes, position->bytes, vec->bytes);
+      vec->bytes[vec->nbytes] = 0;
     }
 
     ShiftBytes(position);
@@ -475,6 +463,7 @@ void dissect_group (const GNode* tnode,
   }
   
   if (its_there) {
+    fdata->empty = FALSE;
 
     fdata->start = position->offset;
 
@@ -501,10 +490,12 @@ void dissect_sequence (const GNode* tnode,
     guint32 i;
     GNode* parent;
 
+    fdata->empty = FALSE;
+
     fdata->start = position->offset;
 
     dissect_uint32 (tnode, position, dnode);
-    size = *(guint32*)fdata->value;
+    size = fdata->value.u32;
 
     parent = dnode;
     dnode  = 0;

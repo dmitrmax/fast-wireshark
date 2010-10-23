@@ -186,8 +186,10 @@ gint64 decode_int64 (guint nbytes, const guint8* bytes)
 void decode_ascii_string (guint nbytes, const guint8* bytes,
                           guint8* str)
 {
-  memcpy (str, bytes, nbytes*sizeof(guint8));
-  str[nbytes-1] &= ~StopByte;
+  if (nbytes > 0) {
+    memcpy (str, bytes, nbytes*sizeof(guint8));
+    str[nbytes-1] &= ~StopByte;
+  }
 }
 
 

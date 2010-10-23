@@ -3,25 +3,29 @@
  * \brief  Handle dictionary setting on field types in templates
  */
 
-#include "dictionaries.h"
-#include "dissect.h"
+#include <string.h>
+
 #include "debug.h"
-#include "template.h"
+
+#include "dictionaries.h"
+
+/*!
+ * \brief Struct to allow a field type to be associated with the value.
+ * Dictionary stored values are typed because it is an error to attempt to use
+ * mismatched types when retrieving values.
+ */
+struct typed_value_struct
+{
+  FieldTypeIdentifier type;
+  gboolean empty;
+  FieldValue value;
+};
+typedef struct typed_value_struct TypedValue;
+
 
 /* Private (static) headers. */
 static GHashTable* dictionaries_table = 0;
 
-/* TODO: Find this function a home */
-/*!
- * \brief Copies a field data, setting the start byte and num bytes to 0 and cloning the value
- * The pointer returned by this is a newly allocated data
- * the memory is the caller's
- * \param field_type The Type of the field to be copied
- * \param field_data The FieldData to be copied
- * \return A copy of field_data with num bytes and start byte set to 0
- */
-static FieldData* copy( const FieldData* field_data, FieldType* field_type);
-static gpointer _copy_convert(gconstpointer, gpointer);
 
 /*!
  * \brief Retrieves a dictionary by name, or creates it if it doesnt exist.
@@ -88,8 +92,21 @@ void set_dictionary_pointers(GNode* node){
   GNode* child = 0;
   FieldType* field_type = 0;
   field_type = (FieldType*)(node->data);
-  /* TODO: Debug code in the tiernary operator: remove everything after and including '?' */
-  field_type->dictionary_ptr = get_dictionary(field_type->dictionary?field_type->dictionary:GLOBAL_DICTIONARY);
+  /* TODO: Debug code in the ternary operator:
+   * remove everything after and
+   * including '?'
+   */
+  field_type->dictionary_ptr =
+    get_dictionary(field_type->dictionary
+                   ? field_type->dictionary
+                   : GLOBAL_DICTIONARY);
+  if (!field_type->empty) {
+    FieldData fdata;
+    fdata.empty = FALSE;
+    /* Not using copy_field_value() to avoid extra malloc/free. */
+    memcpy(&fdata.value, &field_type->value, sizeof(FieldValue));
+    set_dictionary_value(field_type, &fdata);
+  }
   child = g_node_first_child(node);
   /* Recurse into child nodes */
   while(child){
@@ -98,62 +115,57 @@ void set_dictionary_pointers(GNode* node){
   }
 }
 
-GNode* get_dictionary_value(const FieldType* field_type){
+gboolean get_dictionary_value(const FieldType* ftype,
+                              FieldData* fdata)
+{
+  gboolean found = FALSE;
   GHashTable* dictionary = 0;
-  GNode* prev_value = 0;
-  GNode* copy = 0;
-  dictionary = (GHashTable*)field_type->dictionary_ptr;
-  prev_value = (GNode*)g_hash_table_lookup(dictionary,field_type->key);
-  copy = g_node_copy_deep(prev_value, &_copy_convert, field_type);
-  return copy;
+  const TypedValue* prev = 0;
+  dictionary = (GHashTable*)ftype->dictionary_ptr;
+  prev = g_hash_table_lookup(dictionary,ftype->key);
+  if (prev) {
+    if (prev->type == ftype->type) {
+      found = TRUE;
+      fdata->empty = prev->empty;
+      if (!fdata->empty) {
+        copy_field_value(ftype->type, &prev->value, &fdata->value);
+      }
+    }
+    else {
+      DBG2("[%s] Retrieved differently typed value for %s.",
+          "ERR D4", ftype->name);
+    }
+  }
+  return found;
 }
 
-void set_dictionary_value(const FieldType* field_type, GNode* value){
+void set_dictionary_value(const FieldType* ftype,
+                          const FieldData* fdata)
+{
   GHashTable* dictionary = 0;
-  GNode* prev_value = 0;
-  GNode* new_value = 0;
-  dictionary = (GHashTable*)field_type->dictionary_ptr;
-  prev_value = (GNode*)g_hash_table_lookup(dictionary,field_type->key);
-  if(prev_value){
-    /* 
-     * This function will recurse the tree and free all the nodes,
-     * Unsure on if it frees user defined data as well
-     */
-    g_node_destroy(prev_value);
+  TypedValue* prev_value = 0;
+  TypedValue* new_value = 0;
+  dictionary = (GHashTable*)ftype->dictionary_ptr;
+  prev_value = g_hash_table_lookup(dictionary, ftype->key);
+  if (prev_value) {
+    cleanup_field_value(ftype->type, &prev_value->value);
+    new_value = prev_value;
   }
-  new_value = g_node_copy_deep(value, &_copy_convert, field_type);
-  if(new_value){
-    g_hash_table_insert(dictionary,field_type->key,new_value);
+  else {
+    new_value = g_malloc(sizeof(TypedValue));
+  }
+  new_value->type = ftype->type;
+  new_value->empty = fdata->empty;
+  if (!new_value->empty) {
+    copy_field_value(ftype->type, &fdata->value, &new_value->value);
+  }
+  if (new_value) {
+    /* Only have to insert if we created a new value. */
+    if (!prev_value) {
+      g_hash_table_insert(dictionary, ftype->key, new_value);
+    }
   } else {
-    DBG1("Failed to set value for field type: %s", field_type->name);
+    DBG1("Failed to set value for field type: %s", ftype->name);
   }
 }
 
-FieldData* copy(const FieldData* field_data, FieldType* field_type){
-  FieldData* copy = 0;
-  copy = g_malloc (sizeof (FieldData));
-  copy->start = 0;
-  copy->nbytes = 0;
-  copy->value = 0;
-  switch(field_type->type){
-    case FieldTypeUInt32:
-      copy->value = g_malloc (sizeof (guint32));
-      *(guint32*)copy->value = *(guint32*)field_data->value;
-    break;
-    case FieldTypeUInt64:
-    case FieldTypeInt32:
-    case FieldTypeInt64:
-    case FieldTypeDecimal:
-    case FieldTypeAsciiString:
-    case FieldTypeUnicodeString:
-    case FieldTypeByteVector:
-    default:
-      DBG1("Copy not supported for %i",field_type->type);
-    break;
-	}
-	return copy;
-}
-
-gpointer _copy_convert(gconstpointer data, gpointer additional){
-	return copy((FieldData*)data, additional);
-}

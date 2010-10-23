@@ -7,7 +7,7 @@ subdirs (util)
 project (FastWireshark)
 
 set (plugin_srcs
-  basic-dissect.c
+  basic-dissect.c basic-field.c
   debug.c debug-tree.c decode.c dictionaries.c dissect.c
   packet-fast.c parse-template.c template.c)
 
@@ -109,7 +109,7 @@ set (CPACK_PACKAGE_CONTACT "http://code.google.com/p/fast-wireshark")
 set (CPACK_PACKAGE_VERSION_MAJOR "0")
 set (CPACK_PACKAGE_VERSION_MINOR "4")
 set (CPACK_PACKAGE_VERSION_PATCH "0")
-set (CPACK_RESOURCE_FILE_LICENSE "COPYING")
+set (CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/COPYING")
 
 set (CPACK_NSIS_URL_INFO_ABOUT "http://code.google.com/p/fast-wireshark")
 

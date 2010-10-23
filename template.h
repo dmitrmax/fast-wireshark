@@ -10,39 +10,7 @@
 
 #ifndef TEMPLATE_H_INCLUDED_
 #define TEMPLATE_H_INCLUDED_
-#include <glib.h>
-
-enum field_type_identifier_enum
-{ 
-  FieldTypeUInt32,
-  FieldTypeUInt64,
-  FieldTypeInt32,
-  FieldTypeInt64,
-  FieldTypeDecimal,
-  FieldTypeAsciiString,
-  FieldTypeUnicodeString,
-  FieldTypeByteVector,
-  FieldTypeGroup,
-  FieldTypeSequence,
-  FieldTypeEnumLimit,
-  FieldTypeInvalid
-};
-typedef enum field_type_identifier_enum FieldTypeIdentifier;
-
-enum field_operator_identifier_enum
-{
-  FieldOperatorNone,
-  FieldOperatorConstant,
-  FieldOperatorDefault,
-  FieldOperatorCopy,
-  FieldOperatorIncrement,
-  FieldOperatorDelta,
-  FieldOperatorTail,
-  FieldOperatorEnumLimit
-};
-typedef enum field_operator_identifier_enum FieldOperatorIdentifier;
-
-typedef void FieldValue;
+#include "basic-field.h"
 
 /*! \brief  Hold data relevant to a template definition.
  */
@@ -55,7 +23,8 @@ struct field_type_struct
   gboolean mandatory;
   FieldTypeIdentifier type;
   FieldOperatorIdentifier op;
-  FieldValue* value;
+  gboolean empty;
+  FieldValue value;
   /*! \brief Name of the dictionary used for this field */
   char * dictionary;
   GHashTable* dictionary_ptr;
