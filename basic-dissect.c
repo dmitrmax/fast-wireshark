@@ -85,9 +85,7 @@ void basic_dissect_uint32 (DissectPosition* position, FieldData* fdata)
 {
   position->offjmp = count_stop_bit_encoded (position->nbytes,
                                              position->bytes);
-  fdata->start = position->offset;
   fdata->nbytes = position->offjmp;
-  fdata->empty = FALSE;
   fdata->value.u32 = decode_uint32 (position->offjmp,
                                     position->bytes);
   ShiftBytes(position);
@@ -102,9 +100,7 @@ void basic_dissect_uint64 (DissectPosition* position, FieldData* fdata)
 {
   position->offjmp = count_stop_bit_encoded (position->nbytes,
                                              position->bytes);
-  fdata->start = position->offset;
   fdata->nbytes = position->offjmp;
-  fdata->empty = FALSE;
   fdata->value.u64 = decode_uint64 (position->offjmp,
                                     position->bytes);
   ShiftBytes(position);
@@ -118,9 +114,7 @@ void basic_dissect_int32 (DissectPosition* position, FieldData* fdata)
 {
   position->offjmp = count_stop_bit_encoded (position->nbytes,
                                              position->bytes);
-  fdata->start = position->offset;
   fdata->nbytes = position->offjmp;
-  fdata->empty = FALSE;
   fdata->value.i32 = decode_int32 (position->offjmp,
                                    position->bytes);
   ShiftBytes(position);
@@ -135,9 +129,7 @@ void basic_dissect_int64 (DissectPosition* position, FieldData* fdata)
 {
   position->offjmp = count_stop_bit_encoded (position->nbytes,
                                              position->bytes);
-  fdata->start = position->offset;
   fdata->nbytes = position->offjmp;
-  fdata->empty = FALSE;
   fdata->value.i64 = decode_int64 (position->offjmp,
                                    position->bytes);
   ShiftBytes(position);
@@ -154,10 +146,8 @@ void basic_dissect_ascii_string (DissectPosition* position, FieldData* fdata)
   guint32 nbytes;
   position->offjmp = count_stop_bit_encoded (position->nbytes,
                                              position->bytes);
-  fdata->start = position->offset;
   nbytes = position->offjmp;
   fdata->nbytes = nbytes;
-  fdata->empty = FALSE;
   bytes = g_malloc ((1+ nbytes) * sizeof(guint8));
   if (bytes) {
     decode_ascii_string (position->offjmp, position->bytes, bytes);

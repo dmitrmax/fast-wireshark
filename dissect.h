@@ -14,6 +14,8 @@ GNode* dissect_type (const GNode* tnode,
                      DissectPosition* position,
                      GNode* parent, GNode* dnode);
 
+void dissect_optional (const GNode* tnode,
+                       DissectPosition* position, GNode* dnode);
 void dissect_uint32 (const GNode* tnode,
                      DissectPosition* position, GNode* dnode);
 void dissect_uint64 (const GNode* tnode,

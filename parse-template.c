@@ -171,6 +171,7 @@ GNode* new_parsed_field (xmlNodePtr xmlnode, char * curDictionary)
 
   /* Get dictionary used for this node and subfields */
   dictionary = get_field_dictionary (xmlnode, curDictionary);
+  set_field_attributes(xmlnode, tfield, dictionary);
 
   /* Try the integers. */
   if (!found) {
@@ -241,7 +242,6 @@ GNode* new_parsed_field (xmlNodePtr xmlnode, char * curDictionary)
    * fill its attributes.
    */
   if (found && valid) {
-    set_field_attributes(xmlnode, tfield, dictionary);
   }
   else {
     /* TODO: Free parse tree. */
@@ -264,43 +264,48 @@ GNode* new_parsed_field (xmlNodePtr xmlnode, char * curDictionary)
  */
 gboolean parse_decimal (xmlNodePtr xmlnode, FieldType * tfield, GNode * tnode, char * curDictionary)
 {
-    GNode* exptNode;
-    GNode* mantNode;
-    FieldType * expt;
-    FieldType * mant;
-    
+  GNode* exptNode;
+  GNode* mantNode;
+  FieldType * expt;
+  FieldType * mant;
 
-    tfield->type = FieldTypeDecimal;
+  tfield->type = FieldTypeDecimal;
 
-    /* Add exponent and mantissa. */
-    exptNode = create_field (FieldTypeInt32, FieldOperatorNone);
-    if (!exptNode)  BAILOUT(0, "Error creating exponent field.");
-    g_node_insert_after (tnode, 0,        exptNode);
+  /* Add exponent and mantissa. */
+  exptNode = create_field (FieldTypeInt32, FieldOperatorNone);
+  if (!exptNode)  BAILOUT(0, "Error creating exponent field.");
+  g_node_insert_after (tnode, 0,        exptNode);
+  expt = (FieldType*) exptNode->data;
+  expt->dictionary = get_field_dictionary (xmlnode, curDictionary);
+  if (!tfield->mandatory) {
+    expt->mandatory = FALSE;
+  }
 
-    mantNode = create_field (FieldTypeInt64, FieldOperatorNone);
-    if (!mantNode)  BAILOUT(0, "Error creating mantissa field.");
-    g_node_insert_after (tnode, exptNode, mantNode);
+  mantNode = create_field (FieldTypeInt64, FieldOperatorNone);
+  if (!mantNode)  BAILOUT(0, "Error creating mantissa field.");
+  g_node_insert_after (tnode, exptNode, mantNode);
+  mant = (FieldType*) mantNode->data;
+  mant->dictionary = get_field_dictionary (xmlnode, curDictionary);
 
-    /* Get exponent and mantissa operators and values (if given) */
-    xmlnode = xmlnode->xmlChildrenNode;
-	  while (xmlnode != NULL) {
-		  if (!ignore_xml_node(xmlnode)){
-        if(0 == xmlStrcasecmp(xmlnode->name, (xmlChar*)"exponent")){
-          expt = (FieldType*) exptNode->data;
-          if(!parse_operator(xmlnode, expt)) return FALSE;
-          expt->dictionary = get_field_dictionary (xmlnode, curDictionary);
-        } else if( 0 == xmlStrcasecmp(xmlnode->name, (xmlChar*)"mantissa")){
-          mant = (FieldType*) mantNode->data;
-          if(!parse_operator(xmlnode, mant)) return FALSE;
-          mant->dictionary = get_field_dictionary (xmlnode, curDictionary);
-        } else {
-           DBG1("Unknown decimal subfield %s.", xmlnode->name);
-           return FALSE;
+  /* Get exponent and mantissa operators and values (if given) */
+  xmlnode = xmlnode->xmlChildrenNode;
+  while (xmlnode != NULL) {
+    if (!ignore_xml_node(xmlnode)){
+      if(0 == xmlStrcasecmp(xmlnode->name, (xmlChar*)"exponent")){
+        if(!parse_operator(xmlnode, expt)) {
+          BAILOUT(FALSE, "Failed to get exponent.");
         }
-      }  
+      } else if( 0 == xmlStrcasecmp(xmlnode->name, (xmlChar*)"mantissa")){
+        if(!parse_operator(xmlnode, mant)) {
+          BAILOUT(FALSE, "Failed to get mantissa.");
+        }
+      } else {
+        DBG1("Unknown decimal subfield %s.", xmlnode->name);
+        return FALSE;
+      }
+    }  
     xmlnode = xmlnode->next;
-	}
-
+  }
   return TRUE;
 }
 

@@ -1,0 +1,84 @@
+<plan>
+  <!-- All optional fields should be decoded correctly. -->
+  <message value="11">
+    <uint32     value="555"/>
+    <uInt64     value="555"/>
+    <int32      value="555"/>
+    <int64      value="555"/>
+    <decimal    value="5e5"/>
+    <ascii      value="555"/>
+    <unicode    value="555"/>
+    <byteVector value="0555"/>
+    <group      value="">
+      <int32      value="555"/>
+      <int32      value="555"/>
+    </group>
+    <sequence   value="">
+      <group      value="">
+        <int64      value="555"/>
+        <int64      value="555"/>
+      </group>
+      <group      value="">
+        <int64      value="555"/>
+        <int64      value="555"/>
+      </group>
+    </sequence>
+  </message>
+
+  <!-- Edgy cases. -->
+  <message value="11">
+    <uint32     value="0"/>
+    <uInt64     value="0"/>
+    <int32      value="-555"/>
+    <int64      value="-555"/>
+    <decimal    value="-7e-5"/>
+    <ascii      value=""/>
+    <unicode    value=""/>
+    <byteVector value=""/>
+    <group      value="">
+      <int32      value="0"/>
+      <int32      value="0"/>
+    </group>
+    <sequence   value="">
+    </sequence>
+  </message>
+
+  <!-- All primitive fields sent as empty. -->
+  <message value="11">
+    <uint32/>
+    <uInt64/>
+    <int32/>
+    <int64/>
+    <decimal/>
+    <ascii/>
+    <unicode/>
+    <byteVector/>
+    <group      value="">
+      <int32 value="5"/>
+      <int32/>
+    </group>
+    <sequence   value="">
+      <group value="">
+        <int64 value="5"/>
+        <int64/>
+      </group>
+      <group value="">
+        <int64 value="0"/>
+        <int64 value="0"/> <!-- Except this one. -->
+      </group>
+    </sequence>
+  </message>
+
+  <!-- TODO: Groups and sequences empty.
+  -    At least one member is not optional.
+  -->
+
+  <message value="12">
+    <uint32 value="123"/>
+  </message>
+
+  <message value="12">
+    <uint32/>
+  </message>
+</plan>
+

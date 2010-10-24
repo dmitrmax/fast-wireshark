@@ -67,9 +67,24 @@
 		<int32 id="3" name="int32_4" />
 	</template>
 	
-	<template name="t_uint32_optional" id="11">
-		<uInt32 id="1" name="uint32" presence="optional" />
-	</template>	
+  <template name="t_optional" id="11">
+    <uInt32     name="uint32"   presence="optional" />
+    <uInt64     name="int64"    presence="optional" />
+    <int32      name="uint64"   presence="optional" />
+    <int64      name="int64"    presence="optional" />
+    <decimal    name="decimal"  presence="optional" />
+    <string     name="ascii"    presence="optional" charset="ascii" />
+    <string     name="unicode"  presence="optional" charset="unicode" />
+    <byteVector name="bytevec"  presence="optional" />
+    <group      name="group"    presence="optional">
+      <int32      name="int2"/>
+      <int32      name="int2_opt" presence="optional"/>
+    </group>
+    <sequence   name="sequence" presence="optional">
+      <int64      name="int3" />
+      <int64      name="int3_opt" presence="optional" />
+    </sequence>
+  </template>	
 	
 	<template name="t_uint32_opt_const" id="12">
 	  <uInt32 id="1" presence="optional" name="const"> <constant value="123"/> </uInt32>

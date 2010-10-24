@@ -171,8 +171,18 @@ GNode* dissect_type (const GNode* tnode,
   fdata->empty  = TRUE;
   init_field_value(&fdata->value);
 
-  /* Call the dissect function. */
-  (*dissect_fn_map[ftype->type]) (tnode, position, dnode_next);
+  if (!ftype->mandatory) {
+    /* Set empty to false if there should be a value. */
+    dissect_optional(tnode, position, dnode_next);
+  }
+  else {
+    fdata->empty = FALSE;
+  }
+
+  if (!fdata->empty) {
+    /* Call the dissect function. */
+    (*dissect_fn_map[ftype->type]) (tnode, position, dnode_next);
+  }
   if(!(dnode_next->parent)){
     g_node_destroy(dnode_next);
     /* As we are building the tree, the last node added will the the one we just made */
@@ -196,6 +206,57 @@ GNode* dissect_type (const GNode* tnode,
   fdata = (FieldData*) dnode->data;
 
 
+/*! \brief  Given a byte stream, check if an optional field is empty.
+ * \param tnode  Template tree node.
+ * \param position  Position in the packet.
+ * \param dnode  Dissect tree node.
+ */
+void dissect_optional (const GNode* tnode,
+                       DissectPosition* position, GNode* dnode)
+{
+  SetupDissectStack(ftype, fdata,  tnode, dnode);
+  if (ftype->mandatory) {
+    BAILOUT(;,"Don't call this function on a mandatory field.");
+  }
+
+  if (FieldTypeGroup == ftype->type) {
+    fdata->empty = !dissect_shift_pmap(position);
+  }
+  else if (FieldOperatorConstant == ftype->op) {
+    gboolean presence_bit;
+    presence_bit = dissect_shift_pmap(position);
+    if (presence_bit) {
+      fdata->empty = FALSE;
+    }
+  }
+  else {
+    gboolean null_shifted;   
+    null_shifted = dissect_shift_null(position);
+
+    if (null_shifted) {
+      fdata->nbytes = 1;
+      switch (ftype->op) {
+        case FieldOperatorNone:
+        case FieldOperatorDelta:
+          /* Do not set previous value. */
+          break;
+        case FieldOperatorDefault:
+        case FieldOperatorCopy:
+        case FieldOperatorIncrement:
+        case FieldOperatorTail:
+          set_dictionary_value(ftype, fdata);
+          break;
+        default:
+          DBG0("Bad operator type.");
+          break;
+      }
+    }
+    else {
+      fdata->empty = FALSE;
+    }
+  }
+}
+
 /*! \brief  Given a byte stream, dissect an unsigned 32bit integer.
  * \param tnode  Template tree node.
  * \param position  Position in the packet.
@@ -204,86 +265,43 @@ GNode* dissect_type (const GNode* tnode,
 void dissect_uint32 (const GNode* tnode,
                      DissectPosition* position, GNode* dnode)
 {
+  gboolean presence_bit;
   SetupDissectStack(ftype, fdata,  tnode, dnode);
-  
-  /* MANDATORY */
-  if (ftype->mandatory) {
-    gboolean presence_bit;
-    switch(ftype->op) {
-      case FieldOperatorNone:
+
+  switch (ftype->op) {
+    case FieldOperatorNone:
+      basic_dissect_uint32(position, fdata);
+      if (!ftype->mandatory) {
+        -- fdata->value.u32;
+      }
+      break;
+
+    case FieldOperatorCopy:
+      presence_bit = dissect_shift_pmap(position);
+      if (presence_bit) {
         basic_dissect_uint32(position, fdata);
-        break;
-
-      case FieldOperatorCopy:
-        presence_bit = dissect_shift_pmap(position);
-        if (presence_bit) {
-          basic_dissect_uint32(position, fdata);
-          set_dictionary_value(ftype, fdata);
-        } else {
-          /* TODO: Check return status. */
-          get_dictionary_value(ftype, fdata);
+        if (!ftype->mandatory) {
+          -- fdata->value.u32;
         }
-        break;
-        
-      case FieldOperatorConstant:
+        set_dictionary_value(ftype, fdata);
+      } else {
+        /* TODO: Check return status. */
         get_dictionary_value(ftype, fdata);
-        break;
+      }
+      break;
+        
+    case FieldOperatorConstant:
+      get_dictionary_value(ftype, fdata);
+      break;
 
-      case FieldOperatorIncrement:
-      
-      case FieldOperatorDefault:
-        
-      case FieldOperatorDelta:
-        
-      case FieldOperatorTail:
-      default:
-        /* TODO implement this stuff once dictionaries are implemented */
-        DBG0("Only simple types are implemented.");
-        break;
-    }
-
-  }
-  /* OPTIONAL */
-  else {
-    gboolean null_shifted = FALSE;   
-    gboolean presence_bit = FALSE;
-    
-    switch(ftype->op) {
-      
-      case FieldOperatorConstant:
-        presence_bit = dissect_shift_pmap(position);
-        
-        if (presence_bit) {
-          get_dictionary_value(ftype, fdata);
-        }
-        break;
-        
-      case FieldOperatorNone:      
-      case FieldOperatorDefault:
-      case FieldOperatorCopy:
-      case FieldOperatorIncrement:
-      case FieldOperatorDelta:
-      case FieldOperatorTail:
-        null_shifted = dissect_shift_null(position);
-        
-        if(!null_shifted) {
-          basic_dissect_uint32(position, fdata);
-          fdata->value.u32 -= 1;
-        }
-        else {
-          if(FieldOperatorDefault != ftype->op) {
-            fdata->nbytes = 1;
-            /* TODO implement storage of 'empty' value in dictionary
-             * (except for the default operator)
-             */
-          }
-        }
-        break;
-
-      default:
-        DBG0("Only simple types are implemented.");
-        break;
-    } 
+    case FieldOperatorIncrement:
+    case FieldOperatorDefault:
+    case FieldOperatorDelta:
+    case FieldOperatorTail:
+    default:
+      /* TODO implement this stuff once dictionaries are implemented */
+      DBG0("Only simple types are implemented.");
+      break;
   }
 }
 
@@ -298,8 +316,11 @@ void dissect_uint64 (const GNode* tnode,
 {
   SetupDissectStack(ftype, fdata,  tnode, dnode);
 
-  if (ftype->mandatory && !ftype->op) {
+  if (!ftype->op) {
     basic_dissect_uint64 (position, fdata);
+    if (!ftype->mandatory) {
+      -- fdata->value.u64;
+    }
   }
   else {
     DBG0("Only simple types are implemented.");
@@ -316,8 +337,11 @@ void dissect_int32 (const GNode* tnode,
 {
   SetupDissectStack(ftype, fdata,  tnode, dnode);
 
-  if (ftype->mandatory && !ftype->op) {
+  if (!ftype->op) {
     basic_dissect_int32 (position, fdata);
+    if (!ftype->mandatory && fdata->value.i32 > 0) {
+      -- fdata->value.i32;
+    }
   }
   else {
     DBG0("Only simple types are implemented.");
@@ -335,8 +359,11 @@ void dissect_int64 (const GNode* tnode,
 {
   SetupDissectStack(ftype, fdata,  tnode, dnode);
 
-  if (ftype->mandatory && !ftype->op) {
+  if (!ftype->op) {
     basic_dissect_int64 (position, fdata);
+    if (!ftype->mandatory && fdata->value.i64 > 0) {
+      -- fdata->value.i64;
+    }
   }
   else {
     DBG0("Only simple types are implemented.");
@@ -359,11 +386,9 @@ void dissect_decimal (const GNode* tnode,
     BAILOUT(;,"Error in internal decimal field setup.");
   }
 
-  if (ftype->mandatory && !ftype->op) {
+  if (!ftype->op) {
     GNode* expt_node;
     GNode* mant_node;
-
-    fdata->start = position->offset;
 
     /* Grab exponent. */
     expt_node = dissect_type (tnode->children, position,
@@ -374,7 +399,6 @@ void dissect_decimal (const GNode* tnode,
 
     /* Count how many bytes were used. */
     fdata->nbytes = position->offset - fdata->start;
-    fdata->empty = FALSE;
   }
   else {
     DBG0("Only simple types are implemented.");
@@ -392,7 +416,7 @@ void dissect_ascii_string (const GNode* tnode,
 {
   SetupDissectStack(ftype, fdata,  tnode, dnode);
 
-  if (ftype->mandatory && !ftype->op) {
+  if (!ftype->op) {
     basic_dissect_ascii_string (position, fdata);
   }
   else {
@@ -411,13 +435,9 @@ void dissect_byte_vector (const GNode* tnode,
 {
   SetupDissectStack(ftype, fdata,  tnode, dnode);
 
-  if (ftype->mandatory && !ftype->op) {
+  if (!ftype->op) {
     SizedData* vec;
     vec = &fdata->value.bytevec;
-    fdata->empty = FALSE;
-
-    fdata->start = position->offset;
-    fdata->nbytes = 0;
 
     /* See how big the byte vector is. */
     position->offjmp = count_stop_bit_encoded (position->nbytes,
@@ -427,6 +447,10 @@ void dissect_byte_vector (const GNode* tnode,
     vec->nbytes = decode_uint32 (position->offjmp,
                                  position->bytes);
     ShiftBytes(position);
+
+    if (!ftype->mandatory) {
+      -- vec->nbytes;
+    }
 
     /* Get the byte vector. */
     position->offjmp = vec->nbytes;
@@ -455,22 +479,11 @@ void dissect_byte_vector (const GNode* tnode,
 void dissect_group (const GNode* tnode,
                     DissectPosition* position, GNode* dnode)
 {
-  gboolean its_there = TRUE;
   SetupDissectStack(ftype, fdata,  tnode, dnode);
-  
-  if(!ftype->mandatory) {
-    its_there = dissect_shift_pmap(position);
-  }
-  
-  if (its_there) {
-    fdata->empty = FALSE;
 
-    fdata->start = position->offset;
-
-    /* Recurse down the tree, building onto dnode. */
-    dissector_walk (tnode->children, position, dnode, 0);
-    fdata->nbytes = position->offset - fdata->start;
-  }
+  /* Recurse down the tree, building onto dnode. */
+  dissector_walk (tnode->children, position, dnode, 0);
+  fdata->nbytes = position->offset - fdata->start;
 }
 
 
@@ -483,29 +496,19 @@ void dissect_group (const GNode* tnode,
 void dissect_sequence (const GNode* tnode,
                        DissectPosition* position, GNode* dnode)
 {
+  guint32 size;
+  guint32 i;
+  GNode* parent;
   SetupDissectStack(ftype, fdata,  tnode, dnode);
 
-  if (ftype->mandatory && !ftype->op) {
-    guint32 size;
-    guint32 i;
-    GNode* parent;
+  dissect_uint32 (tnode, position, dnode);
+  size = fdata->value.u32;
 
-    fdata->empty = FALSE;
-
-    fdata->start = position->offset;
-
-    dissect_uint32 (tnode, position, dnode);
-    size = fdata->value.u32;
-
-    parent = dnode;
-    dnode  = 0;
-    for (i = 0; i < size; ++i) {
-      dnode = dissect_type (tnode->children, position, parent, dnode);
-    }
-    fdata->nbytes = position->offset - fdata->start;
+  parent = dnode;
+  dnode  = 0;
+  for (i = 0; i < size; ++i) {
+    dnode = dissect_type (tnode->children, position, parent, dnode);
   }
-  else {
-    DBG0("Only simple types are implemented.");
-  }
+  fdata->nbytes = position->offset - fdata->start;
 }
 
