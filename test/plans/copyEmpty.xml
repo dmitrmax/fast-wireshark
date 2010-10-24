@@ -1,0 +1,22 @@
+<!--
+  TESTCASE: Test if copy works with empty values
+  Two 1's to make sure that the dictionary works with normal values
+  Two EMPTY's to confirm the dictionary handles empties
+-->
+<plan>
+  <message value="14">
+    <uint32 value="1"/>
+  </message>
+  
+  <message value="14">
+    <uint32 value="1"/>
+  </message>
+  
+  <message value="14">
+    <uint32/>
+  </message>
+  
+  <message value="14">
+    <uint32/>
+  </message>
+</plan>

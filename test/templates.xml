@@ -79,5 +79,11 @@
 		<byteVector id="1" name="byteVector"/>
 	</template>
 
+	<template name="t_unit32_copy" id="14">
+		<uInt32 id="0" name="copyuInt32" presence="optional">
+			<copy/>
+		</uInt32>
+	</template>
+
 	
 </templates>
