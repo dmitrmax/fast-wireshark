@@ -1,5 +1,13 @@
 
 ______________________________________________________________________________
+--- Installing
+
+
+Double click the 'install' batch script, it will install 'fast.dll' to the
+correct location. This installation is local to the user.
+
+
+______________________________________________________________________________
 --- Building
 
 
@@ -48,7 +56,7 @@ there are compatibility issues with Wireshark's Zlib.
 Go back to your cmd.exe. (Are your paths still set up? Better be.)
   cd /path/to/plugin/src
 Generate an NMake Makefile.
-  cmaker.bat
+  cmake -G "NMake Makefiles"
 Build the plugin.
   nmake
 Install it.

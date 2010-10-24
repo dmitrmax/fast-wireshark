@@ -26,8 +26,7 @@ if (UNIX)
   set (CMAKE_C_FLAGS "-Wall")
   set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -ansi -pedantic")
 else ()
-  #set (install_dir "$ENV{HOMEPATH}/Application Data/Wireshark/plugins")
-  set (install_dir "/Program Files/Wireshark/plugins")
+  set (install_dir "$ENV{HOMEPATH}/Application Data/Wireshark/plugins")
   # Always build as release mode. Wireshark was built the same way.
   set (CMAKE_BUILD_TYPE RELEASE)
   ### These defines and cflags copied from wireshark's config.nmake.

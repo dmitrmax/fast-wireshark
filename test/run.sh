@@ -1,7 +1,10 @@
 #!/bin/sh
 
+testdir=$(dirname "$0")
+basedir=$(dirname "$testdir")
+
 port=5000
-template=test/templates.xml
+template="$testdir/templates.xml"
 
 expect=$1
 pfx=$2
@@ -10,8 +13,8 @@ then
   pfx=output
 fi
 
-./bin/rwcompare \
-    runner "test/OpenFastPlanRunner.jar" \
+"$basedir/bin/rwcompare" \
+    runner "$testdir/OpenFastPlanRunner.jar" \
     tmpl "$template" \
     expect "$expect" \
     port "$port" \
