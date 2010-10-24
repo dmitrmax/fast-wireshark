@@ -1,0 +1,50 @@
+<plan>
+  <message value="15">
+    <int32 value="1322"/>
+    <sequence value="">
+      <group value="">
+        <group value="">
+          <int32 value="1322"/>
+        </group>
+        <group value="">
+          <group value="">
+            <int32 value="1323"/>
+          </group>
+          <group value="">
+            <int32 value="1324"/>
+          </group>
+        </group>
+        <int32 value="1325"/>
+      </group>
+      <group value="">
+        <group value="">
+          <int32 value="1322"/>
+        </group>
+        <group value="">
+          <group value="">
+            <int32 value="1323"/>
+          </group>
+          <group value="">
+            <int32 value="1324"/>
+          </group>
+        </group>
+        <int32 value="1325"/>
+      </group>
+    </sequence>
+    <group value="">
+      <group value="">
+        <int32 value="1323"/>
+      </group>
+      <group value="">
+        <int32 value="1323"/>
+      </group>
+    </group>
+    <group value="">
+      <int32 value="1324"/>
+    </group>
+    <group value="">
+      <int32 value="1324"/>
+    </group>
+  </message>
+</plan>
+

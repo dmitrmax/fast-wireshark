@@ -31,23 +31,11 @@ const GNode* dissect_fast_bytes (guint nbytes, const guint8* bytes,
   position->nbytes = nbytes;
   position->bytes  = bytes;
 
-  position->pmap_len = 0;
-  position->pmap_idx = 0;
-  position->pmap     = 0;
+  basic_dissect_pmap (position, position);
 
-  /* Decode the pmap. */
-  position->offjmp = count_stop_bit_encoded (position->nbytes,
-                                             position->bytes);
-
-  position->pmap_len = number_decoded_bits (position->offjmp);
-  if (position->pmap_len == 0)
-    BAILOUT(0,"PMAP length is zero bytes?");
-
-  position->pmap = g_malloc (position->pmap_len * sizeof(gboolean));
-  if (!position->pmap)  BAILOUT(0,"Could not allocate memory.");
-
-  decode_pmap (position->offjmp, position->bytes, position->pmap);
-  ShiftBytes(position);
+  if (!position->pmap) {
+    BAILOUT(0,"PMAP not set.");
+  }
 
   /* Initialize head node. */
   fdata = (FieldData*) g_malloc (sizeof (FieldData));

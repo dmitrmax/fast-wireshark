@@ -100,5 +100,36 @@
 		</uInt32>
 	</template>
 
+  <template name="t_nested_optional" id="15">
+    <int32 name="leader"/>
+    <sequence name="sequence" presence="optional">
+      <group name="single_group" presence="optional">
+        <int32 name="alpha"/>
+      </group>
+      <group name="nesting_group" presence="optional">
+        <group name="nested_group1" presence="optional">
+          <int32 name="beta"/>
+        </group>
+        <group name="nested_group2" presence="optional">
+          <int32 name="gamma"/>
+        </group>
+      </group>
+      <int32 name="seq_delim"/>
+    </sequence>
+    <group name="g" presence="optional">
+      <group name="gg1" presence="optional">
+        <int32 name="ggi1"/>
+      </group>
+      <group name="gg2" presence="optional">
+        <int32 name="ggi2"/>
+      </group>
+    </group>
+    <group name="g_trailing1" presence="optional">
+      <int32 name="i_trailing1"/>
+    </group>
+    <group name="g_trailing2" presence="optional">
+      <int32 name="i_trailing2"/>
+    </group>
+  </template>
 	
 </templates>

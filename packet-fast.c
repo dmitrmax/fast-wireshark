@@ -399,7 +399,7 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
       /* The field is empty. */
       proto_tree_add_none_format(tree, header_field, tvb,
                                  fdata->start, fdata->nbytes,
-                                 "(empty) %s:", field_typename(ftype->type));
+                                 "%s (empty)", field_typename(ftype->type));
     }
 
     tnode = tnode->next;

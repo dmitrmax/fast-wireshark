@@ -36,7 +36,6 @@ gboolean parseField(xmlDocPtr doc, xmlNodePtr xmlnode){
   int rc = TRUE;
   xmlChar *type;
   xmlChar *fullname;
-  gboolean empty = FALSE;
   xmlChar* prop;
   const xmlChar* value;
 
@@ -50,13 +49,9 @@ gboolean parseField(xmlDocPtr doc, xmlNodePtr xmlnode){
 
   /* Get value of field */
   prop = xmlGetProp( xmlnode, (xmlChar *)"showname");
-  if (0 == xmlStrncmp(prop, (xmlChar*)"(empty)", 7)) {
-    empty = TRUE;
-    value = 0;
-  }
-  else {
-    value = xmlStrchr(prop, ':');
-    if (value && value[1]) {
+  value = xmlStrchr(prop, ':');
+  if (value) {
+    if (value[0] && value[1]) {
       value = value+2;
     }
     else {

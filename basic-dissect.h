@@ -35,6 +35,8 @@ void ShiftBytes(DissectPosition* position);
 gboolean dissect_shift_pmap (DissectPosition* position);
 gboolean dissect_shift_null (DissectPosition* position);
 
+void basic_dissect_pmap (const DissectPosition* parent_position,
+                         DissectPosition* position);
 void basic_dissect_uint32 (DissectPosition* position, FieldData* fdata);
 void basic_dissect_uint64 (DissectPosition* position, FieldData* fdata);
 void basic_dissect_int32 (DissectPosition* position, FieldData* fdata);

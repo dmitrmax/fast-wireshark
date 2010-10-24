@@ -77,6 +77,43 @@ gboolean dissect_shift_null(DissectPosition* position)
   return ret;
 }
 
+/*! \brief  Copy current position to a nested one (with a new pmap).
+ *
+ * Both arguments may be the same.
+ *
+ * \param parent_position  Position in the packet.
+ * \param position  Return value. Moved position with a new pmap.
+ */
+void basic_dissect_pmap (const DissectPosition* parent_position,
+                         DissectPosition* position)
+{
+  position->offjmp = parent_position->offjmp;
+  position->offset = parent_position->offset;
+  position->nbytes = parent_position->nbytes;
+  position->bytes  = parent_position->bytes;
+  position->pmap_len = 0;
+  position->pmap_idx = 0;
+  position->pmap     = 0;
+
+  /* Decode the pmap. */
+  position->offjmp = count_stop_bit_encoded (position->nbytes,
+                                             position->bytes);
+
+  position->pmap_len = number_decoded_bits (position->offjmp);
+  if (position->pmap_len == 0) {
+    BAILOUT(;,"PMAP length is zero bytes?");
+  }
+
+  position->pmap = g_malloc (position->pmap_len * sizeof(gboolean));
+  if (!position->pmap) {
+    position->pmap_len = 0;
+    BAILOUT(;,"Could not allocate memory.");
+  }
+
+  decode_pmap (position->offjmp, position->bytes, position->pmap);
+  ShiftBytes(position);
+}
+
 /*! \brief  Given a byte stream, dissect an unsigned 32bit integer.
  * \param position  Position in the packet.
  * \param dnode  Dissect tree node.
