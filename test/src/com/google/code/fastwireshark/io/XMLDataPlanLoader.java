@@ -54,6 +54,9 @@ public class XMLDataPlanLoader extends DefaultHandler implements Constants{
 	
 	@Override
 	public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException{
+		if(!(qName.equalsIgnoreCase(MESSAGE) || qName.equalsIgnoreCase(PLAN)) && curValues == null){
+			throw new RuntimeException("Optional Group contains fields");
+		}
 		if(qName.equalsIgnoreCase(PLAN)){
 			if(plan != null){
 				throw new RuntimeException("Multiple Plans in one file");
@@ -125,8 +128,14 @@ public class XMLDataPlanLoader extends DefaultHandler implements Constants{
 		} else
 		if(qName.equalsIgnoreCase(GROUP) ||
 		   qName.equalsIgnoreCase(SEQUENCE)) {
-			valueStack.push(curValues);
-			curValues = new ArrayList<Object>();
+			if(attributes.getValue(VALUE) != null){
+				valueStack.push(curValues);
+				curValues = new ArrayList<Object>();
+			} else {
+				valueStack.push(curValues);
+				curValues = null;
+			}
+			
 		}
 	}
 	
