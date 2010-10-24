@@ -371,24 +371,7 @@ gboolean parse_operator (xmlNodePtr xmlnode, FieldType * tfield){
 			prop = xmlGetProp(xmlnode, (xmlChar*)"value");
 			if (prop!=NULL) {
         tfield->empty = FALSE;
-        switch (tfield->type) {
-          case FieldTypeUInt32:
-            tfield->value.u32 = atoi((char*)prop);
-            break;
-          case FieldTypeInt32:
-            tfield->value.i32 = atoi((char*)prop);
-            break;
-          case FieldTypeUInt64:
-            tfield->value.u64 = g_ascii_strtoull((char*)prop, NULL, 10);
-            break;
-          case FieldTypeInt64:
-            tfield->value.i64 = g_ascii_strtoll((char*)prop, NULL, 10);
-            break;
-          default:
-            DBG0("Value for type not implemented yet.");
-            tfield->empty = TRUE;			
-            break;
-        }
+        string_to_field_value((char*)prop, tfield->type, &tfield->value);
 			} else {
 				tfield->empty = TRUE;			
 			}
