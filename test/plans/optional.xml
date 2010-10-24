@@ -68,10 +68,19 @@
       </group>
     </sequence>
   </message>
-
-  <!-- TODO: Groups and sequences empty.
-  -    At least one member is not optional.
-  -->
+  <!-- All fields optional, no nested fields set -->
+  <message value="11">
+    <uint32/>
+    <uInt64/>
+    <int32/>
+    <int64/>
+    <decimal/>
+    <ascii/>
+    <unicode/>
+    <byteVector/>
+    <group/>
+    <sequence/>
+  </message>
 
   <message value="12">
     <uint32 value="123"/>

@@ -53,11 +53,12 @@ gboolean writeNestedType(const xmlChar* type, const xmlChar* value)
     return FALSE;
   }
 
-  rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "value", BAD_CAST value);
-  if (rc < 0) {
-    BAILOUT(FALSE, "Error adding value attribute.");
+  if (value) {
+    rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "value", BAD_CAST value);
+    if (rc < 0) {
+      BAILOUT(FALSE, "Error adding value attribute.");
+    }
   }
-
 
   return TRUE;
 }
