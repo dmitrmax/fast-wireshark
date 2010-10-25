@@ -65,6 +65,7 @@ union field_value_union
   SizedData ascii;
   SizedData unicode;
   SizedData bytevec;
+  gboolean pmap_exists;
 };
 typedef union field_value_union FieldValue;
 

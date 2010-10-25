@@ -43,10 +43,10 @@ static void remove_dictionary(char* name);
 
 /*!
  * \brief Traverses the template tree and sets the dictionary that should be used at each field.
- * \param node The current node in the tree
- * \param current_dictionary The most specific dictionary at this point
+ * \param parent  The parent field. It should have a dictionary set.
+ * \param parent_node  The parent's node in the tree
  */
-static void set_dictionary_pointers(GNode* node);
+void set_dictionary_pointers(const FieldType* parent, GNode* parent_node);
 
 void set_dictionaries(GNode* template_tree){
   GNode* template = 0;
@@ -64,8 +64,16 @@ void set_dictionaries(GNode* template_tree){
    * reference for each template_tree
    */
   while(template){
+    FieldType* field_type;
+
+    field_type = (FieldType*) template->data;
+    if (!field_type->dictionary) {
+      field_type->dictionary = g_strdup(GLOBAL_DICTIONARY);
+    }
+    field_type->dictionary_ptr = get_dictionary(field_type->dictionary);
+
     get_dictionary(TEMPLATE_DICTIONARY);
-    set_dictionary_pointers(template);
+    set_dictionary_pointers(field_type, template);
     remove_dictionary(TEMPLATE_DICTIONARY);
     template = g_node_next_sibling(template);
   }
@@ -88,30 +96,35 @@ void remove_dictionary(char* name){
   }
 }
 
-void set_dictionary_pointers(GNode* node){
-  GNode* child = 0;
-  FieldType* field_type = 0;
-  field_type = (FieldType*)(node->data);
-  /* TODO: Debug code in the ternary operator:
-   * remove everything after and
-   * including '?'
-   */
-  field_type->dictionary_ptr =
-    get_dictionary(field_type->dictionary
-                   ? field_type->dictionary
-                   : GLOBAL_DICTIONARY);
-  if (!field_type->empty) {
-    FieldData fdata;
-    fdata.empty = FALSE;
-    /* Not using copy_field_value() to avoid extra malloc/free. */
-    memcpy(&fdata.value, &field_type->value, sizeof(FieldValue));
-    set_dictionary_value(field_type, &fdata);
+void set_dictionary_pointers(const FieldType* parent, GNode* parent_node)
+{
+  GNode* node = 0;
+  if (!parent_node) {
+    BAILOUT(;,"Passed NULL parent node.");
   }
-  child = g_node_first_child(node);
-  /* Recurse into child nodes */
-  while(child){
-    set_dictionary_pointers(child);
-    child = g_node_next_sibling(child);
+  if (!parent->dictionary_ptr) {
+    BAILOUT(;,"Require parent field to have a dictionary.");
+  }
+
+  for (node = parent_node->children;  node;  node = node->next) {
+    FieldType* field_type = 0;
+    field_type = (FieldType*)(node->data);
+
+    if (field_type->dictionary) {
+      field_type->dictionary_ptr = get_dictionary(field_type->dictionary);
+    }
+    else {
+      field_type->dictionary_ptr = parent->dictionary_ptr;
+    }
+    if (!field_type->empty) {
+      FieldData fdata;
+      fdata.empty = FALSE;
+      /* Not using copy_field_value() to avoid extra malloc/free. */
+      memcpy(&fdata.value, &field_type->value, sizeof(FieldValue));
+      set_dictionary_value(field_type, &fdata);
+    }
+    /* Recurse into child nodes */
+    set_dictionary_pointers(field_type, node);
   }
 }
 

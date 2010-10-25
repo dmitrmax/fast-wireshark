@@ -11,6 +11,9 @@
 static GHashTable* template_table = 0;
 static GNode* template_tree = 0;
 
+static gboolean requires_pmap_bit (const FieldType* ftype);
+static void fixup_walk_template (FieldType* parent, GNode* parent_node);
+
 /*! \brief  Add a new template to the lookup table.
  *
  * \param templates  The root of the templates tree.
@@ -30,9 +33,11 @@ void add_templates (GNode* templates)
 
   /* Loop thru templates, add each to lookup table. */
   for (tmpl = templates->children;  tmpl;  tmpl = tmpl->next) {
-    FieldType* field;
-    field = (FieldType*) tmpl->data;
-    g_hash_table_insert (template_table, &field->id, tmpl);
+    FieldType* tfield;
+    tfield = (FieldType*) tmpl->data;
+    tfield->value.pmap_exists = TRUE;
+    fixup_walk_template (tfield, tmpl);
+    g_hash_table_insert (template_table, &tfield->id, tmpl);
   }
 }
 
@@ -128,5 +133,45 @@ GNode* find_template (guint32 id)
   gint key;
   key = (gint) id;
   return (GNode*) g_hash_table_lookup (template_table, &key);
+}
+
+/*! \brief  Check if a field type needs a bit in the PMAP. */
+gboolean requires_pmap_bit (const FieldType* ftype)
+{
+  if (ftype->type == FieldTypeGroup) {
+    return !ftype->mandatory;
+  }
+  switch (ftype->op) {
+    case FieldOperatorConstant:
+      return !ftype->mandatory;
+    case FieldOperatorDefault:
+    case FieldOperatorCopy:
+    case FieldOperatorIncrement:
+    case FieldOperatorTail:
+      return TRUE;
+    default:
+      return FALSE;
+  }
+}
+
+/*! \brief  Propagate data down and up the type tree.
+ */
+void fixup_walk_template (FieldType* parent, GNode* parent_node)
+{
+  GNode* tnode;
+  for (tnode = parent_node->children;  tnode;  tnode = tnode->next) {
+    FieldType* ftype;
+    ftype = (FieldType*) tnode->data;
+    if (!ftype) {
+      DBG0("Null field type.");
+      continue;
+    }
+    if (!parent->value.pmap_exists) {
+      if (requires_pmap_bit (ftype)) {
+        parent->value.pmap_exists = TRUE;
+      }
+    }
+    fixup_walk_template (ftype, tnode);
+  }
 }
 

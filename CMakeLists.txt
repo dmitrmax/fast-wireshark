@@ -141,4 +141,5 @@ regression_test (OptionalFields "5004" "${test_dir}/templates.xml" "${test_dir}/
 regression_test (UInt32CopyDictionary "5005" "${test_dir}/uintDictionary.xml" "${test_dir}/plans/uintDictionaryPlan.xml")
 regression_test (ByteVectorFields "5006" "${test_dir}/templates.xml" "${test_dir}/plans/byteVectorPlan.xml")
 regression_test (CopyEmptyFields "5007" "${test_dir}/templates.xml" "${test_dir}/plans/copyEmpty.xml")
+regression_test (OptionalNestedFields "5008" "${test_dir}/templates.xml" "${test_dir}/plans/optionalNested.xml")
 

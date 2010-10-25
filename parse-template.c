@@ -13,18 +13,17 @@
 
 /* Private (static) headers. */
 static GNode* parseTemplate (xmlNodePtr cur);
-static void set_field_attributes (xmlNodePtr node, FieldType* tfield, char * dictionary);
+static void set_field_attributes (xmlNodePtr node, FieldType* tfield);
 static gboolean ignore_xml_node (xmlNodePtr cur);
 static void parser_walk_children (xmlNodePtr cur,
-                                  GNode* parent, GNode* tnode_prev, char * dictionary);
-static GNode* new_parsed_field (xmlNodePtr xmlnode, char * dictionary);
+                                  GNode* parent, GNode* tnode_prev);
+static GNode* new_parsed_field (xmlNodePtr xmlnode);
 static gboolean field_type_match (xmlNodePtr node,
                                   FieldTypeIdentifier type);
 static gboolean parse_operator (xmlNodePtr xmlnode, FieldType * tfield);
-static gboolean parse_decimal (xmlNodePtr xmlnode, FieldType * tfield, GNode * tnode, char * dictionary);
-static gboolean parse_sequence (xmlNodePtr xmlnode, FieldType* tfield, GNode* tnode, char * dictionary);
+static gboolean parse_decimal (xmlNodePtr xmlnode, FieldType * tfield, GNode * tnode);
+static gboolean parse_sequence (xmlNodePtr xmlnode, FieldType* tfield, GNode* tnode);
 static gboolean operator_type_match (xmlNodePtr node, FieldOperatorIdentifier type);
-static char * get_field_dictionary (xmlNodePtr xmlnode, char * curDictionary);
 
 /*! \brief  Convert an XML file into an internal representation of
  *          the templates.
@@ -103,22 +102,18 @@ GNode* parseTemplate (xmlNodePtr cur)
 {
   GNode* tnode;
   FieldType* tfield;
-  char * dictionary = "global";
 
   tnode = create_field(FieldTypeUInt32, FieldOperatorCopy);
   if (!tnode)  BAILOUT(0, "Error allocating memory.");
 
   tfield = (FieldType*) tnode->data;
 
-  /* Get dictionary used for this node and subfields */
-  dictionary = get_field_dictionary (cur, dictionary);
-
   /* Get name, id, etc. */
-  set_field_attributes(cur, tfield, dictionary);
+  set_field_attributes(cur, tfield);
 
 
   cur = cur->xmlChildrenNode;
-  parser_walk_children (cur, tnode, 0, dictionary);
+  parser_walk_children (cur, tnode, 0);
 
   return tnode;
 }
@@ -133,12 +128,12 @@ GNode* parseTemplate (xmlNodePtr cur)
  * \param tnode_prev  Previous node in parse tree at this level.
  */
 void parser_walk_children (xmlNodePtr cur,
-                           GNode* parent, GNode* tnode_prev, char * curDictionary)
+                           GNode* parent, GNode* tnode_prev)
 {
   while (cur != NULL) {
     if (!ignore_xml_node(cur)) {
       GNode* tnode;
-      tnode = new_parsed_field (cur, curDictionary);
+      tnode = new_parsed_field (cur);
       if (tnode) {
         /* DBG0("adding tnode"); */
         g_node_insert_after (parent, tnode_prev, tnode);
@@ -155,13 +150,12 @@ void parser_walk_children (xmlNodePtr cur,
  * \return  The new GNode* containing a FieldType.
  *          NULL if something went wrong.
  */
-GNode* new_parsed_field (xmlNodePtr xmlnode, char * curDictionary)
+GNode* new_parsed_field (xmlNodePtr xmlnode)
 {
   gboolean found = FALSE;  /* Field type found. */
   gboolean valid = FALSE;  /* Field type valid. */
   GNode* tnode;
   FieldType* tfield;
-  char * dictionary;
 
   tnode = create_field (FieldTypeInvalid, FieldOperatorNone);
   if (!tnode) {
@@ -169,9 +163,7 @@ GNode* new_parsed_field (xmlNodePtr xmlnode, char * curDictionary)
   }
   tfield = (FieldType*) tnode->data;
 
-  /* Get dictionary used for this node and subfields */
-  dictionary = get_field_dictionary (xmlnode, curDictionary);
-  set_field_attributes(xmlnode, tfield, dictionary);
+  set_field_attributes(xmlnode, tfield);
 
   /* Try the integers. */
   if (!found) {
@@ -202,7 +194,7 @@ GNode* new_parsed_field (xmlNodePtr xmlnode, char * curDictionary)
   if (!found && field_type_match (xmlnode, FieldTypeDecimal)) {
     
     found = TRUE;
-    valid = parse_decimal(xmlnode, tfield, tnode, dictionary);
+    valid = parse_decimal(xmlnode, tfield, tnode);
   }
 
   /* Try string */
@@ -229,13 +221,13 @@ GNode* new_parsed_field (xmlNodePtr xmlnode, char * curDictionary)
     tfield->type = FieldTypeGroup;
     found = TRUE;
     valid = TRUE;
-    parser_walk_children (xmlnode->xmlChildrenNode, tnode, 0, dictionary);
+    parser_walk_children (xmlnode->xmlChildrenNode, tnode, 0);
   }
 
   /* Try sequence */
   if(!found && field_type_match(xmlnode, FieldTypeSequence)){
     found = TRUE;
-    valid = parse_sequence (xmlnode, tfield, tnode, dictionary);
+    valid = parse_sequence (xmlnode, tfield, tnode);
   }
 
   /* If we retrieved built up the field,
@@ -262,7 +254,7 @@ GNode* new_parsed_field (xmlNodePtr xmlnode, char * curDictionary)
  * \param  A pointer to the template within the parse tree.
  * \return  True if sucessfully parsed
  */
-gboolean parse_decimal (xmlNodePtr xmlnode, FieldType * tfield, GNode * tnode, char * curDictionary)
+gboolean parse_decimal (xmlNodePtr xmlnode, FieldType * tfield, GNode * tnode)
 {
   GNode* exptNode;
   GNode* mantNode;
@@ -276,26 +268,23 @@ gboolean parse_decimal (xmlNodePtr xmlnode, FieldType * tfield, GNode * tnode, c
   if (!exptNode)  BAILOUT(0, "Error creating exponent field.");
   g_node_insert_after (tnode, 0,        exptNode);
   expt = (FieldType*) exptNode->data;
-  expt->dictionary = get_field_dictionary (xmlnode, curDictionary);
-  if (!tfield->mandatory) {
-    expt->mandatory = FALSE;
-  }
 
   mantNode = create_field (FieldTypeInt64, FieldOperatorNone);
   if (!mantNode)  BAILOUT(0, "Error creating mantissa field.");
   g_node_insert_after (tnode, exptNode, mantNode);
   mant = (FieldType*) mantNode->data;
-  mant->dictionary = get_field_dictionary (xmlnode, curDictionary);
 
   /* Get exponent and mantissa operators and values (if given) */
   xmlnode = xmlnode->xmlChildrenNode;
   while (xmlnode != NULL) {
     if (!ignore_xml_node(xmlnode)){
       if(0 == xmlStrcasecmp(xmlnode->name, (xmlChar*)"exponent")){
+        set_field_attributes(xmlnode, expt);
         if(!parse_operator(xmlnode, expt)) {
           BAILOUT(FALSE, "Failed to get exponent.");
         }
       } else if( 0 == xmlStrcasecmp(xmlnode->name, (xmlChar*)"mantissa")){
+        set_field_attributes(xmlnode, mant);
         if(!parse_operator(xmlnode, mant)) {
           BAILOUT(FALSE, "Failed to get mantissa.");
         }
@@ -306,6 +295,8 @@ gboolean parse_decimal (xmlNodePtr xmlnode, FieldType * tfield, GNode * tnode, c
     }  
     xmlnode = xmlnode->next;
   }
+
+  expt->mandatory = tfield->mandatory;
   return TRUE;
 }
 
@@ -315,7 +306,7 @@ gboolean parse_decimal (xmlNodePtr xmlnode, FieldType * tfield, GNode * tnode, c
  * \param  A pointer to the template within the parse tree.
  * \return  True if sucessfully parsed
  */
-gboolean parse_sequence (xmlNodePtr xmlnode, FieldType* tfield, GNode* tnode, char * curDictionary)
+gboolean parse_sequence (xmlNodePtr xmlnode, FieldType* tfield, GNode* tnode)
 {
   GNode* group_tnode;
 
@@ -329,7 +320,7 @@ gboolean parse_sequence (xmlNodePtr xmlnode, FieldType* tfield, GNode* tnode, ch
   
 
   /* Descend the tree on the group. */
-  parser_walk_children (xmlnode->xmlChildrenNode, group_tnode, 0, curDictionary);
+  parser_walk_children (xmlnode->xmlChildrenNode, group_tnode, 0);
   return TRUE;
 }
 
@@ -394,7 +385,7 @@ gboolean parse_operator (xmlNodePtr xmlnode, FieldType * tfield){
  * \param node  XML node to query for attributes.
  * \param tfield  Return value. Must already be allocated.
  */
-void set_field_attributes (xmlNodePtr xmlnode, FieldType* tfield, char * dictionary)
+void set_field_attributes (xmlNodePtr xmlnode, FieldType* tfield)
 {
   const xmlChar* str;
   /* Name. */
@@ -431,33 +422,13 @@ void set_field_attributes (xmlNodePtr xmlnode, FieldType* tfield, char * diction
     }
   }
   xmlFree((void*)str);
-  if(dictionary!=NULL){
-    tfield->dictionary = dictionary;
-  } else {
-    DBG1("ERROR: Field %s has no dictionary specified", tfield->name);
-  }
 
-}
-
-/*! \brief  Get the dictionary for the current field in the parse tree
- *
- * \param xmlnode  XML node to query for dictionary attribute.
- * \param curDictionary  The current dictionary in the parse tree (parent)
- * \return The name of the dictionary this field uses, 
- *   may be the same as curDictionary if dictionary not specified.
- */
-char * get_field_dictionary (xmlNodePtr xmlnode, char * curDictionary)
-{
-  xmlChar * str;
   str = xmlGetProp(xmlnode, (xmlChar*) "dictionary");
   if (str) {
-    return (char *) str;
+    tfield->dictionary = g_strdup((char*) str);
+    xmlFree((void*)str);
   }
-
-  return curDictionary;
 }
-  
- 
 
 
 /*! \brief  Check if this XML node should be ignored.

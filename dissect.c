@@ -467,11 +467,29 @@ void dissect_byte_vector (const GNode* tnode,
 void dissect_group (const GNode* tnode,
                     DissectPosition* position, GNode* dnode)
 {
+  DissectPosition stacked_position;
+  DissectPosition* nested_position;
   SetupDissectStack(ftype, fdata,  tnode, dnode);
 
+  if (ftype->value.pmap_exists) {
+    basic_dissect_pmap (position, &stacked_position);
+    nested_position = &stacked_position;
+  }
+  else {
+    stacked_position.pmap = NULL;
+    nested_position = position;
+  }
+
   /* Recurse down the tree, building onto dnode. */
-  dissector_walk (tnode->children, position, dnode, 0);
+  dissector_walk (tnode->children, nested_position, dnode, 0);
+
+  position->offjmp = nested_position->offset - position->offset;
+  ShiftBytes(position);
   fdata->nbytes = position->offset - fdata->start;
+
+  if (stacked_position.pmap) {
+    g_free(stacked_position.pmap);
+  }
 }
 
 
