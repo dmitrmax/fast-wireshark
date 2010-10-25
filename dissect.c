@@ -128,6 +128,10 @@ GNode* dissect_type (const GNode* tnode,
   FieldData* fdata;
   GNode* dnode_next;
 
+  if (!tnode) {
+    BAILOUT(NULL,"Template node is NULL.");
+  }
+
   ftype = (FieldType*) tnode->data;
 
   /* Assure FieldType is good for lookup. */
@@ -421,28 +425,25 @@ void dissect_ascii_string (const GNode* tnode,
 void dissect_byte_vector (const GNode* tnode,
                           DissectPosition* position, GNode* dnode)
 {
+  GNode* length_node;
   SetupDissectStack(ftype, fdata,  tnode, dnode);
+
+  length_node = tnode->children;
+  if (!length_node) {
+    BAILOUT(;,"Length should be a child node.");
+  }
 
   if (!ftype->op) {
     SizedData* vec;
     vec = &fdata->value.bytevec;
 
     /* See how big the byte vector is. */
-    position->offjmp = count_stop_bit_encoded (position->nbytes,
-                                               position->bytes);
-    fdata->nbytes += position->offjmp;
+    dissect_uint32 (length_node, position, dnode);
 
-    vec->nbytes = decode_uint32 (position->offjmp,
-                                 position->bytes);
-    ShiftBytes(position);
-
-    if (!ftype->mandatory) {
-      -- vec->nbytes;
-    }
+    vec->nbytes = fdata->value.u32;
 
     /* Get the byte vector. */
     position->offjmp = vec->nbytes;
-    fdata->nbytes += vec->nbytes;
 
     vec->bytes = g_malloc ((1+vec->nbytes) * sizeof(guint8));
 
@@ -452,6 +453,7 @@ void dissect_byte_vector (const GNode* tnode,
     }
 
     ShiftBytes(position);
+    fdata->nbytes = position->offset - fdata->start;
   }
   else {
     DBG0("Only simple types are implemented.");
@@ -502,18 +504,27 @@ void dissect_group (const GNode* tnode,
 void dissect_sequence (const GNode* tnode,
                        DissectPosition* position, GNode* dnode)
 {
-  guint32 size;
+  guint32 length;
   guint32 i;
   GNode* parent;
+  GNode* length_tnode;
+  GNode* group_tnode;
   SetupDissectStack(ftype, fdata,  tnode, dnode);
 
-  dissect_uint32 (tnode, position, dnode);
-  size = fdata->value.u32;
+  if (!tnode->children || !tnode->children->next) {
+    BAILOUT(;,"Error in sequence setup.");
+  }
+  length_tnode = tnode->children;
+  group_tnode  = length_tnode->next;
+
+  dissect_uint32 (length_tnode, position, dnode);
+  length = fdata->value.u32;
 
   parent = dnode;
   dnode  = 0;
-  for (i = 0; i < size; ++i) {
-    dnode = dissect_type (tnode->children, position, parent, dnode);
+
+  for (i = 0; i < length; ++i) {
+    dnode = dissect_type (group_tnode, position, parent, dnode);
   }
   fdata->nbytes = position->offset - fdata->start;
 }

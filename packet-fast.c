@@ -374,19 +374,29 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
           {
             proto_item* item;
             proto_tree* subtree;
-            GNode* group_dnode;
+            GNode* length_tnode;
             item = proto_tree_add_none_format(tree, header_field, tvb,
                                               fdata->start, fdata->nbytes,
                                               "sequence:");
 
             subtree = proto_item_add_subtree(item, ett_fast);
-            /* Loop thru each child group in the data tree,
-             * using the same child group in the type tree.
-             */
-            for (group_dnode = dnode->children;
-                 group_dnode;
-                 group_dnode = group_dnode->next) {
-              display_fields (tvb, subtree, tnode->children, group_dnode);
+
+            length_tnode = tnode->children;
+            if (length_tnode) {
+              GNode* group_tnode;
+              GNode* group_dnode;
+              group_tnode = length_tnode->next;
+              /* Loop thru each child group in the data tree,
+               * using the same child group in the type tree.
+               */
+              for (group_dnode = dnode->children;
+                   group_dnode;
+                   group_dnode = group_dnode->next) {
+                display_fields (tvb, subtree, group_tnode, group_dnode);
+              }
+            }
+            else {
+              DBG0("Sequence has no children in field type tree.");
             }
           }
           break;

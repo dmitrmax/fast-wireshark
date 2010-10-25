@@ -21,6 +21,8 @@ static GNode* new_parsed_field (xmlNodePtr xmlnode);
 static gboolean field_type_match (xmlNodePtr node,
                                   FieldTypeIdentifier type);
 static gboolean parse_operator (xmlNodePtr xmlnode, FieldType * tfield);
+static gboolean prepend_length (xmlNodePtr xmlnode, const FieldType* parent,
+                                GNode* parent_node);
 static gboolean parse_decimal (xmlNodePtr xmlnode, FieldType * tfield, GNode * tnode);
 static gboolean parse_sequence (xmlNodePtr xmlnode, FieldType* tfield, GNode* tnode);
 static gboolean operator_type_match (xmlNodePtr node, FieldOperatorIdentifier type);
@@ -206,6 +208,9 @@ GNode* new_parsed_field (xmlNodePtr xmlnode)
     tfield->type = FieldTypeUnicodeString;
     found = TRUE;
     valid = parse_operator(xmlnode, tfield);
+    if (valid) {
+      valid = prepend_length(xmlnode, tfield, tnode);
+    }
   }
 
   /* Try bytevector */
@@ -213,6 +218,9 @@ GNode* new_parsed_field (xmlNodePtr xmlnode)
     tfield->type = FieldTypeByteVector;
     found = TRUE;
     valid = parse_operator(xmlnode, tfield);
+    if (valid) {
+      valid = prepend_length(xmlnode, tfield, tnode);
+    }
   }
 
 
@@ -228,6 +236,9 @@ GNode* new_parsed_field (xmlNodePtr xmlnode)
   if(!found && field_type_match(xmlnode, FieldTypeSequence)){
     found = TRUE;
     valid = parse_sequence (xmlnode, tfield, tnode);
+    if (valid) {
+      valid = prepend_length(xmlnode, tfield, tnode);
+    }
   }
 
   /* If we retrieved built up the field,
@@ -246,6 +257,38 @@ GNode* new_parsed_field (xmlNodePtr xmlnode)
     }
   }
   return tnode;
+}
+
+
+/*! \brief  Add a length field as a child.
+ * \param xmlnode  The XML node whose children we will search for a length.
+ * \param parent  Parent field type;
+ * \param parent_node  Tree node to build a length child.
+ * \return  TRUE iff the a child was added.
+ */
+gboolean prepend_length (xmlNodePtr xmlnode, const FieldType* parent,
+                         GNode* parent_node)
+{
+  GNode* tnode;
+  FieldType* ftype;
+
+  tnode = create_field (FieldTypeUInt32, FieldOperatorNone);
+  if (!tnode)  BAILOUT(0, "Error creating exponent field.");
+  g_node_insert_before (parent_node, parent_node->children, tnode);
+  ftype = (FieldType*) tnode->data;
+
+  for (xmlnode = xmlnode->xmlChildrenNode;
+       xmlnode;
+       xmlnode = xmlnode->next) {
+    if (0 == xmlStrcasecmp(xmlnode->name, (xmlChar*)"length")) {
+      set_field_attributes(xmlnode, ftype);
+      if (!parse_operator(xmlnode, ftype)) {
+        BAILOUT(FALSE, "Failed to get length.");
+      }
+    }
+  }
+  ftype->mandatory = parent->mandatory;
+  return TRUE;
 }
 
 
@@ -292,7 +335,7 @@ gboolean parse_decimal (xmlNodePtr xmlnode, FieldType * tfield, GNode * tnode)
         DBG1("Unknown decimal subfield %s.", xmlnode->name);
         return FALSE;
       }
-    }  
+    }
     xmlnode = xmlnode->next;
   }
 
@@ -302,8 +345,9 @@ gboolean parse_decimal (xmlNodePtr xmlnode, FieldType * tfield, GNode * tnode)
 
 
 /*! \brief  Fill in a sequence field in the parse tree.
- * \param  The XML node which /should/ be a sequence field.
- * \param  A pointer to the template within the parse tree.
+ * \param xmlnode  The XML node which /should/ be a sequence field.
+ * \param tfield  Return value. An initialized field type.
+ * \param tnode  A pointer to the template within the parse tree.
  * \return  True if sucessfully parsed
  */
 gboolean parse_sequence (xmlNodePtr xmlnode, FieldType* tfield, GNode* tnode)
@@ -318,9 +362,9 @@ gboolean parse_sequence (xmlNodePtr xmlnode, FieldType* tfield, GNode* tnode)
   }
   g_node_insert_after (tnode, 0, group_tnode);
   
-
   /* Descend the tree on the group. */
   parser_walk_children (xmlnode->xmlChildrenNode, group_tnode, 0);
+
   return TRUE;
 }
 
@@ -441,7 +485,8 @@ void set_field_attributes (xmlNodePtr xmlnode, FieldType* tfield)
 gboolean ignore_xml_node (xmlNodePtr xmlnode)
 {
   return (0 == xmlStrcasecmp(xmlnode->name, (xmlChar*) "text") ||
-          0 == xmlStrcasecmp(xmlnode->name, (xmlChar*) "comment"));
+          0 == xmlStrcasecmp(xmlnode->name, (xmlChar*) "comment") ||
+          0 == xmlStrcasecmp(xmlnode->name, (xmlChar*) "length"));
 }
 
 /*! \brief  Check if a string from XML.

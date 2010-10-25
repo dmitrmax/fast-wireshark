@@ -30,7 +30,9 @@
 	
 	<template name="t_ascii_unicode_string" id="6">
 		<string charset="ascii" id="2" name="a" />
-		<string charset="unicode" id="3" name="u" />
+		<string charset="unicode" id="3" name="u">
+      <length name="unicodeLength"/>
+    </string>
 		<string charset="ascii" id="4" name="s" />
 	</template>
 	
@@ -44,6 +46,7 @@
 	<template name="t_int32_sequence" id="8">
 		<int32 id="1" name="int32" />
 		<sequence name="sequence">
+      <length name="sequenceLength"/>
 			<int32 id="2" name="int32"/>
 		</sequence>
 		<int32 id="3" name="int32" />
@@ -91,7 +94,9 @@
 	</template>
 	
 	<template name="t_byteVector" id="13">
-		<byteVector id="1" name="byteVector"/>
+		<byteVector id="1" name="byteVector">
+      <length name="byteVectorLength"/>
+    </byteVector>
 	</template>
 
 	<template name="t_unit32_copy" id="14">
