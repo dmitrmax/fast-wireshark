@@ -251,8 +251,7 @@ void display_message (tvbuff_t* tvb, proto_tree* tree,
     ftype = (FieldType*) tmpl->data;
     fdata = (FieldData*) parent->data;
     if(ftype->name){
-      field_name = (char *)malloc((sizeof(char)) * strlen(ftype->name));
-      strcpy(field_name, ftype->name);
+      field_name = ftype->name;
     } else {
       field_name = UN_NAMED;
     }
@@ -283,8 +282,7 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
     ftype = (FieldType*) tnode->data;
     fdata = (FieldData*) dnode->data;
     if(ftype->name){
-      field_name = (char *)malloc((sizeof(char)) * strlen(ftype->name));
-      strcpy(field_name, ftype->name);
+      field_name = ftype->name;
     } else {
       field_name = UN_NAMED;
     }
