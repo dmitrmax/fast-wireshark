@@ -155,6 +155,9 @@ gboolean requires_pmap_bit (const FieldType* ftype)
 }
 
 /*! \brief  Propagate data down and up the type tree.
+ *
+ * \param parent  The parent group. Not necessarily contained in parent_node.
+ * \param parent_node  The node on whose children this function will operate.
  */
 void fixup_walk_template (FieldType* parent, GNode* parent_node)
 {
@@ -171,7 +174,15 @@ void fixup_walk_template (FieldType* parent, GNode* parent_node)
         parent->value.pmap_exists = TRUE;
       }
     }
-    fixup_walk_template (ftype, tnode);
+    /* Only have this field as a parent to recursion if it is a group
+     * as only then will it be able to contain a PMAP.
+     */
+    if (FieldTypeGroup == ftype->type) {
+      fixup_walk_template (ftype, tnode);
+    }
+    else {
+      fixup_walk_template (parent, tnode);
+    }
   }
 }
 
