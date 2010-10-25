@@ -247,12 +247,19 @@ void display_message (tvbuff_t* tvb, proto_tree* tree,
     proto_tree* newtree;
     const FieldType* ftype;
     const FieldData* fdata;
+    char * field_name;
     ftype = (FieldType*) tmpl->data;
     fdata = (FieldData*) parent->data;
+    if(ftype->name){
+      field_name = (char *)malloc((sizeof(char)) * strlen(ftype->name));
+      strcpy(field_name, ftype->name);
+    } else {
+      field_name = UN_NAMED;
+    }
 
     item = proto_tree_add_none_format(tree, hf_fast_tid, tvb,
                                       fdata->start, fdata->nbytes,
-                                      "tid: %d", ftype->id);
+                                      "%s - tid: %d", field_name, ftype->id);
 
     newtree = proto_item_add_subtree(item, ett_fast);
     display_fields(tvb, newtree,
