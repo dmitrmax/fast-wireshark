@@ -58,6 +58,10 @@ static gint ett_fast = -1;
 static guint config_port_number = 0;
 /*! Template xml file, absolute or relative pathname. */
 static const char* config_template_xml_path = 0;
+/*! Shows empty fields in data tree if true */
+static gboolean show_empty_optional_fields = 1;
+/*! If true does not capture or dissect packets */
+static gboolean disabled = 0;
 
 
 /*** Forward declarations. ***/
@@ -143,6 +147,19 @@ void proto_register_fast ()
                                    "Enter a valid filesystem path",
                                    &config_template_xml_path);
 
+  prefs_register_bool_preference(module,
+                                   "show_empty",
+                                   "Show empty optional fields",
+                                   "Check if you want to see fields that are empty and were not sent in the packet",
+                                   &show_empty_optional_fields);
+                                   
+  prefs_register_bool_preference(module,
+                                   "disabled",
+                                   "Disable plugin (requires wireshark restart)",
+                                   "Check if you do not want the plugin to capture and dissect packets",
+                                   &disabled);
+                                   
+
   register_dissector("fast", &dissect_fast, proto_fast);
 }
 
@@ -159,7 +176,9 @@ void proto_reg_handoff_fast ()
   static guint currentPort = 0;
   static dissector_handle_t fast_handle;
   const char* portField = "udp.port";
-
+    
+  if(!disabled){
+  
   if (!initialized) {
     fast_handle = create_dissector_handle(&dissect_fast, proto_fast);
   }
@@ -190,6 +209,8 @@ void proto_reg_handoff_fast ()
 
   if (!initialized) {
     initialized = TRUE;
+  }
+  
   }
 }
 
@@ -428,9 +449,11 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
     }
     else {
       /* The field is empty. */
-      proto_tree_add_none_format(tree, header_field, tvb,
+      if(show_empty_optional_fields){
+        proto_tree_add_none_format(tree, header_field, tvb,
                                  fdata->start, fdata->nbytes,
-                                 "%s (empty)", field_typename(ftype->type));
+                                 "%s (empty)", field_typename(ftype->type));                           
+      }
     }
 
     tnode = tnode->next;
