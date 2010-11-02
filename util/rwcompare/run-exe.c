@@ -5,6 +5,8 @@
 
 #include "run-exe.h"
 
+#include "debug.h"
+
 /*! \brief  Do nothing. */
 static void do_nothing (gpointer user_data) { (void) user_data; }
 
@@ -40,6 +42,15 @@ gboolean run_gather (guint argc, const char* const* argv, char** output_ptr)
     argv_mutable[i] = g_strdup (argv[i]);
   }
   argv_mutable[argc] = 0;
+
+  /* Show the command for debug. */
+  if (FALSE)
+  {
+    char* command;
+    command = g_strjoinv (" ", argv_mutable);
+    DBG1("Command: %s", command);
+    g_free (command);
+  }
 
   successp = g_spawn_sync (0, /* Inherit working directory. */
                            argv_mutable,
@@ -86,32 +97,42 @@ gboolean run_tshark (const char* tshark_exe,
                      const char* output_filename,
                      unsigned duration)
 {
-  const char* argv[15];
-  const char* proto_abbr = "fast";
-  char* template_option;
-  char* port_option;
-  char* duration_option;
   gboolean successp;
+  const char* argv[20];
+  const char* proto_abbr = "fast";
+
+  guint        pref_idx  ;
+  const guint nprefs = 4 ;
+  char*        prefs  [4];
+
   char* output = 0;
   char** output_ptr = 0;
 
-  template_option =
-    g_strdup_printf ("%s.template:%s", proto_abbr, template_filename);
-  port_option =
-    g_strdup_printf ("%s.port:%d",     proto_abbr, port);
-  duration_option =
-    g_strdup_printf ("duration:%u", duration);
+  /* Set the plugin preferences. */
+  for (pref_idx = 0; pref_idx < nprefs; ++pref_idx) {
+    prefs[pref_idx] = 0;
+  }
+  pref_idx = 0;
+  if (template_filename) {
+    prefs[pref_idx++] =
+      g_strdup_printf ("%s.template:%s", proto_abbr, template_filename);
+  }
+  if (port) {
+    prefs[pref_idx++] = g_strdup_printf ("%s.port:%d", proto_abbr, port);
+  }
+  prefs[pref_idx++] = g_strdup_printf ("%s.disabled:false", proto_abbr);
+  prefs[pref_idx++] = g_strdup_printf ("%s.show_empty:true", proto_abbr);
 
+  /* Build up the command. */
   {
     unsigned argi = 0;
     argv[argi++] = tshark_exe;
-    if (template_filename) {
-      argv[argi++] = "-o";
-      argv[argi++] = template_option;
-    }
-    if (port) {
-      argv[argi++] = "-o";
-      argv[argi++] = port_option;
+    /* Plugin preferences. */
+    for (pref_idx = 0; pref_idx < nprefs; ++pref_idx) {
+      if (prefs[pref_idx]) {
+        argv[argi++] = "-o";
+        argv[argi++] = prefs[pref_idx];
+      }
     }
     if (output_filename) {
       argv[argi++] = "-S";
@@ -119,6 +140,8 @@ gboolean run_tshark (const char* tshark_exe,
       argv[argi++] = "pdml";
     }
     if (duration) {
+      char duration_option[25];
+      sprintf (duration_option, "duration:%u", duration);
       argv[argi++] = "-a";
       argv[argi++] = duration_option;
       argv[argi++] = "-i";
@@ -136,9 +159,12 @@ gboolean run_tshark (const char* tshark_exe,
     successp = run_gather (argi, argv, output_ptr);
   }
 
-  g_free (template_option);
-  g_free (port_option);
-  g_free (duration_option);
+   /* Free plugin preference strings */
+  for (pref_idx = 0; pref_idx < nprefs; ++pref_idx) {
+    if (prefs[pref_idx]) {
+      g_free(prefs[pref_idx]);
+    }
+  }
 
   /* Write the TShark output to a file. */
   if (successp && output)

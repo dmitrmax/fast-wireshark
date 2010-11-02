@@ -1,7 +1,7 @@
 #!/bin/sh
 
 testdir=$(dirname "$0")
-basedir=$(dirname "$testdir")
+basedir="$testdir/.."
 
 port=5000
 template="$testdir/templates.xml"

@@ -48,6 +48,17 @@ list (APPEND plugin_defines "HAVE_CONFIG_H")
 
 list (APPEND CMAKE_MODULE_PATH ${wireshark_src}/cmake/modules)
 
+# Usage:
+#   setup_dbgn_defines (${my_sources})
+macro (setup_dbgn_defines)
+  foreach (src_file ${ARGN})
+    set_property(SOURCE ${src_file}
+      APPEND PROPERTY COMPILE_DEFINITIONS DBGN_FILENAME="${src_file}")
+  endforeach ()
+endmacro ()
+
+setup_dbgn_defines (${plugin_srcs})
+
 # Useage:
 #   staticlibify (LIBXML2_STATIC_LIBRARIES ${LIBXML2_LIBRARIES})
 macro (staticlibify destlibs)

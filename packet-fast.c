@@ -137,13 +137,13 @@ void proto_register_fast ()
 
   prefs_register_uint_preference(module,
                                  "port",
-                                 "FAST listen port",
+                                 "Listen port",
                                  "Enter a valid port number (1024-65535)",
                                  10,
                                  &config_port_number);
   prefs_register_string_preference(module,
                                    "template",
-                                   "FAST XML Template file",
+                                   "XML template file",
                                    "Enter a valid filesystem path",
                                    &config_template_xml_path);
 
