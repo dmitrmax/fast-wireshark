@@ -61,7 +61,7 @@ static const char* config_template_xml_path = 0;
 /*! Shows empty fields in data tree if true */
 static gboolean show_empty_optional_fields = 1;
 /*! If true does not capture or dissect packets */
-static gboolean disabled = 0;
+static gboolean enabled = 0;
 
 
 /*** Forward declarations. ***/
@@ -154,10 +154,10 @@ void proto_register_fast ()
                                    &show_empty_optional_fields);
                                    
   prefs_register_bool_preference(module,
-                                   "disabled",
-                                   "Disable plugin (requires wireshark restart)",
-                                   "Check if you do not want the plugin to capture and dissect packets",
-                                   &disabled);
+                                   "enabled",
+                                   "Enable plugin (may require wireshark restart)",
+                                   "Check if you want the plugin to capture and dissect packets",
+                                   &enabled);
                                    
 
   register_dissector("fast", &dissect_fast, proto_fast);
@@ -177,41 +177,40 @@ void proto_reg_handoff_fast ()
   static dissector_handle_t fast_handle;
   const char* portField = "udp.port";
     
-  if(!disabled){
-  
-  if (!initialized) {
+  if(enabled && !initialized){
     fast_handle = create_dissector_handle(&dissect_fast, proto_fast);
-  }
-  else {
-    dissector_delete(portField, currentPort, fast_handle);
-  }
-
-  /* Set up port number. */
-  if (initialized && config_port_number == 0) {
-    config_port_number = 1337;
-    fprintf(stderr, "FAST - WARNING: Port is not set, using default %u\n", config_port_number);
-  }
-  currentPort = config_port_number;
-
-  /* Read templates file. */
-  if (initialized && config_template_xml_path) {
-    GNode* templates;
-    fprintf(stderr, "Using xml file %s ...\n",config_template_xml_path);
-    templates = parse_templates_xml (config_template_xml_path);
-    set_dictionaries(templates);
-    if (templates) {
-      add_templates(templates);
-    }
-  }
-
-  /* Tell Wireshark what underlying protocol and port we use. */
-  dissector_add(portField, config_port_number, fast_handle);
-
-  if (!initialized) {
     initialized = TRUE;
   }
   
+  if(enabled && initialized){
+  
+    dissector_delete(portField, currentPort, fast_handle);
+
+    /* Set up port number. */
+    if (initialized && config_port_number == 0) {
+      config_port_number = 1337;
+      fprintf(stderr, "FAST - WARNING: Port is not set, using default %u\n", config_port_number);
+    }
+    currentPort = config_port_number;
+
+    /* Read templates file. */
+    if (initialized && config_template_xml_path) {
+      GNode* templates;
+      fprintf(stderr, "Using xml file %s ...\n",config_template_xml_path);
+      templates = parse_templates_xml (config_template_xml_path);
+      set_dictionaries(templates);
+      if (templates) {
+        add_templates(templates);
+      }
+    }
+
+    /* Tell Wireshark what underlying protocol and port we use. */
+    dissector_add(portField, config_port_number, fast_handle);
+  
+  } else {
+    dissector_delete(portField, currentPort, fast_handle);  
   }
+  
 }
 
 /*! \brief Hook function that Wireshark calls to dissect a packet.

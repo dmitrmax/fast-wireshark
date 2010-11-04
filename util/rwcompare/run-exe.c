@@ -120,7 +120,7 @@ gboolean run_tshark (const char* tshark_exe,
   if (port) {
     prefs[pref_idx++] = g_strdup_printf ("%s.port:%d", proto_abbr, port);
   }
-  prefs[pref_idx++] = g_strdup_printf ("%s.disabled:false", proto_abbr);
+  prefs[pref_idx++] = g_strdup_printf ("%s.enabled:true", proto_abbr);
   prefs[pref_idx++] = g_strdup_printf ("%s.show_empty:true", proto_abbr);
 
   /* Build up the command. */
