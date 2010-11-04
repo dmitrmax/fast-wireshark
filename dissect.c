@@ -172,8 +172,30 @@ GNode* dissect_type (const GNode* tnode,
   }
 
   if (!fdata->empty) {
-    /* Call the dissect function. */
-    (*dissect_fn_map[ftype->type]) (tnode, position, dnode_next);
+    gboolean operator_used = FALSE;
+  
+    switch (ftype->op) {
+      case FieldOperatorCopy:
+        operator_used = dissect_copy(tnode, position, dnode_next);
+        break;
+        
+      case FieldOperatorConstant:
+        copy_field_value(ftype->type, &ftype->value, &fdata->value);
+        operator_used = TRUE;
+        break;
+        
+      case FieldOperatorDefault:
+        operator_used = dissect_default(tnode, position, dnode_next);
+        break;
+        
+      default:
+        break;
+    } 
+       
+    if(!operator_used) {
+      /* Call the dissect function. */
+      (*dissect_fn_map[ftype->type]) (tnode, position, dnode_next);
+    }
   }
   if(!(dnode_next->parent)){
     g_node_destroy(dnode_next);
@@ -249,6 +271,52 @@ void dissect_optional (const GNode* tnode,
   }
 }
 
+/*! \brief Given a byte stream with a copy operator, dissect it
+ *            if it is used
+ * \param tnode  Template tree node.
+ * \param position  Position in the packet.
+ * \param dnode  Dissect tree node.
+ * \return true if the copy operator is used
+ */
+gboolean dissect_copy(const GNode* tnode,
+                      DissectPosition* position, GNode* dnode)
+{
+  gboolean used = TRUE;
+  gboolean presence_bit;
+  SetupDissectStack(ftype, fdata,  tnode, dnode);
+  presence_bit = dissect_shift_pmap(position);
+  if(presence_bit) {
+    used = FALSE;
+  } else {
+    /* TODO: Check return status. */
+    get_dictionary_value(ftype, fdata);
+  }
+  return used;
+}                      
+
+/*! \brief Given a byte stream with a default operator, dissect it
+ *            if it is used
+ * \param tnode  Template tree node.
+ * \param position  Position in the packet.
+ * \param dnode  Dissect tree node.
+ * \return true if the default operator is used
+ */
+gboolean dissect_default(const GNode* tnode,
+                         DissectPosition* position, GNode* dnode)
+{
+  gboolean used = TRUE;  
+  gboolean presence_bit;
+  SetupDissectStack(ftype, fdata,  tnode, dnode);
+  presence_bit = dissect_shift_pmap(position);
+  if(presence_bit) {
+    used = FALSE;
+  } else {
+    copy_field_value(ftype->type, &ftype->value, &fdata->value);
+    set_dictionary_value(ftype, fdata);
+  }
+  return used;
+}
+
 /*! \brief  Given a byte stream, dissect an unsigned 32bit integer.
  * \param tnode  Template tree node.
  * \param position  Position in the packet.
@@ -257,44 +325,59 @@ void dissect_optional (const GNode* tnode,
 void dissect_uint32 (const GNode* tnode,
                      DissectPosition* position, GNode* dnode)
 {
+  gint64 delta = 0;
   gboolean presence_bit;
+  gboolean dissect_it = FALSE;
   SetupDissectStack(ftype, fdata,  tnode, dnode);
 
-  switch (ftype->op) {
-    case FieldOperatorNone:
-      basic_dissect_uint32(position, fdata);
-      if (!ftype->mandatory) {
-        -- fdata->value.u32;
-      }
-      break;
-
-    case FieldOperatorCopy:
-      presence_bit = dissect_shift_pmap(position);
-      if (presence_bit) {
-        basic_dissect_uint32(position, fdata);
-        if (!ftype->mandatory) {
-          -- fdata->value.u32;
-        }
-        set_dictionary_value(ftype, fdata);
-      } else {
-        /* TODO: Check return status. */
-        get_dictionary_value(ftype, fdata);
-      }
-      break;
-        
+  switch(ftype->op) {
     case FieldOperatorConstant:
-      get_dictionary_value(ftype, fdata);
+      BAILOUT(;,"Don't try to set the dictionary value on a constant");
       break;
-
-    case FieldOperatorIncrement:
-    case FieldOperatorDefault:
+      
     case FieldOperatorDelta:
-    case FieldOperatorTail:
-    default:
-      /* TODO implement this stuff once dictionaries are implemented */
-      DBG0("Only simple types are implemented.");
+      {
+        FieldData fdata_temp; 
+        gboolean undefined;
+        undefined = !get_dictionary_value(ftype, fdata);
+        if(undefined && !ftype->empty) {
+          copy_field_value(ftype->type, &ftype->value, &fdata->value);
+        } else if(undefined && ftype->empty) {
+          fdata->value.u32 = 0;
+        }
+        
+        basic_dissect_int64(position, &fdata_temp);
+        delta = fdata_temp.value.i64;
+        if (!ftype->mandatory && 0 < delta) {
+          delta--;
+        }
+      }      
       break;
+      
+    case FieldOperatorIncrement:
+      presence_bit = dissect_shift_pmap(position);
+      if(presence_bit) {
+        dissect_it = TRUE;
+      } else {
+        delta = 1;
+      }
+          
+      break;
+      
+    default:
+      dissect_it = TRUE;      
+      break;
+  }  
+  
+  if(dissect_it) {
+    basic_dissect_uint32(position, fdata);
+    if (!ftype->mandatory) {
+      delta = -1;
+    }
   }
+  
+  fdata->value.u32 += delta;
+  set_dictionary_value(ftype, fdata);
 }
 
 

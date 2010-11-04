@@ -159,7 +159,13 @@ void set_dictionary_value(const FieldType* ftype,
   TypedValue* prev_value = 0;
   TypedValue* new_value = 0;
   dictionary = (GHashTable*)ftype->dictionary_ptr;
+  
+  if(!ftype->key) {
+    return;
+  }
+
   prev_value = g_hash_table_lookup(dictionary, ftype->key);
+  
   if (prev_value) {
     cleanup_field_value(ftype->type, &prev_value->value);
     new_value = prev_value;
