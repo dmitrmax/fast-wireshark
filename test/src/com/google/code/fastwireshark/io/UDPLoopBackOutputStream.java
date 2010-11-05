@@ -17,12 +17,12 @@ public class UDPLoopBackOutputStream extends OutputStream {
 	 * @param maxPacketSize Max size of the packet
 	 * @param port Port to use
 	 */
-	public UDPLoopBackOutputStream(int maxPacketSize, int port){
+	public UDPLoopBackOutputStream(int maxPacketSize, int port, String pcapFile){
 		if(maxPacketSize <= 0){
 			throw new IllegalArgumentException("Invalid max packet size: " + maxPacketSize);
 		}
 		buffer = ByteBuffer.wrap(new byte[maxPacketSize]);
-		server = new UDPLoopBackServer(port);
+		server = new UDPLoopBackServer(port,pcapFile);
 		
 	}
 	

@@ -32,6 +32,7 @@ public class Main {
 			public String dataPlanFile;
 			public boolean binaryOutput;
 			public int port = -1;
+			public String pcapFile;
 
 			/**
 			 * Parses out the command line arguments and sets the public fields
@@ -43,7 +44,8 @@ public class Main {
 							"\t[-t <templateFile>[ <templateFile2>...]]\n" +
 							"\t[-p <planFile>]\n" +
 							"\t[-b]\n" +
-							"\t[-n <port>]"
+							"\t[-n <port>]" +
+							"\t[-P <pcap file>"
 							);
 					System.exit(0);
 				}
@@ -67,6 +69,10 @@ public class Main {
 					if(cur.equals("-n")){
 						if(port > 0){throw new RuntimeException("Multiple port definitions");}
 						port = Integer.valueOf(args[++i]);
+					} else
+					if(cur.equals("-P")){
+						if(pcapFile != null){throw new RuntimeException("Multiple pcap file definitions");}
+						pcapFile = args[++i];
 					}
 				}
 				if(templateFiles == null){
@@ -90,7 +96,7 @@ public class Main {
 			 */
 			OutputStream out;
 			if(cargs.port > 0){
-				out = new UDPLoopBackOutputStream(Constants.MAX_PACKET_SIZE, cargs.port);
+				out = new UDPLoopBackOutputStream(Constants.MAX_PACKET_SIZE, cargs.port, cargs.pcapFile);
 			} else
 			if(cargs.binaryOutput){
 				out = new BinaryOutputStream(System.out, false);
