@@ -7,9 +7,12 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 
+import com.google.code.fastwireshark.io.PcapFileWriter;
+
 public class UDPLoopBackServer{
 
 	private DatagramSocket socket;
+//	PcapFileWriter writer = new PcapFileWriter("pcapFile");
 	
 	/**
 	 * Sets up a Loop Back on the specified port
@@ -46,13 +49,18 @@ public class UDPLoopBackServer{
 			throw new RuntimeException(e);
 		}
 		//Read the bytes in to clear the buffer
+		DatagramPacket p = null;
 		try {
-			socket.receive(new DatagramPacket(new byte[bytes.length],bytes.length));
+			p = new DatagramPacket(new byte[bytes.length],bytes.length);
+			socket.receive(p);
+//			writer.writePacket(p);
 		} catch (IOException e) {
 			System.err.println("Error reading packet in");
 			throw new RuntimeException(e);
 		}
-		
+		if(p == null){
+			throw new RuntimeException("Packet not recieved correctly");
+		}
 	}
 	
 	
