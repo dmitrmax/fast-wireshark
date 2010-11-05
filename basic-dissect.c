@@ -39,7 +39,7 @@ void ShiftBytes(DissectPosition* position)
 
 
 /*! \brief  Claim and retrieve a bit in the PMAP.
- * \param position  The dissector's currect position.
+ * \param position  The dissector's current position.
  * \return  TRUE or FALSE depending on the PMAP bit value.
  */
 gboolean dissect_shift_pmap (DissectPosition* position)
@@ -56,6 +56,20 @@ gboolean dissect_shift_pmap (DissectPosition* position)
   }
   return result;
 }
+
+
+/*! \brief  Retrieve a bit in the PMAP.
+ * \param position  The dissector's current position.
+ * \return  TRUE or FALSE depending on the PMAP bit value.
+ */
+gboolean dissect_peek_pmap (DissectPosition* position)
+{
+  gboolean result;
+  result = dissect_shift_pmap (position);
+  position->pmap_idx -= 1;
+  return result;
+}
+
 
 /*! \brief  Detect and skip null values.
  * \param position  The dissector's currect position.

@@ -33,6 +33,7 @@ typedef struct dissect_position_struct DissectPosition;
 
 void ShiftBytes(DissectPosition* position);
 gboolean dissect_shift_pmap (DissectPosition* position);
+gboolean dissect_peek_pmap (DissectPosition* position);
 gboolean dissect_shift_null (DissectPosition* position);
 
 void basic_dissect_pmap (const DissectPosition* parent_position,

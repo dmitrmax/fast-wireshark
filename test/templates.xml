@@ -136,5 +136,38 @@
       <int32 name="i_trailing2"/>
     </group>
   </template>
+
+  <template name="t_copy" id="16">
+    <uInt32 name="u32">                      <copy value="146"/> </uInt32>
+    <uInt64 name="i32" presence="optional">  <copy value="246"/> </uInt64>
+    <int32 name="u64" presence="optional">   <copy value="346"/> </int32>
+    <int64 name="i64" presence="optional">   <copy value="446"/> </int64>
+    <!--
+    <decimal name="dec" presence="optional">
+      <exponent name="decex"> <copy value="-3"/> </exponent>
+      <mantissa name="decma"> <copy value="-224"/> </mantissa>
+    </decimal>
+    -->
+    <string name="asc" presence="optional" charset="ascii">
+      <copy value="aoeuascii"/>
+    </string>
+    <string name="uni" presence="optional" charset="unicode">
+      <copy value="aoeuunicode"/>
+    </string>
+    <byteVector name="bv"  presence="optional">
+      <length name="bvlen"> <copy value="8"/> </length>
+      <copy value="0123ABCD"/>
+    </byteVector>
+    <group name="grp" presence="optional">
+      <string name="grpstr"> <copy value="I'm in a group."/> </string>
+    </group>
+    <!--
+    <sequence name="seq" presence="optional">
+      <length name="seqlen"> <copy value="3"/> </length>
+      <string name="seqstr1"> <copy/> </string>
+      <string name="seqstr2"> <copy/> </string>
+    </sequence>
+    -->
+  </template>
 	
 </templates>

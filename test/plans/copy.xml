@@ -1,0 +1,67 @@
+<plan>
+  <!-- All initial values should be carried over. -->
+  <message value="16">
+    <uInt32 value="146"/>
+    <uInt64 value="246"/>
+    <int32 value="346"/>
+    <int64 value="446"/>
+    <!--
+    <decimal value="-224e-3"/>
+    -->
+    <ascii value="aoeuascii"/>
+    <unicode value="aoeuunicode"/>
+    <byteVector value="0123ABCD"/>
+    <group value="">
+      <ascii value="I'm in a group."/>
+    </group>
+    <!--
+    <sequence value="">
+      <group value="">
+        <ascii value="Hello from 1."/>
+        <ascii value="Hello from 2."/>
+      </group>
+      <group value="">
+        <ascii value="Hello from 1."/>
+        <ascii value="Hello from 2."/>
+      </group>
+      <group value="">
+        <ascii value="Hello from 1."/>
+        <ascii value="Hello from 2."/>
+      </group>
+    </sequence>
+    -->
+  </message>
+
+  <!-- All initial values should be carried over. -->
+  <message value="16">
+    <uInt32 value="546"/>
+    <uInt64 value="646"/>
+    <int32 value="746"/>
+    <int64 value="846"/>
+    <!--
+    <decimal value="-224e-3"/>
+    -->
+    <ascii value="aoeuascii"/>
+    <unicode value="aoeuunicode"/>
+    <byteVector value="0123ABCD"/>
+    <group value="">
+      <ascii value="I'm in a group."/>
+    </group>
+    <!--
+    <sequence value="">
+      <group value="">
+        <ascii value="Hello from 1."/>
+        <ascii value="Hello from 2."/>
+      </group>
+      <group value="">
+        <ascii value="Hello from 1."/>
+        <ascii value="Hello from 2."/>
+      </group>
+      <group value="">
+        <ascii value="Hello from 1."/>
+        <ascii value="Hello from 2."/>
+      </group>
+    </sequence>
+    -->
+  </message>
+</plan>
