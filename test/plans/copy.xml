@@ -10,11 +10,10 @@
     -->
     <ascii value="aoeuascii"/>
     <unicode value="aoeuunicode"/>
-    <byteVector value="0123ABCD"/>
+    <byteVector value="0123abcd"/>
     <group value="">
       <ascii value="I'm in a group."/>
     </group>
-    <!--
     <sequence value="">
       <group value="">
         <ascii value="Hello from 1."/>
@@ -29,7 +28,6 @@
         <ascii value="Hello from 2."/>
       </group>
     </sequence>
-    -->
   </message>
 
   <!-- All initial values should be carried over. -->
@@ -43,11 +41,10 @@
     -->
     <ascii value="aoeuascii"/>
     <unicode value="aoeuunicode"/>
-    <byteVector value="0123ABCD"/>
+    <byteVector value="0123abcd"/>
     <group value="">
       <ascii value="I'm in a group."/>
     </group>
-    <!--
     <sequence value="">
       <group value="">
         <ascii value="Hello from 1."/>
@@ -62,6 +59,5 @@
         <ascii value="Hello from 2."/>
       </group>
     </sequence>
-    -->
   </message>
 </plan>

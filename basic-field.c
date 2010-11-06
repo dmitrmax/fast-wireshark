@@ -30,7 +30,7 @@ void copy_field_value (FieldTypeIdentifier type,
     case FieldTypeByteVector:
       dest->bytevec.nbytes = src->bytevec.nbytes;
       dest->bytevec.bytes = g_memdup(src->bytevec.bytes,
-                                     src->bytevec.nbytes * sizeof(guint8));
+                                     (1+src->bytevec.nbytes) * sizeof(guint8));
       break;
     default:
       DBG0("Called with bad type.");
@@ -97,8 +97,8 @@ void string_to_field_value(const char* str, FieldTypeIdentifier type, FieldValue
       
       case FieldTypeByteVector:
         len = strlen(str);
-        value->bytevec.nbytes = len/2 + 1;
-        value->bytevec.bytes = g_malloc(value->bytevec.nbytes);
+        value->bytevec.nbytes = len/2;
+        value->bytevec.bytes = g_malloc(1+value->bytevec.nbytes);
         for(i=0; i + 1 < len; i += 2) {
           int nibble1;
           int nibble2;

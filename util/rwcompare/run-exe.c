@@ -44,7 +44,7 @@ gboolean run_gather (guint argc, const char* const* argv, char** output_ptr)
   argv_mutable[argc] = 0;
 
   /* Show the command for debug. */
-  if (FALSE)
+  if (TRUE)
   {
     char* command;
     command = g_strjoinv (" ", argv_mutable);

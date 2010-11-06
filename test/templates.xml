@@ -155,19 +155,16 @@
       <copy value="aoeuunicode"/>
     </string>
     <byteVector name="bv"  presence="optional">
-      <length name="bvlen"> <copy value="8"/> </length>
-      <copy value="0123ABCD"/>
+      <copy value="0123abcd"/>
     </byteVector>
     <group name="grp" presence="optional">
       <string name="grpstr"> <copy value="I'm in a group."/> </string>
     </group>
-    <!--
     <sequence name="seq" presence="optional">
       <length name="seqlen"> <copy value="3"/> </length>
       <string name="seqstr1"> <copy/> </string>
       <string name="seqstr2"> <copy/> </string>
     </sequence>
-    -->
   </template>
 	
 </templates>

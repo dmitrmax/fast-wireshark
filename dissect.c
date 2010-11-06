@@ -51,12 +51,8 @@ const GNode* dissect_fast_bytes (guint nbytes, const guint8* bytes,
   /* Figure out current Template ID. */
   if (dissect_shift_pmap (position)) {
     /* Decode from the stream. */
-    position->offjmp = count_stop_bit_encoded (position->nbytes,
-                                               position->bytes);
-    fdata->nbytes = position->offjmp;
-    template_id = decode_uint32 (position->offjmp,
-                                 position->bytes);
-    ShiftBytes(position);
+    basic_dissect_uint32 (position, fdata);
+    template_id = fdata->value.u32;
   }
 
   tmpl = find_template (template_id);
@@ -76,6 +72,7 @@ const GNode* dissect_fast_bytes (guint nbytes, const guint8* bytes,
                    parent, data_node);
   }
 
+  fdata->nbytes = position->offset - fdata->start;
   g_free(position->pmap);
   return tmpl;
 }
@@ -92,7 +89,7 @@ void dissector_walk (const GNode* tnode,
                      GNode* parent, GNode* dnode)
 {
   while (tnode) {
-    dnode = dissect_type (tnode, position, parent, dnode);
+    dnode = dissect_descend (tnode, position, parent, dnode);
     tnode = tnode->next;
   }
 }
@@ -105,25 +102,10 @@ void dissector_walk (const GNode* tnode,
  * \param dnode  Previous node in data tree.
  * \return  Node that was created.
  */
-GNode* dissect_type (const GNode* tnode,
-                     DissectPosition* position,
-                     GNode* parent, GNode* dnode)
+GNode* dissect_descend (const GNode* tnode,
+                        DissectPosition* position,
+                        GNode* parent, GNode* dnode)
 {
-  /* Map to the dissect functions. */
-  static void (*dissect_fn_map[]) (const GNode*, DissectPosition*, GNode*) =
-  {
-    &dissect_uint32,
-    &dissect_uint64,
-    &dissect_int32,
-    &dissect_int64,
-    &dissect_decimal,
-    &dissect_ascii_string,
-    &dissect_byte_vector, /* Unicode string. */
-    &dissect_byte_vector,
-    &dissect_group,
-    &dissect_sequence,
-    0
-  };
   const FieldType* ftype;
   FieldData* fdata;
   GNode* dnode_next;
@@ -140,12 +122,6 @@ GNode* dissect_type (const GNode* tnode,
     return 0;
   }
 
-  /* Assure the appropriate function exists. */
-  if (!dissect_fn_map[ftype->type]) {
-    DBG1("Field type %u not implemented.", (guint) ftype->type);
-    return 0;
-  }
-
   /* Set up data. */
   fdata = (FieldData*) g_malloc (sizeof (FieldData));
   if (!fdata)  BAILOUT(0,"Could not allocate memory.");
@@ -157,49 +133,13 @@ GNode* dissect_type (const GNode* tnode,
   }
   g_node_insert_after(parent, dnode, dnode_next);
 
-  /* Initialize to sensible defaults. */
-  fdata->start  = position->offset;
-  fdata->nbytes = 0;
-  fdata->empty  = TRUE;
-  init_field_value(&fdata->value);
+  dissect_value(tnode, position, dnode_next);
 
-  if (!ftype->mandatory) {
-    /* Set empty to false if there should be a value. */
-    dissect_optional(tnode, position, dnode_next);
-  }
-  else {
-    fdata->empty = FALSE;
-  }
-
-  if (!fdata->empty) {
-    gboolean operator_used = FALSE;
-  
-    switch (ftype->op) {
-      case FieldOperatorCopy:
-        operator_used = dissect_copy(tnode, position, dnode_next);
-        break;
-        
-      case FieldOperatorConstant:
-        copy_field_value(ftype->type, &ftype->value, &fdata->value);
-        operator_used = TRUE;
-        break;
-        
-      case FieldOperatorDefault:
-        operator_used = dissect_default(tnode, position, dnode_next);
-        break;
-        
-      default:
-        break;
-    } 
-       
-    if(!operator_used) {
-      /* Call the dissect function. */
-      (*dissect_fn_map[ftype->type]) (tnode, position, dnode_next);
-    }
-  }
   if(!(dnode_next->parent)){
-    g_node_destroy(dnode_next);
-    /* As we are building the tree, the last node added will the the one we just made */
+    g_node_destroy(dnode_next); /* TODO: wat? */
+    /* As we are building the tree,
+     * the last node added will the the one we just made.
+     */
     dnode_next = g_node_last_child(parent);
   }
   return dnode_next;
@@ -219,6 +159,80 @@ GNode* dissect_type (const GNode* tnode,
   ftype = (FieldType*) tnode->data; \
   fdata = (FieldData*) dnode->data;
 
+
+/*! \brief  Given a byte stream, dissect some value.
+ * \param tnode  Template tree node.
+ * \param position  Position in the packet.
+ * \param dnode  Dissect tree node.
+ */
+void dissect_value (const GNode* tnode,
+                    DissectPosition* position, GNode* dnode)
+{
+  /* Map to the dissect functions. */
+  static void (*dissect_fn_map[]) (const GNode*, DissectPosition*, GNode*) =
+  {
+    &dissect_uint32, &dissect_uint64,
+    &dissect_int32,  &dissect_int64,
+    &dissect_decimal,
+    &dissect_ascii_string, &dissect_unicode_string, &dissect_byte_vector,
+    &dissect_group, &dissect_sequence,
+    0
+  };
+  guint start;
+  SetupDissectStack(ftype, fdata,  tnode, dnode);
+
+  start = position->offset;
+
+  /* Initialize to sensible defaults. */
+  fdata->start  = start;
+  fdata->nbytes = 0;
+  fdata->empty  = TRUE;
+  init_field_value(&fdata->value);
+
+  /* Assure the appropriate function exists. */
+  if (!dissect_fn_map[ftype->type]) {
+    DBG1("Field type %u not implemented.", (guint) ftype->type);
+    return;
+  }
+
+  if (!ftype->mandatory) {
+    /* Set empty to false if there should be a value. */
+    dissect_optional(tnode, position, dnode);
+  }
+  else {
+    fdata->empty = FALSE;
+  }
+
+  if (!fdata->empty) {
+    gboolean operator_used = FALSE;
+  
+    switch (ftype->op) {
+      case FieldOperatorCopy:
+        operator_used = dissect_copy(tnode, position, dnode);
+        break;
+        
+      case FieldOperatorConstant:
+        copy_field_value(ftype->type, &ftype->value, &fdata->value);
+        operator_used = TRUE;
+        break;
+        
+      case FieldOperatorDefault:
+        operator_used = dissect_default(tnode, position, dnode);
+        break;
+        
+      default:
+        break;
+    } 
+       
+    if(!operator_used) {
+      /* Call the dissect function. */
+      (*dissect_fn_map[ftype->type]) (tnode, position, dnode);
+    }
+  }
+  /* Make sure the window is correct. */
+  fdata->start = start;
+  fdata->nbytes = position->offset - start;
+}
 
 /*! \brief  Given a byte stream, check if an optional field is empty.
  * \param tnode  Template tree node.
@@ -515,18 +529,23 @@ void dissect_decimal (const GNode* tnode,
   }
 
   if (!ftype->op) {
-    GNode* expt_node;
-    GNode* mant_node;
+    gint32 expt;       gint64 mant;
+    GNode* expt_node;  GNode* mant_node;
+
+    expt_node = tnode->children;
+    mant_node = expt_node->next;
 
     /* Grab exponent. */
-    expt_node = dissect_type (tnode->children, position,
-                              dnode, 0);
+    dissect_value (expt_node, position, dnode);
+    expt = fdata->value.i32;
     /* Grab mantissa. */
-    mant_node = dissect_type (tnode->children->next, position,
-                              dnode, expt_node);
+    dissect_value (mant_node, position, dnode);
+    mant = fdata->value.i64;
 
-    /* Count how many bytes were used. */
-    fdata->nbytes = position->offset - fdata->start;
+    fdata->value.decimal.mantissa = mant;
+    fdata->value.decimal.exponent = expt;
+
+    set_dictionary_value(ftype, fdata);
   }
   else {
     DBG0("Only simple types are implemented.");
@@ -561,6 +580,20 @@ void dissect_ascii_string (const GNode* tnode,
   if (dissect_it) {
     basic_dissect_ascii_string (position, fdata);
   }
+  set_dictionary_value(ftype, fdata);
+}
+
+
+/*! \brief  Given a byte stream, dissect a unicode string.
+ * \param tnode  Template tree node.
+ * \param position  Position in the packet.
+ * \param dnode  Dissect tree node.
+ * \sa dissect_byte_vector
+ */
+void dissect_unicode_string (const GNode* tnode,
+                             DissectPosition* position, GNode* dnode)
+{
+  dissect_byte_vector (tnode, position, dnode);
 }
 
 
@@ -599,7 +632,7 @@ void dissect_byte_vector (const GNode* tnode,
     vec = &fdata->value.bytevec;
 
     /* See how big the byte vector is. */
-    dissect_uint32 (length_node, position, dnode);
+    dissect_value (length_node, position, dnode);
 
     vec->nbytes = fdata->value.u32;
 
@@ -614,8 +647,8 @@ void dissect_byte_vector (const GNode* tnode,
     }
 
     ShiftBytes(position);
-    fdata->nbytes = position->offset - fdata->start;
   }
+  set_dictionary_value(ftype, fdata);
 }
 
 /*! \brief  Given a byte stream, dissect a group.
@@ -645,7 +678,6 @@ void dissect_group (const GNode* tnode,
 
   position->offjmp = nested_position->offset - position->offset;
   ShiftBytes(position);
-  fdata->nbytes = position->offset - fdata->start;
 
   if (stacked_position.pmap) {
     g_free(stacked_position.pmap);
@@ -675,15 +707,12 @@ void dissect_sequence (const GNode* tnode,
   length_tnode = tnode->children;
   group_tnode  = length_tnode->next;
 
-  dissect_uint32 (length_tnode, position, dnode);
+  dissect_value (length_tnode, position, dnode);
   length = fdata->value.u32;
-
   parent = dnode;
   dnode  = 0;
-
   for (i = 0; i < length; ++i) {
-    dnode = dissect_type (group_tnode, position, parent, dnode);
+    dnode = dissect_descend (group_tnode, position, parent, dnode);
   }
-  fdata->nbytes = position->offset - fdata->start;
 }
 

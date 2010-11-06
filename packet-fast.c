@@ -18,7 +18,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include <glib.h>
 #include <gmodule.h>
@@ -341,25 +340,12 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
                                      fdata->value.i64);
           break;
         case FieldTypeDecimal:
-          {
-            GNode* node;
-            gint32 expt = 0;
-            gint64 mant = 0;
-
-            node = dnode->children;
-            if (node) {
-              expt = ((FieldData*) node->data) -> value.i32;
-              node = node->next;
-            }
-            if (node) {
-              mant = ((FieldData*) node->data) -> value.i64;
-            }
-
-            proto_tree_add_none_format(tree, header_field, tvb,
-                                       fdata->start, fdata->nbytes,
-                                       "%s(decimal): %" G_GINT64_MODIFIER "de%d",
-                                       field_name, mant, expt);
-          }
+          proto_tree_add_none_format(tree, header_field, tvb,
+                                     fdata->start, fdata->nbytes,
+                                     "%s(decimal): %" G_GINT64_MODIFIER "de%d",
+                                     field_name,
+                                     fdata->value.decimal.mantissa,
+                                     fdata->value.decimal.exponent);
           break;
         case FieldTypeAsciiString:
           proto_tree_add_none_format(tree, header_field, tvb,
