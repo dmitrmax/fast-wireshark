@@ -1,0 +1,59 @@
+<plan>
+  
+  <message value="17">
+    <uInt32 value="42"/>
+    <uInt32 value="42"/>
+    <uInt64 value="42"/>  
+    <int32 value="42"/>
+    <int64 value="42"/>
+    
+    <ascii value = "ascii test 1"/>  
+    <ascii value = "ascii test 2"/>
+    <unicode value = "unicode test 1"/>
+    <unicode value = "unicode test 2"/>
+    
+    <!--
+    <byteVector value = "1234"/>
+    <byteVector value = "5678"/>
+    -->
+    
+    <group value="">
+      <ascii value="group test"/>
+    </group>
+    
+    <sequence value="">
+      <group value="">
+        <ascii value="sequence test"/>
+      </group>
+    </sequence>
+  </message>   
+
+  <message value="17">
+    <uInt32 value="0"/>
+    <uInt32 value="1"/>
+    <uInt64 value="2"/>  
+    <int32 value="3"/>
+    <int64 value="4"/>
+    
+    <ascii value="mandatory ascii string"/>  
+    <ascii value="optional ascii string"/>
+    <unicode value="mandatory unicode string"/>
+    <unicode value="optional unicode string"/>
+    
+    <!--
+    <byteVector value="3030"/>
+    <byteVector value="3232"/>
+    -->
+    
+    <group value="">
+      <ascii value="default group string"/>
+    </group>
+    
+    <sequence value="">
+      <group value="">
+        <ascii value="default sequence string"/>
+      </group>
+    </sequence>
+  </message>
+   
+</plan>
