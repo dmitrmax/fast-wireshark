@@ -166,5 +166,34 @@
       <string name="seqstr2"> <copy/> </string>
     </sequence>
   </template>
+  
+  <template name="t_default" id="17">
+    <uInt32 id="1" presence="mandatory" name="man_uint32"> <default value="0"/> </uInt32>
+    <uInt32 id="2" presence="optional"  name="opt_uint32"> <default value="1"/> </uInt32>
+    
+    <uInt64 id="2" presence="optional"  name="opt_uint64"> <default value="2"/> </uInt64>
+    <int32 id="2" presence="optional"  name="opt_int32"> <default value="3"/> </int32>
+    <int64 id="2" presence="optional"  name="opt_int64"> <default value="4"/> </int64>
+    
+    <string id="3" presence="mandatory" charset="ascii" name="man_ascii"> <default value="mandatory ascii string"/> </string> 
+    <string id="4" presence="optional"  charset="ascii" name="opt_ascii"> <default value="optional ascii string"/> </string> 
+    
+    <string id="5" presence="mandatory" charset="unicode" name="man_uni"> <default value="mandatory unicode string"/> </string> 
+    <string id="6" presence="optional"  charset="unicode" name="opt_uni"> <default value="optional unicode string"/> </string> 
+    
+    <!--
+    <byteVector id="7" presence="mandatory" name="man_bv"> <default value="00"/> </byteVector> 
+    <byteVector id="8" presence="optional"  name="opt_bv"> <default value="22"/> </byteVector> 
+    -->
+    
+    <group name="group" presence="optional">
+      <string id="3" presence="mandatory" charset="ascii" name="group_ascii"> <default value="default group string"/> </string> 
+    </group>
+    
+    <sequence name="sequence" presence="optional">
+      <string id="3" presence="mandatory" charset="ascii" name="sequence_ascii"> <default value="default sequence string"/> </string> 
+	  </sequence>
 	
+	</template>
+	  
 </templates>
