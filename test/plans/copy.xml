@@ -5,9 +5,7 @@
     <uInt64 value="246"/>
     <int32 value="346"/>
     <int64 value="446"/>
-    <!--
     <decimal value="-224e-3"/>
-    -->
     <ascii value="aoeuascii"/>
     <unicode value="aoeuunicode"/>
     <byteVector value="0123abcd"/>
@@ -36,9 +34,7 @@
     <uInt64 value="646"/>
     <int32 value="746"/>
     <int64 value="846"/>
-    <!--
     <decimal value="-224e-3"/>
-    -->
     <ascii value="aoeuascii"/>
     <unicode value="aoeuunicode"/>
     <byteVector value="0123abcd"/>

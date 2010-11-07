@@ -249,6 +249,12 @@ void dissect_optional (const GNode* tnode,
   if (ftype->mandatory) {
     BAILOUT(;,"Don't call this function on a mandatory field.");
   }
+  if ((FieldTypeDecimal == ftype->type ||
+       FieldTypeSequence == ftype->type) 
+      && FieldOperatorNone == ftype->op) {
+    dissect_optional (tnode->children, position, dnode);
+    return;
+  }
   switch (ftype->op) {
     case FieldOperatorNone:
       if (FieldTypeGroup == ftype->type) {
@@ -712,6 +718,14 @@ void dissect_sequence (const GNode* tnode,
   parent = dnode;
   dnode  = 0;
   for (i = 0; i < length; ++i) {
+    if (!position->nbytes) {
+      DBG0("Sequence bailing, no space left in packet.");
+      break;
+    }
+    if (position->pmap_idx >= position->pmap_len) {
+      DBG0("Sequence bailing, no space left in pmap.");
+      break;
+    }
     dnode = dissect_descend (group_tnode, position, parent, dnode);
   }
 }
