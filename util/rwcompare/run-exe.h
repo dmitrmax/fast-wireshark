@@ -20,6 +20,7 @@ GThread* spawn_tshark (const char* tshark_exe,
 gboolean run_plan (const char* plan_runner_jar,
                    const char* template_filename,
                    const char* expect_filename,
+                   const char* pcap_filename,
                    int port);
 
 #endif

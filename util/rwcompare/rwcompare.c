@@ -21,6 +21,7 @@ int ArgParseBailOut(const char* arg, const char* reason)
   fputs ("Usage:\n", out);
   fputs ("  rwcompare [p[ort] <port>]\n", out);
   fputs ("            [runner <PlanRunner jar>]\n", out);
+  fputs ("            [network]\n", out);
   fputs ("            [tshark <TShark executable>]\n", out);
   fputs ("            [tmpl <template file>]\n", out);
   fputs ("            [pcap <pcap file>]\n", out);
@@ -55,6 +56,7 @@ int main (const int argc, const char* const* argv)
   gboolean givenp_pcap = FALSE;
   gboolean givenp_pdml = FALSE;
   gboolean givenp_plan = FALSE;
+  gboolean networkp = FALSE;
   gboolean goodp = TRUE;
   int argi;
 
@@ -65,7 +67,10 @@ int main (const int argc, const char* const* argv)
   /* Loop thru arguments to set internal data. */
   for (argi = 1; argi < argc; ++argi) {
     const char* arg = argv[argi];
-    if (argc == argi+1) {
+    if (!strcmp("network", arg)) {
+      networkp = TRUE;
+    }
+    else if (argc == argi+1) {
       return ArgParseBailOut(arg, "Trailing flag without a value.");
     }
     else if (!strcmp("p", arg) || !strcmp("port", arg)) {
@@ -111,7 +116,7 @@ int main (const int argc, const char* const* argv)
       pdml_filename = g_strdup_printf ("%s-pdml.xml", pcap_filename);
     }
 
-    if (plan_runner_jar && expect_filename) {
+    if (plan_runner_jar && networkp && expect_filename) {
       /* Do an actual capture. */
       unsigned duration = 5;
       GThread* thread;
@@ -134,13 +139,23 @@ int main (const int argc, const char* const* argv)
       goodp = run_plan (plan_runner_jar,
                         template_filename,
                         expect_filename,
+                        0,
                         port);
       if (!g_thread_join (thread)) {
         goodp = FALSE;
       }
     }
 
-    else if (template_filename && givenp_pcap) {
+    else if (template_filename) {
+      /* Generate a pcap file. */
+      if (plan_runner_jar && !networkp) {
+        goodp = run_plan (plan_runner_jar,
+                          template_filename,
+                          expect_filename,
+                          pcap_filename,
+                          port);
+      }
+
       /* Run TShark. */
       if (goodp && template_filename && pcap_filename) {
         goodp = run_tshark (tshark_exe,

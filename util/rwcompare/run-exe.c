@@ -255,10 +255,11 @@ GThread* spawn_tshark (const char* tshark_exe,
 gboolean run_plan (const char* plan_runner_jar,
                    const char* template_filename,
                    const char* expect_filename,
+                   const char* pcap_filename,
                    int port)
 {
   gboolean successp = TRUE;
-  const char* argv[10];
+  const char* argv[15];
   char* port_option;
 
   port_option = g_strdup_printf ("%d", port);
@@ -274,6 +275,10 @@ gboolean run_plan (const char* plan_runner_jar,
     argv[argi++] = expect_filename;
     argv[argi++] = "-n";
     argv[argi++] = port_option;
+    if (pcap_filename) {
+      argv[argi++] = "-P";
+      argv[argi++] = pcap_filename;
+    }
     successp = run_gather (argi, argv, 0);
   }
 
