@@ -61,6 +61,15 @@ static const char* config_template_xml_path = 0;
 static gboolean show_empty_optional_fields = 1;
 /*! If true does not capture or dissect packets */
 static gboolean enabled = 0;
+/*! Table to hold pointers to previously parsed packets for Non-sequental Disection */
+static GHashTable* parsed_packets_table = 0;
+
+struct parsed_packet_data
+{
+  GNode * dataTree;
+  const GNode * tmpl;
+};
+typedef struct parsed_packet_data PacketData;
 
 
 /*** Forward declarations. ***/
@@ -216,6 +225,14 @@ void proto_reg_handoff_fast ()
  */
 void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
 {
+  frame_data *frameData;
+  gpointer * packetParsed = 0;
+  gpointer * orig_key = 0;
+  PacketData * packetData;
+  
+  frameData = pinfo->fd;
+  
+  
   /* fill in protocol column */
   if (check_col(pinfo->cinfo, COL_PROTOCOL)) {
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "FAST");
@@ -237,20 +254,46 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
     const GNode* tmpl;
     GNode* parent;
 
+    /* Create display subtree. */
+    ti = proto_tree_add_item(tree, proto_fast, tvb, 0, -1, ENC_NA);
+    fast_tree = proto_item_add_subtree(ti, ett_fast);
+    
+    if(!parsed_packets_table) {
+      parsed_packets_table = g_hash_table_new(&g_int_hash, &g_int_equal);
+      /* If we fail to make the table bail */
+      if(!parsed_packets_table) { BAILOUT(;,"Packet lookup table not created."); }
+    }
+  
+    /* check if this packet has allready been parsed and get it if it has */
+    /* packetParsed = g_hash_table_lookup_extended(parsed_packets_table, &frameData->num, orig_key, value);*/
+    
+    packetParsed = g_hash_table_lookup(parsed_packets_table, &frameData->num);
+    
+    if(packetParsed){
+      /* packet in dict so display original parsed packet*/
+      packetData = (PacketData*) packetParsed;
+      parent = packetData->dataTree;
+      tmpl = packetData->tmpl;
+      
+    } else {
     parent = g_node_new(0);
     if (!parent) {
       BAILOUT(;,"Could not allocate memory.");
     }
-
-    /* Create display subtree. */
-    ti = proto_tree_add_item(tree, proto_fast, tvb, 0, -1, ENC_NA);
-    fast_tree = proto_item_add_subtree(ti, ett_fast);
 
     /* Dissect the payload. */
     nbytes = tvb_length (tvb);
     bytes = ep_tvb_memdup (tvb, 0, nbytes);
     tmpl = dissect_fast_bytes (nbytes, bytes, parent);
 
+      /* Store pointers to display tree so it can be loaded if user clicks on this packet again
+      packetData = (PacketData*)malloc(sizeof(PacketData));
+      packetData->dataTree = parent;
+      packetData->tmpl = tmpl;
+      
+      g_hash_table_insert(parsed_packets_table, &frameData->num, packetData);*/
+    }
+    
     /* Setup for display. */
     display_message (tvb, fast_tree, tmpl, parent);
   }
