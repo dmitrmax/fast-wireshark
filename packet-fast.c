@@ -227,7 +227,6 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
 {
   frame_data *frameData;
   gpointer * packetParsed = 0;
-  gpointer * orig_key = 0;
   PacketData * packetData;
   
   frameData = pinfo->fd;
@@ -265,8 +264,6 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
     }
   
     /* check if this packet has allready been parsed and get it if it has */
-    /* packetParsed = g_hash_table_lookup_extended(parsed_packets_table, &frameData->num, orig_key, value);*/
-    
     packetParsed = g_hash_table_lookup(parsed_packets_table, &frameData->num);
     
     if(packetParsed){

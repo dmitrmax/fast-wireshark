@@ -370,8 +370,8 @@ gboolean parse_sequence (xmlNodePtr xmlnode, FieldType* tfield, GNode* tnode)
 
 
 /*! \brief  Fill in a field in the parse tree with operator info.
- * \param  The XML node which /should/ be a field.
- * \param  A pointer to the field within the parse tree.
+ * \param xmlnode  The XML node which /should/ be a field.
+ * \param tfield  A pointer to the field within the parse tree.
  * \return  True if sucessfully parsed
  */
 gboolean parse_operator (xmlNodePtr xmlnode, FieldType * tfield){
