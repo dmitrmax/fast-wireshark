@@ -68,6 +68,7 @@ struct parsed_packet_data
 {
   GNode * dataTree;
   const GNode * tmpl;
+  guint32 frameNum;
 };
 typedef struct parsed_packet_data PacketData;
 
@@ -228,7 +229,6 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
   frame_data *frameData;
   gpointer * packetParsed = 0;
   PacketData * packetData;
-  
   frameData = pinfo->fd;
   
   
@@ -247,7 +247,6 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
   {
     proto_item* ti;
     proto_tree* fast_tree;
-
     guint nbytes;
     guint8* bytes;
     const GNode* tmpl;
@@ -264,7 +263,7 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
     }
   
     /* check if this packet has allready been parsed and get it if it has */
-    packetParsed = g_hash_table_lookup(parsed_packets_table, &frameData->num);
+    packetParsed = g_hash_table_lookup(parsed_packets_table, &(frameData->num));
     
     if(packetParsed){
       /* packet in dict so display original parsed packet*/
@@ -273,22 +272,23 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
       tmpl = packetData->tmpl;
       
     } else {
-    parent = g_node_new(0);
-    if (!parent) {
-      BAILOUT(;,"Could not allocate memory.");
-    }
+      parent = g_node_new(0);
+      if (!parent) {
+        BAILOUT(;,"Could not allocate memory.");
+      }
 
-    /* Dissect the payload. */
-    nbytes = tvb_length (tvb);
-    bytes = ep_tvb_memdup (tvb, 0, nbytes);
-    tmpl = dissect_fast_bytes (nbytes, bytes, parent);
+      /* Dissect the payload. */
+      nbytes = tvb_length (tvb);
+      bytes = ep_tvb_memdup (tvb, 0, nbytes);
+      tmpl = dissect_fast_bytes (nbytes, bytes, parent);
 
-      /* Store pointers to display tree so it can be loaded if user clicks on this packet again
+      /* Store pointers to display tree so it can be loaded if user clicks on this packet again */
       packetData = (PacketData*)malloc(sizeof(PacketData));
       packetData->dataTree = parent;
       packetData->tmpl = tmpl;
+      packetData->frameNum = frameData->num;
       
-      g_hash_table_insert(parsed_packets_table, &frameData->num, packetData);*/
+      g_hash_table_insert(parsed_packets_table, &(packetData->frameNum), packetData);
     }
     
     /* Setup for display. */
@@ -354,7 +354,7 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
         case FieldTypeUInt32:
           proto_tree_add_none_format(tree, header_field, tvb,
                                      fdata->start, fdata->nbytes,
-                                     "%s(uInt32): %u",
+                                     "%s (uInt32): %u",
                                      field_name,
                                      fdata->value.u32);
           break;
