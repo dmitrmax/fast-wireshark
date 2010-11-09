@@ -173,11 +173,21 @@
     <int32 id="2" presence="optional"  name="opt_int32"> <default value="3"/> </int32>
     <int64 id="2" presence="optional"  name="opt_int64"> <default value="4"/> </int64>
     
-    <string id="3" presence="mandatory" charset="ascii" name="man_ascii"> <default value="mandatory ascii string"/> </string> 
-    <string id="4" presence="optional"  charset="ascii" name="opt_ascii"> <default value="optional ascii string"/> </string> 
+    <string id="3" presence="mandatory" charset="ascii" name="man_ascii"> 
+      <default value="mandatory ascii string"/> 
+    </string> 
     
-    <string id="5" presence="mandatory" charset="unicode" name="man_uni"> <default value="mandatory unicode string"/> </string> 
-    <string id="6" presence="optional"  charset="unicode" name="opt_uni"> <default value="optional unicode string"/> </string> 
+    <string id="4" presence="optional"  charset="ascii" name="opt_ascii"> 
+      <default value="optional ascii string"/> 
+    </string> 
+    
+    <string id="5" presence="mandatory" charset="unicode" name="man_uni"> 
+      <default value="mandatory unicode string"/> 
+    </string> 
+    
+    <string id="6" presence="optional"  charset="unicode" name="opt_uni"> 
+      <default value="optional unicode string"/>
+    </string> 
     
     <!--
     <byteVector id="7" presence="mandatory" name="man_bv"> <default value="00"/> </byteVector> 
@@ -185,13 +195,34 @@
     -->
     
     <group name="group" presence="optional">
-      <string id="3" presence="mandatory" charset="ascii" name="group_ascii"> <default value="default group string"/> </string> 
+      <string id="3" presence="mandatory" charset="ascii" name="group_ascii"> 
+        <default value="default group string"/> 
+      </string> 
     </group>
     
     <sequence name="sequence" presence="optional">
-      <string id="3" presence="mandatory" charset="ascii" name="sequence_ascii"> <default value="default sequence string"/> </string> 
+      <string id="3" presence="mandatory" charset="ascii" name="sequence_ascii"> 
+        <default value="default sequence string"/> 
+      </string> 
 	  </sequence>
+	</template>
 	
+	<template name="t_increment" id="18">
+	  <uInt32 id="0" presence="optional" name="inc_u32"> <increment value="0"/> </uInt32>
+	  <uInt32 id="0" presence="optional" name="inc_u32_empty"> <increment/> </uInt32>
+
+	  <uInt64 id="0" presence="optional" name="inc_u64"> <increment value="0"/> </uInt64>
+	  <uInt64 id="0" presence="optional" name="inc_u64_empty"> <increment/> </uInt64>	  
+	  
+	  <int32 id="0" presence="optional" name="inc_i32"> <increment/> </int32>	  
+	  <int64 id="0" presence="optional" name="inc_i64"> <increment/> </int64>	  
+	</template>
+	
+	<template name="t_delta" id="19">
+	  <uInt32 id="1" presence="mandatory" name="delta_u32"> <delta/> </uInt32>
+	  <uInt64 id="1" presence="mandatory" name="delta_u64"> <delta/> </uInt64>
+	  <int32 id="1" presence="mandatory" name="delta_i32"> <delta/> </int32>
+	  <int64 id="1" presence="mandatory" name="delta_i64"> <delta/> </int64>
 	</template>
 
 </templates>

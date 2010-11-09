@@ -9,6 +9,9 @@
 #include "dictionaries.h"
 #include "dissect.h"
   
+static gboolean dissect_int_op(gint64 * delta, const FieldType * ftype, 
+                        FieldData * fdata, DissectPosition * position);
+  
 /*! \brief Dissect a FAST message by the bytes.
  * \param nbytes  Total number of bytes in the message.
  * \param bytes  The FAST message, sized to /nbytes/.
@@ -314,7 +317,7 @@ gboolean dissect_copy(const GNode* tnode,
 {
   gboolean used = TRUE;
   gboolean presence_bit;
-  SetupDissectStack(ftype, fdata,  tnode, dnode);
+  SetupDissectStack(ftype, fdata, tnode, dnode);
   presence_bit = dissect_shift_pmap(position);
   if(presence_bit) {
     used = FALSE;
@@ -348,22 +351,20 @@ gboolean dissect_default(const GNode* tnode,
   return used;
 }
 
-/*! \brief  Given a byte stream, dissect an unsigned 32bit integer.
+/*! \brief  Given a byte stream, dissect delta or increment (or nothing).
  * \param tnode  Template tree node.
  * \param position  Position in the packet.
  * \param dnode  Dissect tree node.
+ * \return true if we need to still do a basic dissect
  */
-void dissect_uint32 (const GNode* tnode,
-                     DissectPosition* position, GNode* dnode)
+gboolean dissect_int_op(gint64 * delta, const FieldType * ftype, FieldData * fdata, DissectPosition * position)
 {
-  gint64 delta = 0;
   gboolean presence_bit;
   gboolean dissect_it = FALSE;
-  SetupDissectStack(ftype, fdata,  tnode, dnode);
 
   switch(ftype->op) {
     case FieldOperatorConstant:
-      BAILOUT(;,"Don't try to set the dictionary value on a constant");
+      BAILOUT(FALSE;,"Don't try to set the dictionary value on a constant");
       break;
       
     case FieldOperatorDelta:
@@ -374,13 +375,14 @@ void dissect_uint32 (const GNode* tnode,
         if(undefined && !ftype->empty) {
           copy_field_value(ftype->type, &ftype->value, &fdata->value);
         } else if(undefined && ftype->empty) {
-          fdata->value.u32 = 0;
+          /* Zero out all eight bytes (regardless of integer type) */
+          fdata->value.u64 = 0;
         }
         
         basic_dissect_int64(position, &fdata_temp);
-        delta = fdata_temp.value.i64;
-        if (!ftype->mandatory && 0 < delta) {
-          delta--;
+        *delta = fdata_temp.value.i64;
+        if (!ftype->mandatory && 0 < *delta) {
+          *delta -= 1;
         }
       }      
       break;
@@ -390,15 +392,31 @@ void dissect_uint32 (const GNode* tnode,
       if(presence_bit) {
         dissect_it = TRUE;
       } else {
-        delta = 1;
+        *delta = 1;
       }
-          
       break;
       
     default:
       dissect_it = TRUE;      
       break;
-  }  
+  }
+  
+  return dissect_it;
+}
+
+/*! \brief  Given a byte stream, dissect an unsigned 32bit integer.
+ * \param tnode  Template tree node.
+ * \param position  Position in the packet.
+ * \param dnode  Dissect tree node.
+ */
+void dissect_uint32 (const GNode* tnode,
+                     DissectPosition* position, GNode* dnode)
+{
+  gint64 delta = 0;
+  gboolean dissect_it = FALSE;
+  SetupDissectStack(ftype, fdata,  tnode, dnode);
+
+  dissect_it = dissect_int_op(&delta, ftype, fdata, position);  
   
   if(dissect_it) {
     basic_dissect_uint32(position, fdata);
@@ -424,19 +442,8 @@ void dissect_uint64 (const GNode* tnode,
   gint64 delta = 0;
   SetupDissectStack(ftype, fdata,  tnode, dnode);
 
-  switch(ftype->op) {
-    case FieldOperatorConstant:
-      BAILOUT(;,"Who let a constant in here?");
-      break;
-    case FieldOperatorCopy:
-    case FieldOperatorDefault:
-    case FieldOperatorNone:
-      dissect_it = TRUE;
-      break;
-    default:
-      DBG0("Only simple operators are implemented.");
-      break;
-  }
+  dissect_it = dissect_int_op(&delta, ftype, fdata, position);
+  
   if (dissect_it) {
     basic_dissect_uint64 (position, fdata);
     if (!ftype->mandatory) {
@@ -459,19 +466,8 @@ void dissect_int32 (const GNode* tnode,
   gint64 delta = 0;
   SetupDissectStack(ftype, fdata,  tnode, dnode);
 
-  switch(ftype->op) {
-    case FieldOperatorConstant:
-      BAILOUT(;,"Who let a constant in here?");
-      break;
-    case FieldOperatorCopy:
-    case FieldOperatorDefault:
-    case FieldOperatorNone:
-      dissect_it = TRUE;
-      break;
-    default:
-      DBG0("Only simple operators are implemented.");
-      break;
-  }
+  dissect_it = dissect_int_op(&delta, ftype, fdata, position);
+  
   if (dissect_it) {
     basic_dissect_int32 (position, fdata);
     if (!ftype->mandatory && 0 < fdata->value.i32) {
@@ -495,19 +491,8 @@ void dissect_int64 (const GNode* tnode,
   gint64 delta = 0;
   SetupDissectStack(ftype, fdata,  tnode, dnode);
 
-  switch(ftype->op) {
-    case FieldOperatorConstant:
-      BAILOUT(;,"Who let a constant in here?");
-      break;
-    case FieldOperatorCopy:
-    case FieldOperatorDefault:
-    case FieldOperatorNone:
-      dissect_it = TRUE;
-      break;
-    default:
-      DBG0("Only simple operators are implemented.");
-      break;
-  }
+  dissect_it = dissect_int_op(&delta, ftype, fdata, position);
+  
   if (dissect_it) {
     basic_dissect_int64 (position, fdata);
     if (!ftype->mandatory && 0 < fdata->value.i64) {

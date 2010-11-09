@@ -1,0 +1,31 @@
+<plan>
+
+  <message value="19">
+    <uInt32 value="1"/>    
+    <uInt64 value="2"/> 
+    <int32 value="3"/>
+    <int64 value="4"/>    
+  </message>
+  
+  <message value="19">
+    <uInt32 value="1"/>    
+    <uInt64 value="2"/> 
+    <int32 value="3"/>
+    <int64 value="4"/>    
+  </message>
+  
+  <message value="19">
+    <uInt32 value="2"/>    
+    <uInt64 value="4"/> 
+    <int32 value="6"/>
+    <int64 value="8"/>    
+  </message>
+  
+  <message value="19">
+    <uInt32 value="0"/>    
+    <uInt64 value="0"/> 
+    <int32 value="0"/>
+    <int64 value="0"/>    
+  </message>
+  
+</plan>
