@@ -2,33 +2,33 @@
 		   templateNs="http://www.fixprotocol.org/ns/templates/sample" 
 		   ns="http://www.fixprotocol.org/ns/fix">
 		   
-	<template name="t_int32" id="0">
+	<template name="t_int32" id="0" dictionary="template">
 		<int32 id="1" name="int32"/>
 	</template>
 	
-	<template name="t_uint32" id="1">
+	<template name="t_uint32" id="1" dictionary="template">
 		<uInt32 id="1" name="uint32" />
 	</template>
 	
-	<template name="t_int64" id="2">
+	<template name="t_int64" id="2" dictionary="template">
 		<int64 id="1" name="int64" />
 	</template>
 	
-	<template name="t_uint64" id="3">
+	<template name="t_uint64" id="3" dictionary="template">
 		<uInt64 id="1" name="uint64" />
 	</template>
 	
-	<template name="t_decimal" id="4">
+	<template name="t_decimal" id="4" dictionary="template">
 		<decimal id="1" name="decimal" />
 	</template>
 	
-	<template name="t_ascii" id="5">
+	<template name="t_ascii" id="5" dictionary="template">
 		<string charset="ascii" id="1" name="string" />
 	</template>
 	
 
 	
-	<template name="t_ascii_unicode_string" id="6">
+	<template name="t_ascii_unicode_string" id="6" dictionary="template">
 		<string charset="ascii" id="2" name="a" />
 		<string charset="unicode" id="3" name="u">
       <length name="unicodeLength"/>
@@ -36,14 +36,14 @@
 		<string charset="ascii" id="4" name="s" />
 	</template>
 	
-	<template name="t_int32_group" id="7">
+	<template name="t_int32_group" id="7" dictionary="template">
 		<int32 id="1" name="int32" />
 		<group name="group">
 			<int32 id="3" name="int32" />
 		</group>
 	</template>
 	
-	<template name="t_int32_sequence" id="8">
+	<template name="t_int32_sequence" id="8" dictionary="template">
 		<int32 id="1" name="int32" />
 		<sequence name="sequence">
       <length name="sequenceLength"/>
@@ -56,7 +56,7 @@
 		<string charset="unicode" id="1" name="string" />
 	</template>
 	
-	<template name="t_sequence_sequence_group" id="10">
+	<template name="t_sequence_sequence_group" id="10" dictionary="template">
 		<int32 id="1" name="int32_0" />
 		<sequence name="sequence" >
 			<int32 id="2" name="int32_1" />
@@ -70,7 +70,7 @@
 		<int32 id="3" name="int32_4" />
 	</template>
 	
-  <template name="t_optional" id="11">
+  <template name="t_optional" id="11" dictionary="template">
     <uInt32     name="uint32"   presence="optional" />
     <uInt64     name="int64"    presence="optional" />
     <int32      name="uint64"   presence="optional" />
@@ -89,23 +89,23 @@
     </sequence>
   </template>	
 	
-	<template name="t_uint32_opt_const" id="12">
+	<template name="t_uint32_opt_const" id="12" dictionary="template">
 	  <uInt32 id="1" presence="optional" name="const"> <constant value="123"/> </uInt32>
 	</template>
 	
-	<template name="t_byteVector" id="13">
+	<template name="t_byteVector" id="13" dictionary="template">
 		<byteVector id="1" name="byteVector">
       <length name="byteVectorLength"/>
     </byteVector>
 	</template>
 
-	<template name="t_unit32_copy" id="14">
+	<template name="t_unit32_copy" id="14" dictionary="template">
 		<uInt32 id="0" name="copyuInt32" presence="optional">
 			<copy/>
 		</uInt32>
 	</template>
 
-  <template name="t_nested_optional" id="15">
+  <template name="t_nested_optional" id="15" dictionary="template">
     <int32 name="leader"/>
     <sequence name="sequence" presence="optional">
       <group name="single_group" presence="optional">
@@ -137,7 +137,7 @@
     </group>
   </template>
 
-  <template name="t_copy" id="16">
+  <template name="t_copy" id="16" dictionary="template">
     <uInt32 name="u32">                      <copy value="146"/> </uInt32>
     <uInt64 name="i32" presence="optional">  <copy value="246"/> </uInt64>
     <int32 name="u64" presence="optional">   <copy value="346"/> </int32>
@@ -165,7 +165,7 @@
     </sequence>
   </template>
   
-  <template name="t_default" id="17">
+  <template name="t_default" id="17" dictionary="template">
     <uInt32 id="1" presence="mandatory" name="man_uint32"> <default value="0"/> </uInt32>
     <uInt32 id="2" presence="optional"  name="opt_uint32"> <default value="1"/> </uInt32>
     
@@ -193,5 +193,5 @@
 	  </sequence>
 	
 	</template>
-	  
+
 </templates>

@@ -28,7 +28,7 @@ static GHashTable* dictionaries_table = 0;
 
 
 /*!
- * \brief Retrieves a dictionary by name, or creates it if it doesnt exist.
+ * \brief Retrieves a dictionary by name, or creates it if it doesn't exist.
  * \param name The name of the dictionary to retrieve
  */
 static GHashTable* get_dictionary(char* name);
@@ -56,7 +56,7 @@ void set_dictionaries(GNode* template_tree){
   /* If we fail to make the table bail */
   if(!dictionaries_table) { BAILOUT(;,"Dictionary lookup table not created."); }
   template = g_node_first_child(template_tree);
-  /* Create the gobal dictionary */
+  /* Create the global dictionary */
   get_dictionary(GLOBAL_DICTIONARY);
   
   /* 
@@ -70,9 +70,8 @@ void set_dictionaries(GNode* template_tree){
     if (!field_type->dictionary) {
       field_type->dictionary = g_strdup(GLOBAL_DICTIONARY);
     }
-    field_type->dictionary_ptr = get_dictionary(field_type->dictionary);
-
     get_dictionary(TEMPLATE_DICTIONARY);
+    field_type->dictionary_ptr = get_dictionary(field_type->dictionary);
     set_dictionary_pointers(field_type, template);
     remove_dictionary(TEMPLATE_DICTIONARY);
     template = g_node_next_sibling(template);
@@ -92,7 +91,7 @@ GHashTable* get_dictionary(char* name){
 
 void remove_dictionary(char* name){
   if(!g_hash_table_remove(dictionaries_table, name)){
-    DBG1("Attempt to remove non-existant dictionary: %s", name);
+    DBG1("Attempt to remove non-existent dictionary: %s", name);
   }
 }
 
