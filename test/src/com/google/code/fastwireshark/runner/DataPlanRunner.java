@@ -10,6 +10,7 @@ import org.openfast.GroupValue;
 import org.openfast.Message;
 import org.openfast.MessageOutputStream;
 import org.openfast.SequenceValue;
+import org.openfast.template.ComposedScalar;
 import org.openfast.template.Field;
 import org.openfast.template.Group;
 import org.openfast.template.Scalar;
@@ -108,36 +109,79 @@ public class DataPlanRunner implements Constants{
 				populateGroup(ggv,(List<Object>)o);
 				gv.setFieldValue(i, ggv);
 			} else
-			if(((Scalar)f).getType().getName().equals(INT32) ||
-			   ((Scalar)f).getType().getName().equals(UINT32)){
-				gv.setInteger(i, (Integer)o);
+			if(f instanceof ComposedScalar){
+				setValue(gv,(ComposedScalar)f,i,o);
 			} else
-			if(((Scalar)f).getType().getName().equals(INT64) ||
-			   ((Scalar)f).getType().getName().equals(UINT64)){
-				gv.setLong(i, (Long)o);
-			} else
-			if(((Scalar)f).getType().getName().equals(DECIMAL)){
-			//Decimal can be of differing arguments, further determine correct type
-				if(o instanceof Double){
-					gv.setDecimal(i, (Double)o);
-				} else 
-				if(o instanceof Float){
-					gv.setDecimal(i, (Float)o);
-				} else 
-				if(o instanceof BigDecimal){
-					BigDecimal b = (BigDecimal)o;
-					DecimalValue dv = new DecimalValue(b.unscaledValue().longValue(),-b.scale());
-//					gv.setDecimal(i, (BigDecimal)o);
-					gv.setFieldValue(i, dv);
-				}
-			} else
-			if(((Scalar)f).getType().getName().equals(UNICODE) ||
-			   ((Scalar)f).getType().getName().equals(ASCII)){
-					gv.setString(i, (String)o);
-			} else
-			if(((Scalar)f).getType().getName().equals(BYTEVECTOR)){
-					gv.setByteVector(i, (byte[])o);
+			if(f instanceof Scalar){
+				setValue(gv,(Scalar)f,i,o);
 			}
+      		
+			
 		}
+	}
+	
+	public void setValue(GroupValue gv, Scalar f, int i, Object o){
+		if(f.getType().getName().equals(INT32) ||
+				   f.getType().getName().equals(UINT32)){
+					gv.setInteger(i, (Integer)o);
+				} else
+				if(f.getType().getName().equals(INT64) ||
+				   f.getType().getName().equals(UINT64)){
+					gv.setLong(i, (Long)o);
+				} else
+				if(f.getType().getName().equals(DECIMAL)){
+				//Decimal can be of differing arguments, further determine correct type
+					if(o instanceof Double){
+						gv.setDecimal(i, (Double)o);
+					} else 
+					if(o instanceof Float){
+						gv.setDecimal(i, (Float)o);
+					} else 
+					if(o instanceof BigDecimal){
+						BigDecimal b = (BigDecimal)o;
+						DecimalValue dv = new DecimalValue(b.unscaledValue().longValue(),-b.scale());
+						gv.setFieldValue(i, dv);
+					}
+				} else
+				if(f.getType().getName().equals(UNICODE) ||
+				   f.getType().getName().equals(ASCII)){
+						gv.setString(i, (String)o);
+				} else
+				if(f.getType().getName().equals(BYTEVECTOR)){
+						gv.setByteVector(i, (byte[])o);
+				}
+	}
+	
+	public void setValue(GroupValue gv, ComposedScalar f, int i, Object o){
+		if(f.getType().getName().equals(INT32) ||
+				   f.getType().getName().equals(UINT32)){
+					gv.setInteger(i, (Integer)o);
+				} else
+				if(f.getType().getName().equals(INT64) ||
+				   f.getType().getName().equals(UINT64)){
+					gv.setLong(i, (Long)o);
+				} else
+				if(f.getType().getName().equals(DECIMAL)){
+				//Decimal can be of differing arguments, further determine correct type
+					if(o instanceof Double){
+						gv.setDecimal(i, (Double)o);
+					} else 
+					if(o instanceof Float){
+						gv.setDecimal(i, (Float)o);
+					} else 
+					if(o instanceof BigDecimal){
+						BigDecimal b = (BigDecimal)o;
+						DecimalValue dv = new DecimalValue(b.unscaledValue().longValue(),-b.scale());
+//						gv.setDecimal(i, (BigDecimal)o);
+						gv.setFieldValue(i, dv);
+					}
+				} else
+				if(f.getType().getName().equals(UNICODE) ||
+				   f.getType().getName().equals(ASCII)){
+						gv.setString(i, (String)o);
+				} else
+				if(f.getType().getName().equals(BYTEVECTOR)){
+						gv.setByteVector(i, (byte[])o);
+				}
 	}
 }

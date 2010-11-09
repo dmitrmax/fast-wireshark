@@ -28,17 +28,14 @@ public class PcapFileWriter implements Constants{
 		if (out == null){
 			throw new RuntimeException("File not opened: " + fileName);
 		}
-		final int magicNumberConstant = 0xa1b2c3d4;
-		final short majorVersionNumberConstant = (short)2;
-		final short minorVersionNumberConstant = (short)4;
-		final byte[] magicNumber = intToByteArray(magicNumberConstant);
-		final byte[] majorVersionNumber = shortToByteArray(majorVersionNumberConstant);
-		final byte[] minorVersionNumber = shortToByteArray(minorVersionNumberConstant);
+		
+		final byte[] magicNumber = intToByteArray(PCAP_MAGIC_NUMBER);
+		final byte[] majorVersionNumber = shortToByteArray(PCAP_MAJOR_VERSION_NUMBER);
+		final byte[] minorVersionNumber = shortToByteArray(PCAP_MINOR_VERSION_NUMBER);
 		final byte[] timeZoneOffset = intToByteArray(0);
 		final byte[] sigFlags = intToByteArray(0);
 		final byte[] snapLen = intToByteArray(MAX_PACKET_SIZE);
-		final int ethernetNetworkConstant = 1;
-		final byte[] network = intToByteArray(ethernetNetworkConstant);
+		final byte[] network = intToByteArray(PCAP_ETHERNET);
 		
 		try {
 			//write out the global header
@@ -73,8 +70,7 @@ public class PcapFileWriter implements Constants{
 			out.write(intToByteArray(0));
 			out.write(intToByteArray(packet.getData().length+8+34));
 			out.write(intToByteArray(packet.getData().length+8+34));
-			//i don't know why it wants these bytes but this works
-			//looks like start of ipv6 header
+			//start of ipv6 header
 			out.write(intToByteArray(0));
 			out.write(intToByteArray(0));
 			out.write(intToByteArray(0));

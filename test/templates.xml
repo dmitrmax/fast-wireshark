@@ -143,10 +143,8 @@
     <int32 name="u64" presence="optional">   <copy value="346"/> </int32>
     <int64 name="i64" presence="optional">   <copy value="446"/> </int64>
     <decimal name="dec">
-      <!--
       <exponent name="decex"> <copy value="-3"/> </exponent>
       <mantissa name="decma"> <copy value="-224"/> </mantissa>
-      -->
     </decimal>
     <string name="asc" presence="optional" charset="ascii">
       <copy value="aoeuascii"/>

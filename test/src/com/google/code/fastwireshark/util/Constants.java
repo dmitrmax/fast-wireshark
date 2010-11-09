@@ -25,4 +25,11 @@ public interface Constants {
 	
 	public static final int MAX_PACKET_SIZE = 1024*1024*10;
 	
+	/*
+	 * Pcap File Constants
+	 */
+	public static final int PCAP_MAGIC_NUMBER = 0xa1b2c3d4;
+	public static final short PCAP_MAJOR_VERSION_NUMBER = (short)2;
+	public static final short PCAP_MINOR_VERSION_NUMBER = (short)4;
+	public static final int PCAP_ETHERNET = 1;
 }
