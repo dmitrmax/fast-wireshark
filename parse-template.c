@@ -20,6 +20,7 @@ static void parser_walk_children (xmlNodePtr cur,
 static GNode* new_parsed_field (xmlNodePtr xmlnode);
 static gboolean field_type_match (xmlNodePtr node,
                                   FieldTypeIdentifier type);
+static gboolean parse_field_operator (xmlNodePtr xmlnode, FieldType * tfield);
 static gboolean parse_operator (xmlNodePtr xmlnode, FieldType * tfield);
 static gboolean prepend_length (xmlNodePtr xmlnode, const FieldType* parent,
                                 GNode* parent_node);
@@ -188,7 +189,7 @@ GNode* new_parsed_field (xmlNodePtr xmlnode)
 
     if (found) {
       /* check if field has valid operators */
-      valid = parse_operator(xmlnode, tfield);
+      valid = parse_field_operator(xmlnode, tfield);
     }
   }
 
@@ -203,11 +204,11 @@ GNode* new_parsed_field (xmlNodePtr xmlnode)
   if(!found && field_type_match (xmlnode, FieldTypeAsciiString)){
     tfield->type = FieldTypeAsciiString;
     found = TRUE;
-    valid = parse_operator(xmlnode, tfield);
+    valid = parse_field_operator(xmlnode, tfield);
   } else if(!found && field_type_match (xmlnode, FieldTypeUnicodeString)){
     tfield->type = FieldTypeUnicodeString;
     found = TRUE;
-    valid = parse_operator(xmlnode, tfield);
+    valid = parse_field_operator(xmlnode, tfield);
     if (valid) {
       valid = prepend_length(xmlnode, tfield, tnode);
     }
@@ -217,7 +218,7 @@ GNode* new_parsed_field (xmlNodePtr xmlnode)
   if(!found && field_type_match (xmlnode, FieldTypeByteVector)){
     tfield->type = FieldTypeByteVector;
     found = TRUE;
-    valid = parse_operator(xmlnode, tfield);
+    valid = parse_field_operator(xmlnode, tfield);
     if (valid) {
       valid = prepend_length(xmlnode, tfield, tnode);
     }
@@ -282,7 +283,7 @@ gboolean prepend_length (xmlNodePtr xmlnode, const FieldType* parent,
        xmlnode = xmlnode->next) {
     if (0 == xmlStrcasecmp(xmlnode->name, (xmlChar*)"length")) {
       set_field_attributes(xmlnode, ftype);
-      if (!parse_operator(xmlnode, ftype)) {
+      if (!parse_field_operator(xmlnode, ftype)) {
         BAILOUT(FALSE, "Failed to get length.");
       }
     }
@@ -323,17 +324,17 @@ gboolean parse_decimal (xmlNodePtr xmlnode, FieldType * tfield, GNode * tnode)
     if (!ignore_xml_node(xmlnode)){
       if(0 == xmlStrcasecmp(xmlnode->name, (xmlChar*)"exponent")){
         set_field_attributes(xmlnode, expt);
-        if(!parse_operator(xmlnode, expt)) {
+        if(!parse_field_operator(xmlnode, expt)) {
           BAILOUT(FALSE, "Failed to get exponent.");
         }
       } else if( 0 == xmlStrcasecmp(xmlnode->name, (xmlChar*)"mantissa")){
         set_field_attributes(xmlnode, mant);
-        if(!parse_operator(xmlnode, mant)) {
+        if(!parse_field_operator(xmlnode, mant)) {
           BAILOUT(FALSE, "Failed to get mantissa.");
         }
       } else {
-        DBG1("Unknown decimal subfield %s.", xmlnode->name);
-        return FALSE;
+        /* assume this node is an operator */
+        parse_operator (xmlnode, tfield);
       }
     }
     xmlnode = xmlnode->next;
@@ -368,10 +369,36 @@ gboolean parse_sequence (xmlNodePtr xmlnode, FieldType* tfield, GNode* tnode)
   return TRUE;
 }
 
-
 /*! \brief  Fill in a field in the parse tree with operator info.
  * \param xmlnode  The XML node which /should/ be a field.
  * \param tfield  A pointer to the field within the parse tree.
+ * \return  True if sucessfully parsed
+ */
+gboolean parse_field_operator(xmlNodePtr xmlnode, FieldType * tfield){
+  
+  const xmlChar *name;
+  name = xmlnode->name;
+
+  /* loop through field to find operators */
+  xmlnode = xmlnode->xmlChildrenNode;
+  while (xmlnode != NULL) {
+    if (!ignore_xml_node(xmlnode)){
+      
+      return parse_operator(xmlnode, tfield);
+
+    }
+    xmlnode = xmlnode->next;
+  }
+  
+  /* DBG0("no operator found");*/
+  return TRUE;
+}  
+  
+
+
+/*! \brief  Fill in a field in the parse tree with operator info.
+ * \param xmlnode  The XML node which /should/ be a operator.
+ * \param tfield  A pointer to the operator within the parse tree.
  * \return  True if sucessfully parsed
  */
 gboolean parse_operator (xmlNodePtr xmlnode, FieldType * tfield){
@@ -380,45 +407,39 @@ gboolean parse_operator (xmlNodePtr xmlnode, FieldType * tfield){
   const xmlChar *name;
   name = xmlnode->name;
 
-	/* loop through field to find operators */
-	xmlnode = xmlnode->xmlChildrenNode;
-	while (xmlnode != NULL) {
-		if (!ignore_xml_node(xmlnode)){
+  /* DBG2("parse_operator called on node %s  tfield name is %s", name, tfield->name);*/
+  
+  if (xmlnode==NULL){
+    return FALSE;
+  }
 
-      if (operator_type_match (xmlnode, FieldOperatorConstant)) {
-        tfield->op = FieldOperatorConstant;
-      }
-      else if (operator_type_match (xmlnode, FieldOperatorDefault)) {
-        tfield->op = FieldOperatorDefault;
-      }
-      else if (operator_type_match (xmlnode, FieldOperatorCopy)) {
-        tfield->op = FieldOperatorCopy;
-      }
-      else if (operator_type_match (xmlnode, FieldOperatorIncrement)) {
-        tfield->op = FieldOperatorIncrement;
-      }
-      else if (operator_type_match (xmlnode, FieldOperatorDelta)) {
-        tfield->op = FieldOperatorDelta;
-      }
-      else if (operator_type_match (xmlnode, FieldOperatorTail)) {
-        tfield->op = FieldOperatorTail;
-      } else {
-        DBG2("Invalid operator (%s) for field %s", xmlnode->name, name);
-        return FALSE;
-      }
+  if (operator_type_match (xmlnode, FieldOperatorConstant)) {
+    tfield->op = FieldOperatorConstant;
+  } else if (operator_type_match (xmlnode, FieldOperatorDefault)) {
+    tfield->op = FieldOperatorDefault;
+  } else if (operator_type_match (xmlnode, FieldOperatorCopy)) {
+    tfield->op = FieldOperatorCopy;
+  } else if (operator_type_match (xmlnode, FieldOperatorIncrement)) {
+    tfield->op = FieldOperatorIncrement;
+  } else if (operator_type_match (xmlnode, FieldOperatorDelta)) {
+    tfield->op = FieldOperatorDelta;
+  } else if (operator_type_match (xmlnode, FieldOperatorTail)) {
+    tfield->op = FieldOperatorTail;
+  } else {
+    DBG2("Invalid operator (%s) for field %s", xmlnode->name, name);
+    return FALSE;
+  }
 			
-			/* get value of operator if given */
-			prop = xmlGetProp(xmlnode, (xmlChar*)"value");
-			if (prop!=NULL) {
-        tfield->empty = FALSE;
-        string_to_field_value((char*)prop, tfield->type, &tfield->value);
-			} else {
-				tfield->empty = TRUE;			
-			}
-
-		}
-    xmlnode = xmlnode->next;
+  /* get value of operator if given */
+  prop = xmlGetProp(xmlnode, (xmlChar*)"value");
+  if (prop!=NULL) {
+    tfield->empty = FALSE;
+    string_to_field_value((char*)prop, tfield->type, &tfield->value);
+    DBG2("value is %s  tfield name is %s", (char *)prop, tfield->name);
+  } else {
+    tfield->empty = TRUE;			
 	}
+		
   return TRUE;
 }
 
