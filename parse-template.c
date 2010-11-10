@@ -435,7 +435,7 @@ gboolean parse_operator (xmlNodePtr xmlnode, FieldType * tfield){
   if (prop!=NULL) {
     tfield->empty = FALSE;
     string_to_field_value((char*)prop, tfield->type, &tfield->value);
-    DBG2("value is %s  tfield name is %s", (char *)prop, tfield->name);
+    /* DBG2("value is %s  tfield name is %s", (char *)prop, tfield->name); */
   } else {
     tfield->empty = TRUE;			
 	}

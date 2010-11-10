@@ -145,7 +145,7 @@ macro (regression_test test_name template plan)
 endmacro ()
 
 regression_test (IntegerFields "${test_dir}/templates.xml" "${test_dir}/plans/intPlan.xml")
-regression_test (DecimalFields "${test_dir}/templates.xml" "${test_dir}/plans/decimalPlan.xml")
+regression_test (DecimalFields "${test_dir}/templates.xml" "${test_dir}/plans/decimal.xml")
 regression_test (StringFields  "${test_dir}/templates.xml" "${test_dir}/plans/stringPlan.xml")
 regression_test (GroupSequence "${test_dir}/templates.xml" "${test_dir}/plans/groupSequencePlan.xml")
 regression_test (OptionalFields "${test_dir}/templates.xml" "${test_dir}/plans/optional.xml")

@@ -225,4 +225,17 @@
 	  <int64 id="1" presence="mandatory" name="delta_i64"> <delta/> </int64>
 	</template>
 
+	<template name="t_decimal_ops" id="20" dictionary="template">
+	  <decimal presence="optional" name="large">   <constant value="3209000"/>   </decimal>
+	  <decimal presence="optional" name="small">   <constant value=".003"/>      </decimal>
+	  <decimal presence="optional" name="zeromid"> <constant value="100.0001"/>  </decimal>
+	  <decimal presence="optional" name="righty">  <copy     value="-001.0001"/> </decimal>
+	  <decimal presence="optional" name="lefty">   <default  value="+100.1"/>    </decimal>
+	  <decimal presence="optional" name="smaller"> <constant value="-0.0001"/>   </decimal>
+	  <decimal presence="optional" name="larger">  <constant value="03200.00"/>  </decimal>
+	  <decimal presence="optional" name="zero">    <constant value="00"/>        </decimal>
+	  <decimal presence="optional" name="zeroR">   <constant value=".00"/>       </decimal>
+	  <decimal presence="optional" name="zeroL">   <constant value="00."/>       </decimal>
+	</template>
+
 </templates>

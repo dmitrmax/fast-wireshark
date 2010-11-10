@@ -1,0 +1,15 @@
+
+<plan>
+  <message value="20">
+	  <decimal value="3209e3"/>
+	  <decimal value="3e-2"/>
+	  <decimal value="1000001e-4"/>
+	  <decimal value="-10001e-4"/>
+	  <decimal value="1001e-2"/>
+	  <decimal value="-00001e-4"/>
+	  <decimal value="32e2"/>
+	  <decimal value="0e0"/>
+	  <decimal value="0e0"/>
+	  <decimal value="0e0"/>
+  </message>
+</plan>

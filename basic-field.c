@@ -1,9 +1,13 @@
+
+#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "debug.h"
 
 #include "basic-field.h"
+
+static void  string_to_decimal_value (const char* str, FieldValue* value);
 
 /*! \brief  Initialize the memory of a FieldValue.
  */
@@ -71,22 +75,20 @@ void string_to_field_value(const char* str, FieldTypeIdentifier type, FieldValue
       int len;
       
       case FieldTypeUInt32:
-        value->u32 = atoi((char*)str);
+        value->u32 = atoi(str);
         break;
       case FieldTypeInt32:
-        value->i32 = atoi((char*)str);
+        value->i32 = atoi(str);
         break;
       case FieldTypeUInt64:
-        value->u64 = g_ascii_strtoull((char*)str, NULL, 10);
+        value->u64 = g_ascii_strtoull(str, NULL, 10);
         break;
       case FieldTypeInt64:
-        value->i64 = g_ascii_strtoll((char*)str, NULL, 10);
+        value->i64 = g_ascii_strtoll(str, NULL, 10);
         break;
         
       case FieldTypeDecimal:
-        len = strlen(str);
-        
-        DBG1("decimal string: %s", str);
+        string_to_decimal_value (str, value);
         break;
         
       case FieldTypeAsciiString:
@@ -119,5 +121,60 @@ void string_to_field_value(const char* str, FieldTypeIdentifier type, FieldValue
         DBG0("Called with bad type.");
         break;
     }
+}
+
+
+/*! \brief  Translate a string to a decimal value. */
+void  string_to_decimal_value (const char* str, FieldValue* value)
+{
+  unsigned left, right, len;
+  unsigned dot;
+  unsigned i;
+  unsigned start, end;
+  char* buf;
+
+  len = strlen(str);
+  start = 0;
+  end   = len -1;
+  left  = end;
+  right = start;
+  dot   = len;
+
+  buf = g_strdup (str);
+  if (!buf) {
+    BAILOUT(;,"Failed malloc");
+  }
+
+  for (i = 0; i < len; ++i) {
+    switch (buf[i]) {
+      case '-':
+      case '+':
+        start = i+1;
+        break;
+      case '0':
+        break;
+      case '.':
+        dot = i;
+        break;
+      default:
+        if (i < left)   left  = i;
+        if (i > right)  right = i;
+        break;
+    }
+  }
+
+  if (dot <= right) {
+    /* Scoot that memory over. */
+    memmove (dot+buf, 1+dot+buf, right-dot);
+    right -= 1;
+  }
+  dot -= 1;  /* Now sitting on the 10^0 digit. */
+  value->decimal.exponent = (gint32) dot - (gint32) right;
+
+  end = 1+right;
+  buf[end] = 0;
+  value->decimal.mantissa = g_ascii_strtoll(buf, NULL, 10);
+
+  g_free(buf);
 }
 
