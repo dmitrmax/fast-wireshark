@@ -136,22 +136,24 @@ set (tshark "tshark")
 set (rwcompare "${exe_dir}/rwcompare")
 set (plan_runner "${test_dir}/OpenFastPlanRunner.jar")
 
-macro (regression_test test_name port template plan)
+macro (regression_test test_name template plan)
   add_test ("${test_name}"
     "${rwcompare}"
-    "port" "${port}" "tshark" "${tshark}"
+    "port" "5000" "tshark" "${tshark}"
     "runner" "${plan_runner}"
     "tmpl" "${template}" "expect" "${plan}")
 endmacro ()
 
-regression_test (IntegerFields "5000" "${test_dir}/templates.xml" "${test_dir}/plans/intPlan.xml")
-regression_test (DecimalFields "5001" "${test_dir}/templates.xml" "${test_dir}/plans/decimalPlan.xml")
-regression_test (StringFields  "5002" "${test_dir}/templates.xml" "${test_dir}/plans/stringPlan.xml")
-regression_test (GroupSequence "5003" "${test_dir}/templates.xml" "${test_dir}/plans/groupSequencePlan.xml")
-regression_test (OptionalFields "5004" "${test_dir}/templates.xml" "${test_dir}/plans/optional.xml")
-regression_test (UInt32CopyDictionary "5005" "${test_dir}/uintDictionary.xml" "${test_dir}/plans/uintDictionaryPlan.xml")
-regression_test (ByteVectorFields "5006" "${test_dir}/templates.xml" "${test_dir}/plans/byteVectorPlan.xml")
-regression_test (CopyEmptyFields "5007" "${test_dir}/templates.xml" "${test_dir}/plans/copyEmpty.xml")
-regression_test (OptionalNestedFields "5008" "${test_dir}/templates.xml" "${test_dir}/plans/optionalNested.xml")
-regression_test (Copy "5009" "${test_dir}/templates.xml" "${test_dir}/plans/copy.xml")
+regression_test (IntegerFields "${test_dir}/templates.xml" "${test_dir}/plans/intPlan.xml")
+regression_test (DecimalFields "${test_dir}/templates.xml" "${test_dir}/plans/decimalPlan.xml")
+regression_test (StringFields  "${test_dir}/templates.xml" "${test_dir}/plans/stringPlan.xml")
+regression_test (GroupSequence "${test_dir}/templates.xml" "${test_dir}/plans/groupSequencePlan.xml")
+regression_test (OptionalFields "${test_dir}/templates.xml" "${test_dir}/plans/optional.xml")
+regression_test (UInt32CopyDictionary "${test_dir}/uintDictionary.xml" "${test_dir}/plans/uintDictionaryPlan.xml")
+regression_test (ByteVectorFields "${test_dir}/templates.xml" "${test_dir}/plans/byteVectorPlan.xml")
+regression_test (CopyEmptyFields "${test_dir}/templates.xml" "${test_dir}/plans/copyEmpty.xml")
+regression_test (OptionalNestedFields "${test_dir}/templates.xml" "${test_dir}/plans/optionalNested.xml")
+regression_test (Copy "${test_dir}/templates.xml" "${test_dir}/plans/copy.xml")
+regression_test (Delta "${test_dir}/templates.xml" "${test_dir}/plans/delta.xml")
+regression_test (Increment "${test_dir}/templates.xml" "${test_dir}/plans/increment.xml")
 
