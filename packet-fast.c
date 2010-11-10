@@ -352,51 +352,59 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
     if (!fdata->empty) {
       switch (ftype->type) {
         case FieldTypeUInt32:
+          /*type - name (id): value*/
           proto_tree_add_none_format(tree, header_field, tvb,
                                      fdata->start, fdata->nbytes,
-                                     "%s (uInt32): %u",
+                                     "uInt32 - %s (%d): %u",
                                      field_name,
+                                     ftype->id,
                                      fdata->value.u32);
           break;
         case FieldTypeUInt64:
           proto_tree_add_none_format(tree, header_field, tvb,
                                      fdata->start, fdata->nbytes,
-                                     "%s(uInt64): %" G_GINT64_MODIFIER "u",
+                                     "uInt64 - %s (%d): %" G_GINT64_MODIFIER "u",
                                      field_name,
+                                     ftype->id,
                                      fdata->value.u64);
           break;
         case FieldTypeInt32:
           proto_tree_add_none_format(tree, header_field, tvb,
                                      fdata->start, fdata->nbytes,
-                                     "%s(int32): %d",
+                                     "int32 - %s (%d): %d",
                                      field_name,
+                                     ftype->id,
                                      fdata->value.i32);
           break;
         case FieldTypeInt64:
           proto_tree_add_none_format(tree, header_field, tvb,
                                      fdata->start, fdata->nbytes,
-                                     "%s(int64): %" G_GINT64_MODIFIER "d",
+                                     "int64 - %s (%d): %" G_GINT64_MODIFIER "d",
                                      field_name,
+                                     ftype->id,
                                      fdata->value.i64);
           break;
         case FieldTypeDecimal:
           proto_tree_add_none_format(tree, header_field, tvb,
                                      fdata->start, fdata->nbytes,
-                                     "%s(decimal): %" G_GINT64_MODIFIER "de%d",
+                                     "decimal - %s (%d): %" G_GINT64_MODIFIER "de%d",
                                      field_name,
+                                     ftype->id,
                                      fdata->value.decimal.mantissa,
                                      fdata->value.decimal.exponent);
           break;
         case FieldTypeAsciiString:
           proto_tree_add_none_format(tree, header_field, tvb,
                                      fdata->start, fdata->nbytes,
-                                     "%s(ascii): %s", field_name,
+                                     "ascii - %s (%d): %s", field_name,
+                                     ftype->id,
                                      fdata->value.ascii.bytes);
           break;
         case FieldTypeUnicodeString:
           proto_tree_add_none_format(tree, header_field, tvb,
                                      fdata->start, fdata->nbytes,
-                                     "%s(unicode): %s", field_name,
+                                     "unicode - %s (%d): %s", field_name,
+                                     ftype->id,
                                      fdata->value.unicode.bytes);
           break;
         case FieldTypeByteVector:
@@ -414,14 +422,18 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
               str[2*vec->nbytes] = 0;
               proto_tree_add_none_format(tree, header_field, tvb,
                                          fdata->start, fdata->nbytes,
-                                         "%s(byteVector): %s", field_name, str);
+                                         "byteVector - %s (%d): %s", field_name,
+                                         ftype->id,
+                                         str);
               g_free (str);
             }
             else {
               DBG0("Error allocating memory.");
               proto_tree_add_none_format(tree, header_field, tvb,
                                          fdata->start, fdata->nbytes,
-                                         "%s(byteVector): %s", field_name, "");
+                                         "byteVector - %s (%d): %s", field_name,
+                                         ftype->id,
+                                         "");
             }
           }
           break;
@@ -431,7 +443,9 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
             proto_tree* subtree;
             item = proto_tree_add_none_format(tree, header_field, tvb,
                                               fdata->start, fdata->nbytes,
-                                              "%s(group):", field_name);
+                                              "group - %s (%d):", field_name,
+                                              ftype->id
+                                              );
 
             subtree = proto_item_add_subtree(item, ett_fast);
             display_fields (tvb, subtree, tnode->children, dnode->children);
@@ -444,7 +458,9 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
             GNode* length_tnode;
             item = proto_tree_add_none_format(tree, header_field, tvb,
                                               fdata->start, fdata->nbytes,
-                                              "%s(sequence):", field_name);
+                                              "sequence - %s (%d):", field_name,
+                                              ftype->id
+                                              );
 
             subtree = proto_item_add_subtree(item, ett_fast);
 
