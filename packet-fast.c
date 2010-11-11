@@ -144,6 +144,12 @@ void proto_register_fast ()
   module = prefs_register_protocol(proto_fast,
                                    proto_reg_handoff_fast);
 
+  prefs_register_bool_preference(module,
+                                   "enabled",
+                                   "Plugin Enabled",
+                                   "Check if you want the plugin to capture and dissect packets",
+                                   &enabled);
+                                   
   prefs_register_uint_preference(module,
                                  "port",
                                  "Listen port",
@@ -160,13 +166,7 @@ void proto_register_fast ()
                                    "show_empty",
                                    "Show empty optional fields",
                                    "Check if you want to see fields that are empty and were not sent in the packet",
-                                   &show_empty_optional_fields);
-                                   
-  prefs_register_bool_preference(module,
-                                   "enabled",
-                                   "Enable plugin (may require wireshark restart)",
-                                   "Check if you want the plugin to capture and dissect packets",
-                                   &enabled);
+                                   &show_empty_optional_fields);                              
                                    
 
   register_dissector("fast", &dissect_fast, proto_fast);
