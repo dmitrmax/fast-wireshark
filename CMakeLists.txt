@@ -154,6 +154,8 @@ regression_test (ByteVectorFields "${test_dir}/templates.xml" "${test_dir}/plans
 regression_test (CopyEmptyFields "${test_dir}/templates.xml" "${test_dir}/plans/copyEmpty.xml")
 regression_test (OptionalNestedFields "${test_dir}/templates.xml" "${test_dir}/plans/optionalNested.xml")
 regression_test (Copy "${test_dir}/templates.xml" "${test_dir}/plans/copy.xml")
+regression_test (Default "${test_dir}/templates.xml" "${test_dir}/plans/default.xml")
 regression_test (Delta "${test_dir}/templates.xml" "${test_dir}/plans/delta.xml")
 regression_test (Increment "${test_dir}/templates.xml" "${test_dir}/plans/increment.xml")
+regression_test (Value "${test_dir}/templates.xml" "${test_dir}/plans/value.xml")
 

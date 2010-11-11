@@ -230,7 +230,7 @@
 
 	<template name="t_decimal_ops" id="20" dictionary="template">
 	  <decimal presence="optional" name="large">   <constant value="3209000"/>   </decimal>
-	  <decimal presence="optional" name="small">   <constant value=".03"/>      </decimal>
+	  <decimal presence="optional" name="small">   <constant value="0.03"/>      </decimal>
 	  <decimal presence="optional" name="zeromid"> <constant value="100.0001"/>  </decimal>
 	  <decimal presence="optional" name="righty">  <default  value="-001.0001"/> </decimal>
 	  <decimal presence="optional" name="lefty">   <default  value="+100.1"/>    </decimal>

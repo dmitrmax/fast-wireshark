@@ -174,6 +174,12 @@ void  string_to_decimal_value (const char* str, FieldValue* value)
   end = 1+right;
   buf[end] = 0;
   value->decimal.mantissa = g_ascii_strtoll(buf, NULL, 10);
+  if (0 == value->decimal.mantissa) {
+    /* Our /right/ was never set correctly, could be invalid.
+     * Thus, the exponent may be strange. Zero it.
+     */
+    value->decimal.exponent = 0;
+  }
 
   g_free(buf);
 }
