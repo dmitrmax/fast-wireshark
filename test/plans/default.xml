@@ -17,6 +17,8 @@
     <byteVector value = "5678"/>
     -->
     
+    <decimal value="42e0"/>
+    
     <group value="">
       <ascii value="group test"/>
     </group>
@@ -44,6 +46,8 @@
     <byteVector value="3030"/>
     <byteVector value="3232"/>
     -->
+    
+    <decimal value="55e-1"/>
     
     <group value="">
       <ascii value="default group string"/>

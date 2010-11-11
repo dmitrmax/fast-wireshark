@@ -194,6 +194,8 @@
     <byteVector id="8" presence="optional"  name="opt_bv"> <default value="22"/> </byteVector> 
     -->
     
+    <decimal name="def_dec" id="9" presence="mandatory"> <default value="5.5"/> </decimal>
+    
     <group name="group" presence="optional">
       <string id="3" presence="mandatory" charset="ascii" name="group_ascii"> 
         <default value="default group string"/> 

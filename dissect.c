@@ -519,7 +519,7 @@ void dissect_decimal (const GNode* tnode,
     BAILOUT(;,"Error in internal decimal field setup.");
   }
 
-  if (!ftype->op) {
+  if (!ftype->op || TRUE) {
     gint32 expt;       gint64 mant;
     GNode* expt_node;  GNode* mant_node;
 
