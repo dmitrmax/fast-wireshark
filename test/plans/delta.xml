@@ -5,6 +5,7 @@
     <uInt64 value="2"/> 
     <int32 value="3"/>
     <int64 value="4"/>    
+    <decimal value="5e0"/>
   </message>
   
   <message value="19">
@@ -12,6 +13,7 @@
     <uInt64 value="2"/> 
     <int32 value="3"/>
     <int64 value="4"/>    
+    <decimal value="5e0"/>
   </message>
   
   <message value="19">
@@ -19,13 +21,15 @@
     <uInt64 value="4"/> 
     <int32 value="6"/>
     <int64 value="8"/>    
+    <decimal value="1e1"/>
   </message>
   
   <message value="19">
     <uInt32 value="0"/>    
     <uInt64 value="0"/> 
     <int32 value="0"/>
-    <int64 value="0"/>    
+    <int64 value="0"/> 
+    <decimal value="0e0"/>   
   </message>
   
 </plan>

@@ -3,6 +3,7 @@
  * \brief  Handle payload dissection independent of Wireshark.
  */
 
+#include <string.h>
 #include "debug.h"
 #include "decode.h"
 #include "template.h"
@@ -375,8 +376,8 @@ gboolean dissect_int_op(gint64 * delta, const FieldType * ftype, FieldData * fda
         if(undefined && !ftype->empty) {
           copy_field_value(ftype->type, &ftype->value, &fdata->value);
         } else if(undefined && ftype->empty) {
-          /* Zero out all eight bytes (regardless of integer type) */
-          fdata->value.u64 = 0;
+          /* Zero out all bytes (regardless of integer type) */
+          memset(&fdata->value, 0, sizeof(FieldValue));
         }
         
         basic_dissect_int64(position, &fdata_temp);
@@ -514,23 +515,36 @@ void dissect_decimal (const GNode* tnode,
 {
   gint32 expt;       gint64 mant;
   GNode* expt_node;  GNode* mant_node;
+   
   SetupDissectStack(ftype, fdata,  tnode, dnode);
 
   /* Assure existence of 2 child nodes. */
   if (!tnode->children || !tnode->children->next) {
     BAILOUT(;,"Error in internal decimal field setup.");
   }
-
+  
   expt_node = tnode->children;
   mant_node = expt_node->next;
-
-  /* Grab exponent. */
-  dissect_value (expt_node, position, dnode);
-  expt = fdata->value.i32;
-  /* Grab mantissa. */
-  dissect_value (mant_node, position, dnode);
-  mant = fdata->value.i64;
-
+  
+  if(FieldOperatorDelta == ftype->op) {
+    gint64 delta = 0; 
+    FieldData expt_data;
+    FieldData mant_data;
+    dissect_int_op(&delta, ftype, &expt_data, position);
+    expt = delta + expt_data.value.decimal.exponent;
+    
+    dissect_int_op(&delta, ftype, &mant_data, position);    
+    mant = delta + mant_data.value.decimal.mantissa;
+  }
+  else {
+    /* Grab exponent. */
+    dissect_value (expt_node, position, dnode);
+    expt = fdata->value.i32;
+    /* Grab mantissa. */
+    dissect_value (mant_node, position, dnode);
+    mant = fdata->value.i64;
+  }
+  
   fdata->value.decimal.mantissa = mant;
   fdata->value.decimal.exponent = expt;
 
