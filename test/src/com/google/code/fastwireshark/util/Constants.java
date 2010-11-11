@@ -18,12 +18,14 @@ public interface Constants {
 	public static final String GROUP = "group";
 	public static final String SEQUENCE = "sequence";
 	public static final String MESSAGE = "message";
+	public static final String BYTE_MESSAGE = "bytemessage";
 	public static final String PLAN = "plan";
 	public static final String TEMPLATE_ID = "templateID";
 	public static final String TEMPLATE_NAME = "templateName";
 	public static final String VALUE = "value";
 	
 	public static final int MAX_PACKET_SIZE = 1024*1024*10;
+	public static final int BITS_IN_BYTE = 8;
 	
 	/*
 	 * Pcap File Constants

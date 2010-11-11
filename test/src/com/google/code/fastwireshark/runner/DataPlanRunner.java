@@ -1,6 +1,7 @@
 package com.google.code.fastwireshark.runner;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.util.Iterator;
 import java.util.List;
@@ -16,6 +17,7 @@ import org.openfast.template.Group;
 import org.openfast.template.Scalar;
 import org.openfast.template.Sequence;
 
+import com.google.code.fastwireshark.data.ByteMessagePlan;
 import com.google.code.fastwireshark.data.DataPlan;
 import com.google.code.fastwireshark.data.MessagePlan;
 import com.google.code.fastwireshark.util.Constants;
@@ -53,8 +55,12 @@ public class DataPlanRunner implements Constants{
 		if(messageOut == null){
 			throw new RuntimeException("messageOut is null");
 		}
-		for(MessagePlan mp : dp){
-			runMessagePlan(mp);
+		for(com.google.code.fastwireshark.data.Message mp : dp){
+			if(mp instanceof MessagePlan){
+				runMessagePlan((MessagePlan)mp);
+			} else if (mp instanceof ByteMessagePlan){
+				runByteMessagePlan((ByteMessagePlan)mp);
+			}
 		}
 	}
 	
@@ -73,6 +79,22 @@ public class DataPlanRunner implements Constants{
 			messageOut.getUnderlyingStream().flush();
 		} catch (IOException e) {
 			System.err.println("Error writing message: " + m);
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * Runs a ByteMessagePlan
+	 * Reads the bytes of the message plan and writes it out
+	 * @param mp The Message Plan to run
+	 */
+	private void runByteMessagePlan(ByteMessagePlan mp){
+		OutputStream out = messageOut.getUnderlyingStream();
+		try {
+			out.write(mp.getBytes());
+			out.flush();
+		} catch (IOException e) {
+			System.err.println("Error writing message: " + mp);
 			e.printStackTrace();
 		}
 	}

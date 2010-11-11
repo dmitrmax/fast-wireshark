@@ -5,19 +5,19 @@ import java.util.Iterator;
 import java.util.List;
 
 
-public class DataPlan implements Iterable<MessagePlan>{
+public class DataPlan implements Iterable<Message>{
 
-	private final List<MessagePlan> dataPlan = new ArrayList<MessagePlan>();
+	private final List<Message> dataPlan = new ArrayList<Message>();
 	
-	public void addMessagePlan(MessagePlan mt){
+	public void addMessagePlan(Message mt){
 		dataPlan.add(mt);
 	}
 	
-	public List<MessagePlan> getPlanList(){
+	public List<Message> getPlanList(){
 		return Collections.unmodifiableList(dataPlan);
 	}
 	
-	public Iterator<MessagePlan> iterator(){
+	public Iterator<Message> iterator(){
 		return dataPlan.iterator();
 	}
 	

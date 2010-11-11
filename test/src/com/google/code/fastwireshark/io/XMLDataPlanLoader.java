@@ -3,6 +3,7 @@ package com.google.code.fastwireshark.io;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
@@ -16,6 +17,7 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import com.google.code.fastwireshark.data.ByteMessagePlan;
 import com.google.code.fastwireshark.data.DataPlan;
 import com.google.code.fastwireshark.data.MessagePlan;
 import com.google.code.fastwireshark.util.Constants;
@@ -26,6 +28,7 @@ public class XMLDataPlanLoader extends DefaultHandler implements Constants{
 	private MessageTemplate curMessageTemplate;
 	private List<Object> curValues;
 	private Stack<List<Object>> valueStack;
+	private ByteBuffer byteMessage;
 	
 	/**
 	 * Attempts to load the data plan from the specified XML file.
@@ -37,7 +40,6 @@ public class XMLDataPlanLoader extends DefaultHandler implements Constants{
 		SAXParserFactory spf = SAXParserFactory.newInstance();
 		try {
 			SAXParser sp = spf.newSAXParser();
-			
 			sp.parse(xmlFile, this);
 		} catch (ParserConfigurationException e) {
 			plan = null;
@@ -53,8 +55,45 @@ public class XMLDataPlanLoader extends DefaultHandler implements Constants{
 	}
 	
 	@Override
+	public void characters(char[] ch, int start, int length)
+			throws SAXException {
+		/*
+		 * This will be called for every 2 or so lines of data, so we will need to keep state between reads
+		 */
+		//The array given may not be the correct size and will contain extra info, just grab what we want
+		char[] t = new char[length];
+		System.arraycopy(ch, start, t, 0, length);
+		ch = t;
+		//If we are handling a byte message, handle it, otherwise we are done here
+		if(byteMessage != null){
+			//Use String library to remove extra characters and whitespace
+			String value = new String(ch);
+			value = value.replaceAll("[\\s]", "");
+			value = value.trim();
+			ch = value.toCharArray();
+			//Make sure we have the correct number of 'bit' characters
+			if(ch.length % BITS_IN_BYTE != 0){
+				char[] error = new char[length];
+				System.arraycopy(ch, start, error, 0, length);
+				throw new RuntimeException("Binary is not in a multiple of 8: " + new String(error));
+			}
+			//Take 8 characters from the data and work with them
+			byte[] bytes = new byte[ch.length/BITS_IN_BYTE];
+			char[] bite = new char[BITS_IN_BYTE];
+			for(int i = 0 ; i < bytes.length ; i++){
+				System.arraycopy(ch, i*BITS_IN_BYTE, bite, 0, BITS_IN_BYTE);
+				bytes[i] = charArrayToByte(bite);
+			}
+			//Store the bytes
+			for(byte b : bytes){
+				byteMessage.put(b);
+			}
+		}
+	}
+	
+	@Override
 	public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException{
-		if(!(qName.equalsIgnoreCase(MESSAGE) || qName.equalsIgnoreCase(PLAN)) && curValues == null){
+		if(!(qName.equalsIgnoreCase(MESSAGE) || qName.equalsIgnoreCase(PLAN) || qName.equalsIgnoreCase(BYTE_MESSAGE)) && curValues == null){
 			throw new RuntimeException("Optional Group contains fields");
 		}
 		if(qName.equalsIgnoreCase(PLAN)){
@@ -79,6 +118,12 @@ public class XMLDataPlanLoader extends DefaultHandler implements Constants{
 			}
 			curValues = new ArrayList<Object>();
 			valueStack = new Stack<List<Object>>();
+		} else
+		if(qName.equalsIgnoreCase(BYTE_MESSAGE)){
+			if(curValues != null){
+				throw new RuntimeException("Starting another message without finishing the old one");
+			}
+			byteMessage = ByteBuffer.allocate(MAX_PACKET_SIZE);
 		} else
 		if(qName.equalsIgnoreCase(INT32) ||
 		   qName.equalsIgnoreCase(UINT32)){
@@ -145,6 +190,13 @@ public class XMLDataPlanLoader extends DefaultHandler implements Constants{
 			plan.addMessagePlan(new MessagePlan(curMessageTemplate, curValues));
 			curValues = null;
 		} else 
+		if(qName.equalsIgnoreCase(BYTE_MESSAGE)){
+			byte[] data = new byte[byteMessage.position()];
+			byteMessage.rewind();
+			byteMessage.get(data);
+			plan.addMessagePlan(new ByteMessagePlan(data));
+			byteMessage = null;
+		} else
 		if(qName.equalsIgnoreCase(GROUP) ||
 		   qName.equalsIgnoreCase(SEQUENCE)){
 			List<Object> temp = curValues;
@@ -216,5 +268,31 @@ public class XMLDataPlanLoader extends DefaultHandler implements Constants{
 		default:
 			throw new IllegalArgumentException("Invalid hex character: " + cha);
 		}
+	}
+	
+	/**
+	 * Converts a char array to a byte
+	 * @param ch Char array to convert, must me '0' or '1' and have a length of 8
+	 * @return The byte represented by ch
+	 */
+	private byte charArrayToByte(char[] ch){
+		if(ch.length != BITS_IN_BYTE){
+			throw new IllegalArgumentException("char array is not length 8: " + new String(ch));
+		}
+		byte b = 0;
+		for(int i = 0 ; i < ch.length ; i++){
+			switch (ch[i]){
+			case '0':
+			break;
+			case '1':
+				//Shift over so that the bit is in the correct slot
+				//-1 due to to account for initial position of '1'
+				b |= 1<<(BITS_IN_BYTE - 1 - i);
+			break;
+			default:
+				throw new IllegalArgumentException("Invalid binary character: " + ch[i]);
+			}
+		}
+		return b;
 	}
 }

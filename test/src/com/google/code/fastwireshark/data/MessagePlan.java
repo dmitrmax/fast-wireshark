@@ -4,7 +4,7 @@ import java.util.List;
 import org.openfast.template.MessageTemplate;
 
 
-public class MessagePlan {
+public class MessagePlan implements Message{
 
 	private MessageTemplate template;
 	private List<Object> values;
