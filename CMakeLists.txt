@@ -149,7 +149,7 @@ regression_test (DecimalFields "${test_dir}/templates.xml" "${test_dir}/plans/de
 regression_test (StringFields  "${test_dir}/templates.xml" "${test_dir}/plans/stringPlan.xml")
 regression_test (GroupSequence "${test_dir}/templates.xml" "${test_dir}/plans/groupSequencePlan.xml")
 regression_test (OptionalFields "${test_dir}/templates.xml" "${test_dir}/plans/optional.xml")
-regression_test (UInt32CopyDictionary "${test_dir}/uintDictionary.xml" "${test_dir}/plans/uintDictionaryPlan.xml")
+regression_test (UInt32CopyDictionary "${test_dir}/templates.xml" "${test_dir}/plans/uintDictionaryPlan.xml")
 regression_test (ByteVectorFields "${test_dir}/templates.xml" "${test_dir}/plans/byteVectorPlan.xml")
 regression_test (CopyEmptyFields "${test_dir}/templates.xml" "${test_dir}/plans/copyEmpty.xml")
 regression_test (OptionalNestedFields "${test_dir}/templates.xml" "${test_dir}/plans/optionalNested.xml")

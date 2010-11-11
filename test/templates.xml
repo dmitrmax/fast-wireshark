@@ -230,9 +230,9 @@
 
 	<template name="t_decimal_ops" id="20" dictionary="template">
 	  <decimal presence="optional" name="large">   <constant value="3209000"/>   </decimal>
-	  <decimal presence="optional" name="small">   <constant value=".003"/>      </decimal>
+	  <decimal presence="optional" name="small">   <constant value=".03"/>      </decimal>
 	  <decimal presence="optional" name="zeromid"> <constant value="100.0001"/>  </decimal>
-	  <decimal presence="optional" name="righty">  <copy     value="-001.0001"/> </decimal>
+	  <decimal presence="optional" name="righty">  <default  value="-001.0001"/> </decimal>
 	  <decimal presence="optional" name="lefty">   <default  value="+100.1"/>    </decimal>
 	  <decimal presence="optional" name="smaller"> <constant value="-0.0001"/>   </decimal>
 	  <decimal presence="optional" name="larger">  <constant value="03200.00"/>  </decimal>
@@ -240,5 +240,66 @@
 	  <decimal presence="optional" name="zeroR">   <constant value=".00"/>       </decimal>
 	  <decimal presence="optional" name="zeroL">   <constant value="00."/>       </decimal>
 	</template>
+
+  <!-- BEGIN Dictionary test templates. -->
+  <template name="template1" id="21" >
+    <uInt32 id="1" name="uint32a" presence="mandatory" />
+    <uInt32 id="2" name="uint32b" presence="mandatory">
+      <copy/>
+    </uInt32>
+    <uInt32 id="3" name="uint32c" dictionary="template" presence="mandatory">
+      <copy/>
+    </uInt32>
+    <uInt32 id="4" name="uint32d" dictionary="foo" presence="mandatory">
+      <copy/>
+    </uInt32>
+  </template>
+  
+  <template name="template2" id="22" >
+    <uInt32 id="1" name="uint32a" presence="mandatory" />
+    <uInt32 id="2" name="uint32b" presence="mandatory">
+      <copy/>
+    </uInt32>
+    <uInt32 id="3" name="uint32c" dictionary="template" presence="mandatory">
+      <copy/>
+    </uInt32>
+    <uInt32 id="4" name="uint32d" dictionary="foo" presence="mandatory">
+      <copy/>
+    </uInt32>
+  </template>
+  
+  <template name="templatefoo" id="23" dictionary="foo">
+    <uInt32 id="4" name="uint32d" presence="mandatory">
+      <copy/>
+    </uInt32>
+  </template>
+  
+  <template name="dictionaryTest" id="24" dictionary="template">
+    <uInt32 id="0" name="uint32a" presence="mandatory" key="key">
+      <copy/>
+    </uInt32>
+    <uInt32 id="1" name="uint32b" presence="mandatory" key="key">
+      <copy/>
+    </uInt32>
+    <uInt32 id="2" name="uint32c" presence="mandatory" key="key">
+      <copy/>
+    </uInt32>
+    <uInt32 id="3" name="uint32d" presence="mandatory" key="key">
+      <copy/>
+    </uInt32>
+    <uInt32 id="4" name="uint32e" presence="mandatory" key="key">
+      <copy/>
+    </uInt32>
+    <uInt32 id="5" name="uint32f" presence="mandatory" key="key">
+      <copy/>
+    </uInt32>
+    <uInt32 id="6" name="uint32g" presence="mandatory" key="key">
+      <copy/>
+    </uInt32>
+    <uInt32 id="7" name="uint32h" presence="mandatory" key="key">
+      <copy/>
+    </uInt32>
+  </template>
+  <!-- END Dictionary test templates. -->
 
 </templates>
