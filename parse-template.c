@@ -340,6 +340,12 @@ gboolean parse_decimal (xmlNodePtr xmlnode, FieldType * tfield, GNode * tnode)
     xmlnode = xmlnode->next;
   }
 
+  if (FieldOperatorDelta == tfield->op) {
+    expt->op = FieldOperatorDelta;
+    mant->op = FieldOperatorDelta;
+    tfield->op = FieldOperatorNone;
+  }
+
   expt->mandatory = tfield->mandatory;
   return TRUE;
 }

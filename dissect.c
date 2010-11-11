@@ -512,6 +512,8 @@ void dissect_int64 (const GNode* tnode,
 void dissect_decimal (const GNode* tnode,
                       DissectPosition* position, GNode* dnode)
 {
+  gint32 expt;       gint64 mant;
+  GNode* expt_node;  GNode* mant_node;
   SetupDissectStack(ftype, fdata,  tnode, dnode);
 
   /* Assure existence of 2 child nodes. */
@@ -519,28 +521,20 @@ void dissect_decimal (const GNode* tnode,
     BAILOUT(;,"Error in internal decimal field setup.");
   }
 
-  if (!ftype->op || TRUE) {
-    gint32 expt;       gint64 mant;
-    GNode* expt_node;  GNode* mant_node;
+  expt_node = tnode->children;
+  mant_node = expt_node->next;
 
-    expt_node = tnode->children;
-    mant_node = expt_node->next;
+  /* Grab exponent. */
+  dissect_value (expt_node, position, dnode);
+  expt = fdata->value.i32;
+  /* Grab mantissa. */
+  dissect_value (mant_node, position, dnode);
+  mant = fdata->value.i64;
 
-    /* Grab exponent. */
-    dissect_value (expt_node, position, dnode);
-    expt = fdata->value.i32;
-    /* Grab mantissa. */
-    dissect_value (mant_node, position, dnode);
-    mant = fdata->value.i64;
+  fdata->value.decimal.mantissa = mant;
+  fdata->value.decimal.exponent = expt;
 
-    fdata->value.decimal.mantissa = mant;
-    fdata->value.decimal.exponent = expt;
-
-    set_dictionary_value(ftype, fdata);
-  }
-  else {
-    DBG0("Only simple types are implemented.");
-  }
+  set_dictionary_value(ftype, fdata);
 }
 
 
