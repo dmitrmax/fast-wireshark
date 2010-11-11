@@ -1,20 +1,18 @@
 <Plan>
-	 <bytemessage>
-      01100101
-      11100000
-      10000100
-      10000011
-      10000100
-      10000101
-      10000011
-      10000101
-      <!--<uint32 value="3"/>
-      <uint32 value="3"/>
-      <uint32 value="3"/>
-      <uint32 value="4"/>
-      <uint32 value="4"/>
-      <uint32 value="5"/>
-      <uint32 value="3"/>
-      <uint32 value="5"/>-->
-    </bytemessage>
+  <bytemessage>
+    11000000
+    10000000
+    10101010
+  </bytemessage>
+  <!-- Sends a proper encoding of the last copy dictionary test -->
+  <bytemessage>
+    01100101
+    11100000
+    10011000
+    10000011
+    10000100
+    10000101
+    10000011
+    10000101
+  </bytemessage>
 </Plan>
