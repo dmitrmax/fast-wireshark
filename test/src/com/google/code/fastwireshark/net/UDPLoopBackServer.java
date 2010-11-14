@@ -7,18 +7,15 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 
-import com.google.code.fastwireshark.io.PcapFileWriter;
-
 public class UDPLoopBackServer{
 
 	private DatagramSocket socket;
-	PcapFileWriter writer;
 	
 	/**
 	 * Sets up a Loop Back on the specified port
 	 * @param port
 	 */
-	public UDPLoopBackServer(int port, String pcapFile){
+	public UDPLoopBackServer(int port){
 		if(port <= 0){
 			throw new IllegalArgumentException("Invalid Port Specified: " + port);
 		}
@@ -30,9 +27,6 @@ public class UDPLoopBackServer{
 		} catch (UnknownHostException e) {
 			System.err.println("Unable to resolve local host");
 			throw new RuntimeException(e);
-		}
-		if(pcapFile != null){
-			writer = new PcapFileWriter(pcapFile);
 		}
 	}
 	
@@ -56,9 +50,6 @@ public class UDPLoopBackServer{
 		try {
 			p = new DatagramPacket(new byte[bytes.length],bytes.length);
 			socket.receive(p);
-			if(writer != null){
-				writer.writePacket(p);
-			}
 		} catch (IOException e) {
 			System.err.println("Error reading packet in");
 			throw new RuntimeException(e);

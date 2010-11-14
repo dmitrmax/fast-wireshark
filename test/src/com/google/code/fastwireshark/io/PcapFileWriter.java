@@ -4,22 +4,28 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.DatagramPacket;
+import java.nio.ByteBuffer;
 
 import com.google.code.fastwireshark.util.Constants;
 
 /**
- * Writes datagram packets to a pcap-style file
+ * Writes bytes to a pcap-style file
  * @author pmiele
  *
  */
-public class PcapFileWriter implements Constants{
+public class PcapFileWriter extends OutputStream implements Constants{
 
-	OutputStream out = null;
-	int packetCounter = 0;
-	int checkSum = 0;
+	private OutputStream out = null;
+	private int packetCounter = 0;
+	private int checkSum = 0;
+	private final short port;
+	private ByteBuffer buffer;
 	
-	public PcapFileWriter(String fileName){
+	public PcapFileWriter(short port, String fileName){
+		if(port <= 0){
+			throw new IllegalArgumentException("Invalid port: " + port);
+		}
+		this.port = port;
 		try {
 			 out = new FileOutputStream(fileName);
 		} catch (FileNotFoundException e) {
@@ -28,6 +34,7 @@ public class PcapFileWriter implements Constants{
 		if (out == null){
 			throw new RuntimeException("File not opened: " + fileName);
 		}
+		buffer = ByteBuffer.wrap(new byte[MAX_PACKET_SIZE]);
 		
 		final byte[] magicNumber = intToByteArray(PCAP_MAGIC_NUMBER);
 		final byte[] majorVersionNumber = shortToByteArray(PCAP_MAJOR_VERSION_NUMBER);
@@ -52,14 +59,14 @@ public class PcapFileWriter implements Constants{
 		}
 	}
 	
-	public void writePacket(DatagramPacket packet){
+	public void writePacket(byte[] packet){
 		try {
 			//udp checksum
 			short c = (short)0;
-			c+=packet.getPort();
-			c+=packet.getPort();
-			c+=(short)(packet.getData().length + 8);
-			for(byte b : packet.getData()){
+			c+=port;
+			c+=port;
+			c+=(short)(packet.length + 8);
+			for(byte b : packet){
 				c+=b;
 			}
 			//Dont ask what most of this means
@@ -68,8 +75,8 @@ public class PcapFileWriter implements Constants{
 			//Also I don't know why, but the endianness changes on certain fields
 			out.write(intToByteArray(packetCounter++));
 			out.write(intToByteArray(0));
-			out.write(intToByteArray(packet.getData().length+8+34));
-			out.write(intToByteArray(packet.getData().length+8+34));
+			out.write(intToByteArray(packet.length+8+34));
+			out.write(intToByteArray(packet.length+8+34));
 			//start of ipv6 header
 			out.write(intToByteArray(0));
 			out.write(intToByteArray(0));
@@ -80,8 +87,8 @@ public class PcapFileWriter implements Constants{
 			checkSum(new byte[]{(byte)0x45,(byte)0});
 			out.write((byte)0x45);
 			out.write((byte)0);
-			checkSum(shortToByteArrayNoSwap((short)(packet.getData().length+28)));
-			out.write(shortToByteArrayNoSwap((short)(packet.getData().length+28)));
+			checkSum(shortToByteArrayNoSwap((short)(packet.length+28)));
+			out.write(shortToByteArrayNoSwap((short)(packet.length+28)));
 			checkSum(shortToByteArray((short)0));
 			out.write(shortToByteArray((short)0));
 			checkSum(new byte[]{(byte)0x40,(byte)0});
@@ -101,12 +108,12 @@ public class PcapFileWriter implements Constants{
 			//127.0.0.1 = 0x7f000001
 			out.write(intToByteArrayNoSwap(0x7f000001));
 			out.write(intToByteArrayNoSwap(0x7f000001));
-			out.write(shortToByteArrayNoSwap((short)packet.getPort()));
-			out.write(shortToByteArrayNoSwap((short)packet.getPort()));
-			out.write(shortToByteArrayNoSwap((short)(packet.getData().length + 8)));
+			out.write(shortToByteArrayNoSwap((short)port));
+			out.write(shortToByteArrayNoSwap((short)port));
+			out.write(shortToByteArrayNoSwap((short)(packet.length + 8)));
 			
 			out.write(shortToByteArray((short)(c^0xffff)));
-			out.write(packet.getData());
+			out.write(packet);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
@@ -141,6 +148,31 @@ public class PcapFileWriter implements Constants{
 				System.out.println("EQUALS");
 			}
 		}
+	}
+
+	/**
+	 * Buffers the byte for sending on the flush
+	 * @param i Integer that only the lowest order byte will be used
+	 */
+	@Override
+	public void write(int i) throws IOException {
+		if(buffer.remaining() == 0){
+			throw new RuntimeException("Buffer Overflow");
+		}
+		byte b = (byte) i;
+		buffer.put(b);
+	}
+	
+	/**
+	 * Flushes the stream and writes the packet to the file
+	 */
+	@Override
+	public void flush() throws IOException {
+		byte[] data = new byte[buffer.position()];
+		buffer.rewind();
+		buffer.get(data);
+		writePacket(data);
+		buffer.rewind();
 	}
 
 	

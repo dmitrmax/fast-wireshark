@@ -10,6 +10,7 @@ import com.google.code.fastwireshark.data.DataPlan;
 import com.google.code.fastwireshark.io.AsciiBinaryOutputStream;
 import com.google.code.fastwireshark.io.BinaryOutputStream;
 import com.google.code.fastwireshark.io.MessageTemplateRepository;
+import com.google.code.fastwireshark.io.PcapFileWriter;
 import com.google.code.fastwireshark.io.UDPLoopBackOutputStream;
 import com.google.code.fastwireshark.io.XMLDataPlanLoader;
 import com.google.code.fastwireshark.runner.DataPlanRunner;
@@ -31,7 +32,7 @@ public class Main {
 			public List<String> templateFiles;
 			public String dataPlanFile;
 			public boolean binaryOutput;
-			public int port = -1;
+			public short port = -1;
 			public String pcapFile;
 
 			/**
@@ -68,7 +69,7 @@ public class Main {
 					} else
 					if(cur.equals("-n")){
 						if(port > 0){throw new RuntimeException("Multiple port definitions");}
-						port = Integer.valueOf(args[++i]);
+						port = Short.valueOf(args[++i]);
 					} else
 					if(cur.equals("-P")){
 						if(pcapFile != null){throw new RuntimeException("Multiple pcap file definitions");}
@@ -95,8 +96,11 @@ public class Main {
 			 * LOAD TEMPLATE 
 			 */
 			OutputStream out;
+			if(cargs.pcapFile != null && cargs.port > 0){
+				out = new PcapFileWriter(cargs.port, cargs.pcapFile);
+			} else
 			if(cargs.port > 0){
-				out = new UDPLoopBackOutputStream(Constants.MAX_PACKET_SIZE, cargs.port, cargs.pcapFile);
+				out = new UDPLoopBackOutputStream(Constants.MAX_PACKET_SIZE, cargs.port);
 			} else
 			if(cargs.binaryOutput){
 				out = new BinaryOutputStream(System.out, false);
