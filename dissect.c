@@ -426,7 +426,7 @@ void dissect_uint32 (const GNode* tnode,
     }
   }
   
-  fdata->value.u32 += delta;
+  fdata->value.u32 = (guint32) (fdata->value.u32 + delta);
   set_dictionary_value(ftype, fdata);
 }
 
@@ -475,7 +475,7 @@ void dissect_int32 (const GNode* tnode,
       delta = -1;
     }
   }
-  fdata->value.i32 += delta;
+  fdata->value.i32 = (gint32) (fdata->value.i32 + delta);
   set_dictionary_value(ftype, fdata);
 }
 
@@ -531,7 +531,7 @@ void dissect_decimal (const GNode* tnode,
     FieldData expt_data;
     FieldData mant_data;
     dissect_int_op(&delta, ftype, &expt_data, position);
-    expt = delta + expt_data.value.decimal.exponent;
+    expt = (gint32) (delta + expt_data.value.decimal.exponent);
     
     dissect_int_op(&delta, ftype, &mant_data, position);    
     mant = delta + mant_data.value.decimal.mantissa;
