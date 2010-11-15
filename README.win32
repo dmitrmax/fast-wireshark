@@ -23,6 +23,9 @@ Move it to ../wireshark relative to this directory.
 Basically, follow the steps here to build Wireshark:
 http://www.wireshark.org/docs/wsdg_html_chunked/ChSetupWin32.html
 
+For the first of these commands, you'll need Cygwin.
+It'll tell you what packages you need when they're not present.
+cmd:
   nmake -f Makefile.nmake setup
   nmake -f Makefile.nmake distclean
   nmake -f Makefile.nmake config.h
@@ -33,27 +36,47 @@ That last one may fail, but the .dll we need may have been made.
 
 >-> Unscrewup the libraries.
 Get in a cygwin shell.
-  cd /cygdrive/c
-  mkdir dev
+sh:
+  devroot=/cygdrive/c/dev
+  mkdir $devroot
+  cd $devroot/..
+  mkdir compile
   cd wireshark-win32-libs-1.4
   cp -r gtk2/* ../dev
-  wget http://xmlsoft.org/sources/win32/libxml2-2.7.6.win32.zip
-  wget http://xmlsoft.org/sources/win32/iconv-1.9.2.win32.zip
-  unzip libxml2-2.7.6.win32.zip
-  unzip iconv-1.9.2.win32.zip
-  cp -r libxml2-2.7.6.win32/* ../dev
-  cp -r iconv-1.9.2.win32/* ../dev
-  cd ../dev/include
-There's some extra cruft here.
+#There's some extra cruft here.
+  cd $devroot/include
   mv glib-2.0/* ./
   rmdir glib-2.0
 
-If you're working with Wireshark 1.4, don't be slick and get a newer LibXML2,
-there are compatibility issues with Wireshark's Zlib.
+>-> Install libiconv.
+sh:
+  cd $devroot/../compile
+  libiconv=iconv-1.9.2.win32
+  wget http://xmlsoft.org/sources/win32/$libiconv.zip
+  unzip $libiconv.zip
+  cp -r $libiconv/* ../dev
+  unset libiconv
+
+
+>-> Compile/install libxml2.
+sh:
+  cd $devroot/../compile
+  libxml=libxml2-2.7.6
+#Note: I've had problems with newer versions.
+  wget ftp://xmlsoft.org/libxml2/$libxml.tar.gz
+  tar xf $libxml.tar.gz
+  unset libxml
+cmd: (Are your paths.bat still set up?)
+  cd c:\compile\libxml\win32
+  cscript configure.js compiler=msvc ^
+    prefix=c:\dev include=c:\dev\include lib=c:\dev\lib ^
+    http=no ftp=no
+  nmake /f Makefile.msvc
+  nmake /f Makefile.msvc install
 
 
 >-> Build the plugin.
-Go back to your cmd.exe. (Are your paths still set up? Better be.)
+cmd: (Are your paths.bat still set up?)
   cd /path/to/plugin/src
 Generate an NMake Makefile.
   cmake -G "NMake Makefiles"
