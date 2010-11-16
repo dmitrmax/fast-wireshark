@@ -62,7 +62,7 @@ static gboolean show_empty_optional_fields = 1;
 /*! If true does not capture or dissect packets */
 static gboolean enabled = 0;
 
-enum ProtocolImplem { GenericImplem, CMEImplem, NImplem };
+enum ProtocolImplem { GenericImplem, CMEImplem, UMDFImplem, NImplem };
 /*! The specific implementation of FAST to use. */
 static gint implementation = 0;
 /*! Table to hold pointers to previously parsed packets for Non-sequental Disection */
@@ -283,7 +283,7 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
       if(!parsed_packets_table) { BAILOUT(;,"Packet lookup table not created."); }
     }
   
-    /* check if this packet has allready been parsed and get it if it has */
+    /* check if this packet has already been parsed and get it if it has */
     packetParsed = g_hash_table_lookup(parsed_packets_table, &(frameData->num));
     
     if (packetParsed) {
@@ -305,6 +305,9 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
       if (implementation == CMEImplem) {
         header_offset = 5;
       }
+      else if (implementation == UMDFImplem) {
+        header_offset = 10;
+      }
 
       bytes = ep_tvb_memdup (tvb, 0, nbytes);
       tmpl = dissect_fast_bytes (nbytes, bytes, parent, header_offset);
@@ -315,7 +318,7 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
       packetData->tmpl = tmpl;
       packetData->frameNum = frameData->num;
       
-      if (implementation == CMEImplem) {
+      if (implementation == CMEImplem || implementation == UMDFImplem) {
         /* TODO: Uncomment this? Causes segfault in set_dictionaries() */
         /* clear_dictionaries(); */
         set_dictionaries(full_templates_tree());
