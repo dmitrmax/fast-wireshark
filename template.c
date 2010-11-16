@@ -186,3 +186,10 @@ void fixup_walk_template (FieldType* parent, GNode* parent_node)
   }
 }
 
+/*! \brief  Get the entire templates tree.
+ */
+GNode* full_templates_tree ()
+{
+  return template_tree;
+}
+

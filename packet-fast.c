@@ -61,10 +61,9 @@ static const char* config_template_xml_path = 0;
 static gboolean show_empty_optional_fields = 1;
 /*! If true does not capture or dissect packets */
 static gboolean enabled = 0;
-/*! The specific implementation of FAST to use 
- 0 - Generic
- 1 - CME
-*/
+
+enum ProtocolImplem { GenericImplem, CMEImplem, NImplem };
+/*! The specific implementation of FAST to use. */
 static gint implementation = 0;
 /*! Table to hold pointers to previously parsed packets for Non-sequental Disection */
 static GHashTable* parsed_packets_table = 0;
@@ -287,13 +286,14 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
     /* check if this packet has allready been parsed and get it if it has */
     packetParsed = g_hash_table_lookup(parsed_packets_table, &(frameData->num));
     
-    if(packetParsed){
+    if (packetParsed) {
       /* packet in dict so display original parsed packet*/
       packetData = (PacketData*) packetParsed;
       parent = packetData->dataTree;
       tmpl = packetData->tmpl;
       
     } else {
+      guint header_offset = 0;
       parent = g_node_new(0);
       if (!parent) {
         BAILOUT(;,"Could not allocate memory.");
@@ -302,17 +302,12 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
       /* Dissect the payload. */
       nbytes = tvb_length (tvb);
       
-      if(implementation && 10 <= nbytes)
-      {
-        DBG0("got here");
-        bytes = ep_tvb_memdup (tvb, 10, nbytes-10);
-        tmpl = dissect_fast_bytes (nbytes, bytes, parent, 10);
+      if (implementation == CMEImplem) {
+        header_offset = 5;
       }
-      else
-      {
-        bytes = ep_tvb_memdup (tvb, 0, nbytes);
-        tmpl = dissect_fast_bytes (nbytes, bytes, parent, 0);
-      }
+
+      bytes = ep_tvb_memdup (tvb, 0, nbytes);
+      tmpl = dissect_fast_bytes (nbytes, bytes, parent, header_offset);
            
       /* Store pointers to display tree so it can be loaded if user clicks on this packet again */
       packetData = (PacketData*)malloc(sizeof(PacketData));
@@ -320,8 +315,10 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
       packetData->tmpl = tmpl;
       packetData->frameNum = frameData->num;
       
-      if(implementation)
+      if (implementation == CMEImplem) {
         clear_dictionaries();
+        set_dictionaries(full_templates_tree());
+      }
       
       g_hash_table_insert(parsed_packets_table, &(packetData->frameNum), packetData);
     }

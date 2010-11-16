@@ -40,6 +40,7 @@ GNode* create_field (FieldTypeIdentifier type,
                      FieldOperatorIdentifier op);
 
 GNode* find_template (guint32 id);
+GNode* full_templates_tree ();
 
 #endif
 

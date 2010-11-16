@@ -30,8 +30,8 @@ const GNode* dissect_fast_bytes (guint nbytes, const guint8* bytes,
   FieldData* fdata; /* Template TID data node. */
 
   position = &stacked_position;
-  position->offjmp = 0;
-  position->offset = offset;
+  position->offjmp = offset;
+  position->offset = 0;
   position->nbytes = nbytes;
   position->bytes  = bytes;
   

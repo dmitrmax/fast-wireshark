@@ -58,7 +58,9 @@ void set_dictionary_pointers(const FieldType* parent, GNode* parent_node);
 void set_dictionaries(GNode* template_tree){
   GNode* template = 0;
   if(!dictionaries_table) {
-    dictionaries_table = g_hash_table_new(&g_str_hash, &g_str_equal);
+    dictionaries_table =
+      g_hash_table_new_full(&g_str_hash, &g_str_equal, &g_free,
+                            (GDestroyNotify) &g_hash_table_destroy);
   }
   /* If we fail to make the table bail */
   if(!dictionaries_table) { BAILOUT(;,"Dictionary lookup table not created."); }
@@ -80,8 +82,10 @@ void set_dictionaries(GNode* template_tree){
     get_dictionary(TEMPLATE_DICTIONARY);
     field_type->dictionary_ptr = get_dictionary(field_type->dictionary);
     set_dictionary_pointers(field_type, template);
-    template_dictionaries = g_list_prepend(template_dictionaries, get_dictionary(TEMPLATE_DICTIONARY));
-    remove_dictionary(TEMPLATE_DICTIONARY);
+    template_dictionaries =
+      g_list_prepend(template_dictionaries,
+                     get_dictionary(TEMPLATE_DICTIONARY));
+    g_hash_table_steal(dictionaries_table, TEMPLATE_DICTIONARY);
     template = g_node_next_sibling(template);
   }
 
@@ -91,7 +95,8 @@ GHashTable* get_dictionary(char* name){
   GHashTable* dictionary = 0;
   dictionary = g_hash_table_lookup(dictionaries_table, name);
   if(!dictionary){
-    dictionary = g_hash_table_new_full(&g_str_hash, &g_str_equal, &g_free, &cleanup_typed_value);
+    dictionary = g_hash_table_new_full(&g_str_hash, &g_str_equal, &g_free,
+                                       (GDestroyNotify)&cleanup_typed_value);
     g_hash_table_insert(dictionaries_table, name, dictionary);
   }
   return dictionary;
@@ -99,10 +104,12 @@ GHashTable* get_dictionary(char* name){
 
 void clear_dictionaries() 
 {
-  GList * list = g_hash_table_get_keys(dictionaries_table);
+  GList* list;
+  list = g_hash_table_get_keys(dictionaries_table);
   
   while(list) {
-    GHashTable* dictionary = g_hash_table_lookup(dictionaries_table, ((char*)list->data));
+    GHashTable* dictionary = g_hash_table_lookup(dictionaries_table,
+                                                 ((char*)list->data));
     g_hash_table_remove_all(dictionary);
     list = g_list_next(list);
   }
@@ -169,6 +176,9 @@ gboolean get_dictionary_value(const FieldType* ftype,
   GHashTable* dictionary = 0;
   const TypedValue* prev = 0;
   dictionary = (GHashTable*)ftype->dictionary_ptr;
+  if (!ftype->key) {
+    BAILOUT(FALSE, "No key on field.");
+  }
   prev = g_hash_table_lookup(dictionary,ftype->key);
   if (prev) {
     if (prev->type == ftype->type) {
