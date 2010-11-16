@@ -17,6 +17,11 @@
 #define TEMPLATE_DICTIONARY "template"
 
 /*!
+ * \brief Clears the contents of all the dictionaries
+ */
+void clear_dictionaries();
+
+/*!
  * \brief Sets the dictionary pointer for each field tyep in the template tree
  * Sets the dictionary_ptr in each field type to the most specific dictionary
  * reference at that point.  Uses the value of dictionary to determine which

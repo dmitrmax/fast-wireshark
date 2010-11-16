@@ -26,6 +26,7 @@ typedef struct typed_value_struct TypedValue;
 /* Private (static) headers. */
 static GHashTable* dictionaries_table = 0;
 
+static GList* template_dictionaries;
 
 /*!
  * \brief Retrieves a dictionary by name, or creates it if it doesn't exist.
@@ -40,6 +41,12 @@ static GHashTable* get_dictionary(char* name);
  * \param name The name of the dictionary to remove
  */
 static void remove_dictionary(char* name);
+
+/*!
+ * \brief frees the memory used by a TypedValue
+ * \param val the TypedValue to be liberated
+ */
+static void cleanup_typed_value(TypedValue* val);
 
 /*!
  * \brief Traverses the template tree and sets the dictionary that should be used at each field.
@@ -73,6 +80,7 @@ void set_dictionaries(GNode* template_tree){
     get_dictionary(TEMPLATE_DICTIONARY);
     field_type->dictionary_ptr = get_dictionary(field_type->dictionary);
     set_dictionary_pointers(field_type, template);
+    template_dictionaries = g_list_prepend(template_dictionaries, get_dictionary(TEMPLATE_DICTIONARY));
     remove_dictionary(TEMPLATE_DICTIONARY);
     template = g_node_next_sibling(template);
   }
@@ -83,10 +91,37 @@ GHashTable* get_dictionary(char* name){
   GHashTable* dictionary = 0;
   dictionary = g_hash_table_lookup(dictionaries_table, name);
   if(!dictionary){
-    dictionary = g_hash_table_new(&g_str_hash, &g_str_equal);
+    dictionary = g_hash_table_new_full(&g_str_hash, &g_str_equal, &g_free, &cleanup_typed_value);
     g_hash_table_insert(dictionaries_table, name, dictionary);
   }
   return dictionary;
+}
+
+void clear_dictionaries() 
+{
+  GList * list = g_hash_table_get_keys(dictionaries_table);
+  
+  while(list) {
+    GHashTable* dictionary = g_hash_table_lookup(dictionaries_table, ((char*)list->data));
+    g_hash_table_remove_all(dictionary);
+    list = g_list_next(list);
+  }
+  
+  g_list_free(list);  
+  list = template_dictionaries;
+  
+  while(list) {
+    GHashTable* dictionary = list->data;
+    g_hash_table_remove_all(dictionary);
+    list = g_list_next(list);
+  }
+  
+}
+
+static void cleanup_typed_value(TypedValue* val)
+{
+  cleanup_field_value(val->type, &val->value);
+  g_free(val);
 }
 
 void remove_dictionary(char* name){
@@ -180,7 +215,7 @@ void set_dictionary_value(const FieldType* ftype,
   if (new_value) {
     /* Only have to insert if we created a new value. */
     if (!prev_value) {
-      g_hash_table_insert(dictionary, ftype->key, new_value);
+      g_hash_table_insert(dictionary, g_strdup(ftype->key), new_value);
     }
   } else {
     DBG1("Failed to set value for field type: %s", ftype->name);

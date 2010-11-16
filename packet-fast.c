@@ -301,14 +301,27 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
 
       /* Dissect the payload. */
       nbytes = tvb_length (tvb);
-      bytes = ep_tvb_memdup (tvb, 0, nbytes);
-      tmpl = dissect_fast_bytes (nbytes, bytes, parent);
-
+      
+      if(implementation && 10 <= nbytes)
+      {
+        DBG0("got here");
+        bytes = ep_tvb_memdup (tvb, 10, nbytes-10);
+        tmpl = dissect_fast_bytes (nbytes, bytes, parent, 10);
+      }
+      else
+      {
+        bytes = ep_tvb_memdup (tvb, 0, nbytes);
+        tmpl = dissect_fast_bytes (nbytes, bytes, parent, 0);
+      }
+           
       /* Store pointers to display tree so it can be loaded if user clicks on this packet again */
       packetData = (PacketData*)malloc(sizeof(PacketData));
       packetData->dataTree = parent;
       packetData->tmpl = tmpl;
       packetData->frameNum = frameData->num;
+      
+      if(implementation)
+        clear_dictionaries();
       
       g_hash_table_insert(parsed_packets_table, &(packetData->frameNum), packetData);
     }

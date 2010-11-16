@@ -20,7 +20,7 @@ static gboolean dissect_int_op(gint64 * delta, const FieldType * ftype,
  * \return  The template that was used to parse.
  */
 const GNode* dissect_fast_bytes (guint nbytes, const guint8* bytes,
-                                 GNode* parent)
+                                 GNode* parent, guint offset)
 {
   static guint32 template_id = 0;
 
@@ -31,9 +31,11 @@ const GNode* dissect_fast_bytes (guint nbytes, const guint8* bytes,
 
   position = &stacked_position;
   position->offjmp = 0;
-  position->offset = 0;
+  position->offset = offset;
   position->nbytes = nbytes;
   position->bytes  = bytes;
+  
+  ShiftBytes(position);
 
   basic_dissect_pmap (position, position);
 

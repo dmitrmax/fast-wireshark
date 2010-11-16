@@ -5,7 +5,7 @@
 #include "basic-dissect.h"
 
 const GNode* dissect_fast_bytes (guint nbytes, const guint8* bytes,
-                                 GNode* parent);
+                                 GNode* parent, guint offset);
 void dissector_walk (const GNode* tnode,
                      DissectPosition* position,
                      GNode* parent, GNode* dnode);
