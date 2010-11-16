@@ -61,6 +61,11 @@ static const char* config_template_xml_path = 0;
 static gboolean show_empty_optional_fields = 1;
 /*! If true does not capture or dissect packets */
 static gboolean enabled = 0;
+/*! The specific implementation of FAST to use 
+ 0 - Generic
+ 1 - CME
+*/
+static gint implementation = 0;
 /*! Table to hold pointers to previously parsed packets for Non-sequental Disection */
 static GHashTable* parsed_packets_table = 0;
 
@@ -121,11 +126,19 @@ void proto_register_fast ()
     { &hf_fast[FieldTypeSequence],      { "sequence",   "fast.sequence",   FT_NONE, BASE_NONE, NULL, 0, "", HFILL } },
     { &hf_fast_tid,                     { "tid",        "fast.tid",        FT_NONE, BASE_NONE, NULL, 0, "", HFILL } }
   };
+  static enum_val_t radio_buttons[] = 
+  {
+    { "Generic", "Generic", 0 },
+    { "CME", "CME", 1 },
+    { 0, 0, 0 }
+  };
+  
   /* Subtree array. */
   static gint *ett[] = {
     &ett_fast
   };
   module_t* module;
+  
 
   if (proto_fast != -1)  return;
 
@@ -166,8 +179,17 @@ void proto_register_fast ()
                                    "show_empty",
                                    "Show empty optional fields",
                                    "Check if you want to see fields that are empty and were not sent in the packet",
-                                   &show_empty_optional_fields);                              
+                                   &show_empty_optional_fields);
                                    
+                                  
+  prefs_register_enum_preference(module,
+                                  "implementation",
+                                  "FAST Implementation",
+                                  "Select the specific implementation of FAST",
+                                  &implementation,
+                                  radio_buttons,
+                                  FALSE);
+    
 
   register_dissector("fast", &dissect_fast, proto_fast);
 }
@@ -185,7 +207,7 @@ void proto_reg_handoff_fast ()
   static guint currentPort = 0;
   static dissector_handle_t fast_handle;
   const char* portField = "udp.port";
-    
+  
   if(enabled && !initialized){
     fast_handle = create_dissector_handle(&dissect_fast, proto_fast);
     initialized = TRUE;
