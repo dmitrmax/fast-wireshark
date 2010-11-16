@@ -127,8 +127,9 @@ void proto_register_fast ()
   };
   static enum_val_t radio_buttons[] = 
   {
-    { "Generic", "Generic", 0 },
-    { "CME", "CME", 1 },
+    { "Generic", "Generic", GenericImplem },
+    { "CME", "CME", CMEImplem },
+    { "UMDF", "UMDF", UMDFImplem },
     { 0, 0, 0 }
   };
   
