@@ -316,7 +316,8 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
       packetData->frameNum = frameData->num;
       
       if (implementation == CMEImplem) {
-        clear_dictionaries();
+        /* TODO: Uncomment this? Causes segfault in set_dictionaries() */
+        /* clear_dictionaries(); */
         set_dictionaries(full_templates_tree());
       }
       

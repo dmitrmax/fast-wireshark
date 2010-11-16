@@ -341,6 +341,16 @@ gboolean parse_decimal (xmlNodePtr xmlnode, FieldType * tfield, GNode * tnode)
   }
 
   expt->mandatory = tfield->mandatory;
+
+  if (tfield->key) {
+    if (!mant->key) {
+      mant->key = g_strdup_printf ("%s-mantissa", tfield->key);
+    }
+    if (!expt->key) {
+      expt->key = g_strdup_printf ("%s-exponent", tfield->key);
+    }
+  }
+
   return TRUE;
 }
 
