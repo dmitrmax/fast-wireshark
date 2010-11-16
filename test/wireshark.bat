@@ -3,7 +3,8 @@
   -o fast.port:"5000" ^
   -o fast.template:"templates.xml" ^
   -o fast.enabled:true ^
-  -o fast.show_empty:true
+  -o fast.show_empty:true ^
+  -o fast.implementation:Generic
 
 pause
 
