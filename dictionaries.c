@@ -57,7 +57,9 @@ void set_dictionary_pointers(const FieldType* parent, GNode* parent_node);
 
 void set_dictionaries(GNode* template_tree){
   GNode* template = 0;
-  if(!dictionaries_table) {
+  
+  /* TODO remove this TRUE  temporarily put in to fix CME */
+  if(TRUE || !dictionaries_table) {
     dictionaries_table =
       g_hash_table_new_full(&g_str_hash, &g_str_equal, &g_free,
                             (GDestroyNotify) &g_hash_table_destroy);
