@@ -46,7 +46,7 @@ static void remove_dictionary(char* name);
  * \brief frees the memory used by a TypedValue
  * \param val the TypedValue to be liberated
  */
-static void cleanup_typed_value(TypedValue* val);
+static void free_typed_value(TypedValue* val);
 
 /*!
  * \brief Traverses the template tree and sets the dictionary that should be used at each field.
@@ -58,8 +58,8 @@ void set_dictionary_pointers(const FieldType* parent, GNode* parent_node);
 void set_dictionaries(GNode* template_tree){
   GNode* template = 0;
   
-  /* TODO remove this TRUE  temporarily put in to fix CME */
-  if(TRUE || !dictionaries_table) {
+  clear_dictionaries();
+  if(!dictionaries_table) {
     dictionaries_table =
       g_hash_table_new_full(&g_str_hash, &g_str_equal, &g_free,
                             (GDestroyNotify) &g_hash_table_destroy);
@@ -98,7 +98,7 @@ GHashTable* get_dictionary(char* name){
   dictionary = g_hash_table_lookup(dictionaries_table, name);
   if(!dictionary){
     dictionary = g_hash_table_new_full(&g_str_hash, &g_str_equal, &g_free,
-                                       (GDestroyNotify)&cleanup_typed_value);
+                                       (GDestroyNotify)&free_typed_value);
     g_hash_table_insert(dictionaries_table, name, dictionary);
   }
   return dictionary;
@@ -127,9 +127,11 @@ void clear_dictionaries()
   
 }
 
-static void cleanup_typed_value(TypedValue* val)
+static void free_typed_value(TypedValue* val)
 {
-  cleanup_field_value(val->type, &val->value);
+  if (!val->empty) {
+    cleanup_field_value(val->type, &val->value);
+  }
   g_free(val);
 }
 
@@ -213,7 +215,9 @@ void set_dictionary_value(const FieldType* ftype,
   prev_value = g_hash_table_lookup(dictionary, ftype->key);
   
   if (prev_value) {
-    cleanup_field_value(ftype->type, &prev_value->value);
+    if (!prev_value->empty) {
+      cleanup_field_value(ftype->type, &prev_value->value);
+    }
     new_value = prev_value;
   }
   else {

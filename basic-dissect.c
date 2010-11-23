@@ -50,9 +50,11 @@ gboolean dissect_shift_pmap (DissectPosition* position)
     position->pmap_idx += 1;
   }
   else {
+#ifdef OVERRUN_DEBUG
     DBG2("PMAP index out of bounds at %u (length %u).",
          position->pmap_idx,
          position->pmap_len);
+#endif
   }
   return result;
 }
@@ -86,7 +88,9 @@ gboolean dissect_shift_null(DissectPosition* position)
     }
   }
   else {
+#ifdef OVERRUN_DEBUG
     DBG0("index out of bounds (nbytes == 0)");
+#endif
   }
   return ret;
 }
