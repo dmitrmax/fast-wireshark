@@ -3,11 +3,12 @@
  * \brief  Primitive readers for the byte stream
  *         using the dissector structures.
  */
+#include "basic-dissect.h"
 
 #include "debug.h"
 #include "decode.h"
+#include <string.h>
 
-#include "basic-dissect.h"
 
 /*! \brief  Shift a buffer by a certain amount.
  *
@@ -208,7 +209,7 @@ void basic_dissect_ascii_string (DissectPosition* position, FieldData* fdata)
     decode_ascii_string (position->offjmp, position->bytes, bytes);
     bytes[nbytes] = 0;
     fdata->value.ascii.bytes = bytes;
-    fdata->value.ascii.nbytes = nbytes;
+    fdata->value.ascii.nbytes = strlen((char*) bytes);
   }
   ShiftBytes(position);
 }

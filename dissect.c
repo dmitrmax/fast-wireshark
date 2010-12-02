@@ -142,7 +142,7 @@ GNode* dissect_descend (const GNode* tnode,
   dissect_value(tnode, position, dnode_next);
 
   if(!(dnode_next->parent)){
-    g_node_destroy(dnode_next); /* TODO: wat? */
+    g_node_destroy(dnode_next);   /* TODO: wat? */
     /* As we are building the tree,
      * the last node added will the the one we just made.
      */
@@ -574,8 +574,77 @@ void dissect_ascii_string (const GNode* tnode,
     case FieldOperatorNone:
       dissect_it = TRUE;
       break;
+    case FieldOperatorDelta:
+    case FieldOperatorTail:
+      {
+        FieldData fdata_temp;
+        FieldData input_str;
+        FieldData lookup;
+        gint64 subtract;
+        gint64 cut_length;
+        gint64 input_str_len;
+        
+        /* get the subtraction length */
+        basic_dissect_int64(position, &fdata_temp);
+        subtract = fdata_temp.value.i64;
+        
+        /* get the previous string */
+        if(!get_dictionary_value(ftype, &lookup)) {
+          dissect_it = TRUE;
+          break;
+        }
+        
+        
+        /* get the input string */
+        basic_dissect_ascii_string (position, &input_str);
+        
+        if(subtract < 0){
+        
+          /* increment the subtraction length and make it positive */
+          subtract = -(subtract + 1);
+          
+          if(lookup.value.ascii.nbytes < subtract) {
+            /* if the previous value is shorter than the
+             * subtraction length, this is an error.
+             *
+             * TODO: make this a legit error.
+             */
+            cleanup_field_value(FieldTypeAsciiString, &input_str.value);
+            cleanup_field_value(FieldTypeAsciiString, &lookup.value); 
+            BAILOUT(;,"[ERR D7]: The subtraction length is larger than the"
+                        " number of characters in the base value");
+ 
+          }
+          
+          cut_length = lookup.value.ascii.nbytes - subtract;
+          input_str_len = input_str.value.ascii.nbytes;
+          fdata->value.ascii.nbytes = cut_length + input_str_len;
+          fdata->value.ascii.bytes = (guint8 *)
+                  g_malloc((fdata->value.ascii.nbytes + 1)*sizeof(guint8));
+                                                
+          memcpy(fdata->value.ascii.bytes,
+                 input_str.value.ascii.bytes, 
+                 input_str_len);
+                 
+          memcpy(fdata->value.ascii.bytes + input_str_len,
+                 lookup.value.ascii.bytes + subtract,
+                 cut_length);
+          
+          /* null terminator */
+          fdata->value.ascii.bytes[fdata->value.ascii.nbytes] = 0;
+          
+          cleanup_field_value(FieldTypeAsciiString, &input_str.value);
+          cleanup_field_value(FieldTypeAsciiString, &lookup.value); 
+                 
+        } else {
+          /* remove (subtract) characters from end of string */
+          /* append fdata->value.ascii.bytes to end of string */
+        }
+
+      }
+      break; 
     default:
-      DBG0("Only simple operators are implemented.");
+      DBG0("Invalid Operator.");
       break;
   }
   if (dissect_it) {
@@ -624,8 +693,16 @@ void dissect_byte_vector (const GNode* tnode,
     case FieldOperatorNone:
       dissect_it = TRUE;
       break;
+    case FieldOperatorDelta:
+    case FieldOperatorTail:
+    
+      
+      /* do something here. */
+      
+      
+      break; 
     default:
-      DBG0("Only simple operators are implemented.");
+      DBG0("Invalid Operator.");
       break;
   }
   if (dissect_it) {
