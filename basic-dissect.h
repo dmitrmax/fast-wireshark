@@ -4,13 +4,21 @@
 
 #include "basic-field.h"
 
+enum field_status_enum
+{
+  FieldExists,
+  FieldEmpty,
+  FieldError
+};
+typedef enum field_status_enum FieldStatus;
+
 /*! \brief  Identify the position of this field in the stream.
  */
 struct field_data_struct
 {
   guint start;
   guint nbytes;
-  gboolean empty;
+  FieldStatus status;
   FieldValue value;
 };
 typedef struct field_data_struct FieldData;
@@ -29,6 +37,8 @@ struct dissect_position_struct
   gboolean* pmap;
 };
 typedef struct dissect_position_struct DissectPosition;
+
+
 
 
 void ShiftBytes(DissectPosition* position);

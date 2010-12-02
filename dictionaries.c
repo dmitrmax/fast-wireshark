@@ -163,7 +163,7 @@ void set_dictionary_pointers(const FieldType* parent, GNode* parent_node)
     }
     if (!field_type->empty) {
       FieldData fdata;
-      fdata.empty = FALSE;
+      fdata.status = FieldExists;
       /* Not using copy_field_value() to avoid extra malloc/free. */
       memcpy(&fdata.value, &field_type->value, sizeof(FieldValue));
       set_dictionary_value(field_type, &fdata);
@@ -187,14 +187,17 @@ gboolean get_dictionary_value(const FieldType* ftype,
   if (prev) {
     if (prev->type == ftype->type) {
       found = TRUE;
-      fdata->empty = prev->empty;
-      if (!fdata->empty) {
+      fdata->status = prev->empty ? FieldEmpty : FieldExists;
+      if (fdata->status == FieldExists) {
         copy_field_value(ftype->type, &prev->value, &fdata->value);
       }
     }
     else {
-      DBG2("[%s] Retrieved differently typed value for %s.",
-          "ERR D4", ftype->name);
+      /* An the types differ which is a dynamic error
+       * The cast is to change the gchar* to guint8* so that our types will work with it
+       */
+      fdata->value.ascii.bytes = (guint8*)g_strdup_printf("[ERR D4] Retrieved differently typed value from dictionary");
+      fdata->status = FieldError;
     }
   }
   return found;
@@ -224,7 +227,7 @@ void set_dictionary_value(const FieldType* ftype,
     new_value = g_malloc(sizeof(TypedValue));
   }
   new_value->type = ftype->type;
-  new_value->empty = fdata->empty;
+  new_value->empty = fdata->status == FieldEmpty;
   if (!new_value->empty) {
     copy_field_value(ftype->type, &fdata->value, &new_value->value);
   }

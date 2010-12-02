@@ -384,7 +384,7 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
     if (ftype->type < FieldTypeEnumLimit) {
       header_field = hf_fast[ftype->type];
     }
-    if (!fdata->empty) {
+    if (fdata->status == FieldExists) {
       switch (ftype->type) {
         case FieldTypeUInt32:
           /*type - name (id): value*/
@@ -523,15 +523,23 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
           break;
       }
     }
-    else {
+    else if (fdata->status == FieldEmpty) {
       /* The field is empty. */
       if(show_empty_optional_fields){
         proto_tree_add_none_format(tree, header_field, tvb,
                                  fdata->start, fdata->nbytes,
                                  "%s (empty %s)",
                                  field_name,
-                                 field_typename(ftype->type));                           
+                                 field_typename(ftype->type));
       }
+    } else {
+      /* The field has an error */
+      proto_tree_add_none_format(tree, header_field, tvb, 0, 0, 
+                                 "%s - %s (%d): %s",
+                                 field_typename(ftype->type),
+                                 field_name,
+                                 ftype->id,
+                                 fdata->value.ascii.bytes);
     }
 
     tnode = tnode->next;

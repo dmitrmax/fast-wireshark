@@ -52,7 +52,7 @@ const GNode* dissect_fast_bytes (guint nbytes, const guint8* bytes,
   parent->data  = fdata;
   fdata->start  = position->offset;
   fdata->nbytes = 0;
-  fdata->empty  = TRUE;
+  fdata->status  = FieldEmpty;
 
   /* Figure out current Template ID. */
   if (dissect_shift_pmap (position)) {
@@ -192,7 +192,7 @@ void dissect_value (const GNode* tnode,
   /* Initialize to sensible defaults. */
   fdata->start  = start;
   fdata->nbytes = 0;
-  fdata->empty  = TRUE;
+  fdata->status  = FieldEmpty;
   init_field_value(&fdata->value);
 
   /* Assure the appropriate function exists. */
@@ -206,10 +206,10 @@ void dissect_value (const GNode* tnode,
     dissect_optional(tnode, position, dnode);
   }
   else {
-    fdata->empty = FALSE;
+    fdata->status = FieldExists;
   }
 
-  if (!fdata->empty) {
+  if (fdata->status == FieldExists) {
     gboolean operator_used = FALSE;
   
     switch (ftype->op) {
@@ -290,20 +290,20 @@ void dissect_optional (const GNode* tnode,
       break;
   }
   
-  if (fdata->empty && check_pmap) {
+  if ((fdata->status == FieldEmpty) && check_pmap) {
     gboolean bit = dissect_peek_pmap(position);
     if (( bit && !check_null) ||
         (!bit &&  check_null)) {
-      fdata->empty = FALSE;
+      fdata->status = FieldExists;
     }
   }
-  if (fdata->empty && check_null) {
-    fdata->empty = dissect_shift_null(position);
+  if ((fdata->status == FieldEmpty) && check_null) {
+    fdata->status = dissect_shift_null(position) ? FieldEmpty : FieldExists;
   }
-  if (fdata->empty && set_dict) {
+  if ((fdata->status == FieldEmpty) && set_dict) {
     set_dictionary_value(ftype, fdata);
   }
-  if (check_pmap && (!check_null || fdata->empty)) {
+  if (check_pmap && (!check_null || (fdata->status == FieldEmpty))) {
     dissect_shift_pmap(position);
   }
 }
