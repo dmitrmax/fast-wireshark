@@ -12,6 +12,8 @@
   
 static gboolean dissect_int_op(gint64 * delta, const FieldType * ftype, 
                         FieldData * fdata, DissectPosition * position);
+gboolean dissect_ascii_delta(const FieldType* ftype, FieldData* fdata,
+                        DissectPosition* position);
   
 /*! \brief Dissect a FAST message by the bytes.
  * \param nbytes  Total number of bytes in the message.
@@ -576,72 +578,7 @@ void dissect_ascii_string (const GNode* tnode,
       break;
     case FieldOperatorDelta:
     case FieldOperatorTail:
-      {
-        FieldData fdata_temp;
-        FieldData input_str;
-        FieldData lookup;
-        gint64 subtract;
-        gint64 cut_length;
-        gint64 input_str_len;
-        
-        /* get the subtraction length */
-        basic_dissect_int64(position, &fdata_temp);
-        subtract = fdata_temp.value.i64;
-        
-        /* get the previous string */
-        if(!get_dictionary_value(ftype, &lookup)) {
-          dissect_it = TRUE;
-          break;
-        }
-        
-        
-        /* get the input string */
-        basic_dissect_ascii_string (position, &input_str);
-        
-        if(subtract < 0){
-        
-          /* increment the subtraction length and make it positive */
-          subtract = -(subtract + 1);
-          
-          if(lookup.value.ascii.nbytes < subtract) {
-            /* if the previous value is shorter than the
-             * subtraction length, this is an error.
-             *
-             * TODO: make this a legit error.
-             */
-            cleanup_field_value(FieldTypeAsciiString, &input_str.value);
-            cleanup_field_value(FieldTypeAsciiString, &lookup.value); 
-            BAILOUT(;,"[ERR D7]: The subtraction length is larger than the"
-                        " number of characters in the base value");
- 
-          }
-          
-          cut_length = lookup.value.ascii.nbytes - subtract;
-          input_str_len = input_str.value.ascii.nbytes;
-          fdata->value.ascii.nbytes = cut_length + input_str_len;
-          fdata->value.ascii.bytes = (guint8 *)
-                  g_malloc((fdata->value.ascii.nbytes + 1)*sizeof(guint8));
-                                                
-          memcpy(fdata->value.ascii.bytes,
-                 input_str.value.ascii.bytes, 
-                 input_str_len);
-                 
-          memcpy(fdata->value.ascii.bytes + input_str_len,
-                 lookup.value.ascii.bytes + subtract,
-                 cut_length);
-          
-          /* null terminator */
-          fdata->value.ascii.bytes[fdata->value.ascii.nbytes] = 0;
-          
-          cleanup_field_value(FieldTypeAsciiString, &input_str.value);
-          cleanup_field_value(FieldTypeAsciiString, &lookup.value); 
-                 
-        } else {
-          /* remove (subtract) characters from end of string */
-          /* append fdata->value.ascii.bytes to end of string */
-        }
-
-      }
+        dissect_it = dissect_ascii_delta(ftype, fdata, position);
       break; 
     default:
       DBG0("Invalid Operator.");
@@ -651,6 +588,92 @@ void dissect_ascii_string (const GNode* tnode,
     basic_dissect_ascii_string (position, fdata);
   }
   set_dictionary_value(ftype, fdata);
+}
+
+/*! \brief 
+ * 
+ */
+gboolean dissect_ascii_delta(const FieldType* ftype, FieldData* fdata,
+                        DissectPosition* position)
+{
+  FieldData fdata_temp;
+  FieldData input_str;
+  FieldData lookup;
+  gint64 subtract;
+  gint64 cut_length;
+  gint64 input_str_len;
+  gboolean append_to_front;
+  
+  /* get the subtraction length */
+  basic_dissect_int64(position, &fdata_temp);
+  subtract = fdata_temp.value.i64;
+  
+  /* get the previous string */
+  if(!get_dictionary_value(ftype, &lookup)) {
+    return TRUE;
+  }
+  
+  /* get the input string */
+  basic_dissect_ascii_string (position, &input_str);
+  
+  /* append to front or tail? */
+  append_to_front = (subtract < 0);
+  if(append_to_front)
+    subtract = -(subtract + 1);
+
+  if(lookup.value.ascii.nbytes < subtract) 
+  {
+    /* if the previous value is shorter than the
+     * subtraction length, this is an error.
+     *
+     * TODO: make this a legit error.
+     */
+    cleanup_field_value(FieldTypeAsciiString, &input_str.value);
+    cleanup_field_value(FieldTypeAsciiString, &lookup.value); 
+    BAILOUT(FALSE;,"[ERR D7]: The subtraction length is larger than the"
+                " number of characters in the base value");
+
+  }
+  
+  /* malloc space for new string */
+  cut_length = lookup.value.ascii.nbytes - subtract;
+  input_str_len = input_str.value.ascii.nbytes;
+  fdata->value.ascii.nbytes = cut_length + input_str_len;
+  fdata->value.ascii.bytes = (guint8 *)
+          g_malloc((fdata->value.ascii.nbytes + 1)*sizeof(guint8));
+
+  if(append_to_front)
+  {    
+    /* append input string to front */                                      
+    memcpy(fdata->value.ascii.bytes,
+           input_str.value.ascii.bytes, 
+           input_str_len);
+    
+    /* append cut string to end */       
+    memcpy(fdata->value.ascii.bytes + input_str_len,
+           lookup.value.ascii.bytes + subtract,
+           cut_length);
+  } 
+  else 
+  {
+    /* append cut string to front */                                      
+    memcpy(fdata->value.ascii.bytes,
+           lookup.value.ascii.bytes,
+           cut_length);
+    
+    /* append input string to end */
+    memcpy(fdata->value.ascii.bytes + cut_length,
+           input_str.value.ascii.bytes, 
+           input_str_len);
+  }
+    
+  /* null terminator */
+  fdata->value.ascii.bytes[fdata->value.ascii.nbytes] = 0;
+  
+  cleanup_field_value(FieldTypeAsciiString, &input_str.value);
+  cleanup_field_value(FieldTypeAsciiString, &lookup.value);
+  
+  return FALSE;
 }
 
 
@@ -695,11 +718,105 @@ void dissect_byte_vector (const GNode* tnode,
       break;
     case FieldOperatorDelta:
     case FieldOperatorTail:
-    
+      {    
       
-      /* do something here. */
+        /* TODO: test this, then merge it with ascii_delta function */
       
-      
+        SizedData* vec;
+        FieldData fdata_temp;
+        FieldData input_str;
+        FieldData lookup;
+        gint64 subtract;
+        gint64 cut_length;
+        gint64 input_str_len;
+        gboolean append_to_front;
+        
+        /* get the subtraction length */
+        basic_dissect_int64(position, &fdata_temp);
+        subtract = fdata_temp.value.i64;
+        
+        /* get the previous string */
+        if(!get_dictionary_value(ftype, &lookup)) 
+          break;
+        
+        /* get the input string */
+        /* -----------------------------TODO: generalize this. */
+        vec = &fdata->value.bytevec;
+
+        /* See how big the byte vector is. */
+        dissect_value (length_node, position, dnode);
+
+        vec->nbytes = fdata->value.u32;
+
+        /* Get the byte vector. */
+        position->offjmp = vec->nbytes;
+
+        vec->bytes = g_malloc ((1+vec->nbytes) * sizeof(guint8));
+
+        if (vec->bytes) {
+          decode_byte_vector (vec->nbytes, position->bytes, vec->bytes);
+          vec->bytes[vec->nbytes] = 0;
+        }
+
+        ShiftBytes(position);
+        /* --------------------------------- */
+        
+        /* append to front or tail? */
+        append_to_front = (subtract < 0);
+        if(append_to_front)
+          subtract = -(subtract + 1);
+
+        if(lookup.value.bytevec.nbytes < subtract) 
+        {
+          /* if the previous value is shorter than the
+           * subtraction length, this is an error.
+           *
+           * TODO: make this a legit error.
+           */
+          cleanup_field_value(FieldTypeByteVector, &input_str.value);
+          cleanup_field_value(FieldTypeByteVector, &lookup.value); 
+          BAILOUT(;,"[ERR D7]: The subtraction length is larger than the"
+                      " number of characters in the base value");
+        }
+        
+        /* malloc space for new string */
+        cut_length = lookup.value.bytevec.nbytes - subtract;
+        input_str_len = input_str.value.bytevec.nbytes;
+        fdata->value.bytevec.nbytes = cut_length + input_str_len;
+        fdata->value.bytevec.bytes = (guint8 *)
+                g_malloc((fdata->value.bytevec.nbytes + 1)*sizeof(guint8));
+
+        if(append_to_front)
+        {    
+          /* append input string to front */                                      
+          memcpy(fdata->value.bytevec.bytes,
+                 input_str.value.bytevec.bytes, 
+                 input_str_len);
+          
+          /* append cut string to end */       
+          memcpy(fdata->value.bytevec.bytes + input_str_len,
+                 lookup.value.bytevec.bytes + subtract,
+                 cut_length);
+        } 
+        else 
+        {
+          /* append cut string to front */                                      
+          memcpy(fdata->value.bytevec.bytes,
+                 lookup.value.bytevec.bytes,
+                 cut_length);
+          
+          /* append input string to end */
+          memcpy(fdata->value.bytevec.bytes + cut_length,
+                 input_str.value.bytevec.bytes, 
+                 input_str_len);
+        }
+          
+        /* null terminator */
+        fdata->value.bytevec.bytes[fdata->value.ascii.nbytes] = 0;
+        
+        cleanup_field_value(FieldTypeByteVector, &input_str.value);
+        cleanup_field_value(FieldTypeByteVector, &lookup.value);
+      }
       break; 
     default:
       DBG0("Invalid Operator.");

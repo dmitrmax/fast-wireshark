@@ -227,6 +227,8 @@
 	  <int64 id="1" presence="mandatory" name="delta_i64"> <delta/> </int64>
 	  <decimal id="1" presence="mandatory" name="delta_dec"> <delta/> </decimal>
 	  <string id="1" presence="mandatory" charset="ascii" name="delta_ascii"> <delta/> </string>
+	  <!--<string id="1" presence="mandatory" charset="unicode" name="delta_uni"> <delta/> </string>
+	  <byteVector id="1" presence="mandatory" name="delta_bv"> <delta/> </byteVector>-->
 	</template>
 
 	<template name="t_decimal_ops" id="20" dictionary="template">

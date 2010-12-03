@@ -7,6 +7,8 @@
     <int64 value="4"/>    
     <decimal value="5e0"/>
     <ascii value="FAST is awesome!!!!"/>
+    <!--<unicode value="FAST is awesome!!!!"/> 
+    <bytevector value="11111"/>-->
   </message>
   
   <message value="19">
@@ -15,7 +17,9 @@
     <int32 value="3"/>
     <int64 value="4"/>    
     <decimal value="5e0"/>
-    <ascii value="AST is awesome!!!!"/>
+    <ascii value="FAST is too complicated"/>
+    <!--<unicode value="FAST is too complicated"/>
+    <bytevector value="112222"/>-->
   </message>
   
   <message value="19">
@@ -24,7 +28,9 @@
     <int32 value="6"/>
     <int64 value="8"/>    
     <decimal value="1e1"/>
-    <ascii value="Wireshark is awesome!!!!"/>
+    <ascii value="women are too complicated"/>
+    <!--<unicode value="women are too complicated"/>
+    <bytevector value="312222"/>-->
   </message>
   
   <message value="19">
@@ -33,7 +39,9 @@
     <int32 value="0"/>
     <int64 value="0"/> 
     <decimal value="0e0"/> 
-    <ascii value="Mireshark is awesome!!!!"/>  
+    <ascii value=""/>  
+    <!--<unicode value=""/>
+    <bytevector value=""/>-->
   </message>
   
 </plan>
