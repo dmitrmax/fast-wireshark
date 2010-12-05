@@ -40,7 +40,7 @@
 G_MODULE_EXPORT const gchar version[] = "0.1";
 #endif
 
-#define UN_NAMED "un-named"
+#define UNNAMED "un-named"
 
 /*! Global id of our protocol plugin used by Wireshark. */
 static int proto_fast = -1;
@@ -65,16 +65,18 @@ static gboolean enabled = 0;
 enum ProtocolImplem { GenericImplem, CMEImplem, UMDFImplem, NImplem };
 /*! The specific implementation of FAST to use. */
 static gint implementation = 0;
-/*! Table to hold pointers to previously parsed packets for Non-sequental Disection */
-static GHashTable* parsed_packets_table = 0;
+/*! Table to hold pointers to previously dissected
+ * packets to assure sequential disection.
+ */
+static GHashTable* dissected_packets_table = 0;
 
-struct parsed_packet_data
+struct packet_data_struct
 {
-  GNode * dataTree;
-  const GNode * tmpl;
+  GList* dataTrees;
+  GList* tmplTrees;
   guint32 frameNum;
 };
-typedef struct parsed_packet_data PacketData;
+typedef struct packet_data_struct PacketData;
 
 
 /*** Forward declarations. ***/
@@ -248,9 +250,8 @@ void proto_reg_handoff_fast ()
  */
 void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
 {
-  frame_data *frameData;
-  gpointer * packetParsed = 0;
-  PacketData * packetData;
+  frame_data* frameData;
+  PacketData* packetData;
   frameData = pinfo->fd;
   
   
@@ -265,44 +266,29 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
   }
 
   /* Only do dissection if we are asked */
-  if (tree)
-  {
+  if (tree) {
     proto_item* ti;
     proto_tree* fast_tree;
-    guint nbytes;
-    guint8* bytes;
-    const GNode* tmpl;
-    GNode* parent;
 
     /* Create display subtree. */
     ti = proto_tree_add_item(tree, proto_fast, tvb, 0, -1, ENC_NA);
     fast_tree = proto_item_add_subtree(ti, ett_fast);
     
-    if(!parsed_packets_table) {
-      parsed_packets_table = g_hash_table_new(&g_int_hash, &g_int_equal);
+    if(!dissected_packets_table) {
+      dissected_packets_table = g_hash_table_new(&g_int_hash, &g_int_equal);
       /* If we fail to make the table bail */
-      if(!parsed_packets_table) { BAILOUT(;,"Packet lookup table not created."); }
+      if(!dissected_packets_table) { BAILOUT(;,"Packet lookup table not created."); }
     }
   
-    /* check if this packet has already been parsed and get it if it has */
-    packetParsed = g_hash_table_lookup(parsed_packets_table, &(frameData->num));
+    /* check if this packet has already been dissected and get it if it has */
+    packetData = (PacketData*) g_hash_table_lookup(dissected_packets_table, &(frameData->num));
     
-    if (packetParsed) {
-      /* packet in dict so display original parsed packet*/
-      packetData = (PacketData*) packetParsed;
-      parent = packetData->dataTree;
-      tmpl = packetData->tmpl;
-      
-    } else {
-      guint header_offset = 0;
-      parent = g_node_new(0);
-      if (!parent) {
-        BAILOUT(;,"Could not allocate memory.");
-      }
-
+    if (!packetData) {
       /* Dissect the payload. */
-      nbytes = tvb_length (tvb);
-      
+      DissectPosition stacked_position;
+      DissectPosition* position;
+      guint header_offset = 0;
+
       if (implementation == CMEImplem) {
         header_offset = 5;
       }
@@ -310,26 +296,58 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
         header_offset = 10;
       }
 
-      bytes = ep_tvb_memdup (tvb, 0, nbytes);
-      tmpl = dissect_fast_bytes (nbytes, bytes, parent, header_offset);
-           
-      /* Store pointers to display tree so it can be loaded if user clicks on this packet again */
-      packetData = (PacketData*)malloc(sizeof(PacketData));
-      packetData->dataTree = parent;
-      packetData->tmpl = tmpl;
+      /* Store pointers to display tree so it can be
+       * loaded if user clicks on this packet again.
+       */
+      packetData = (PacketData*)g_malloc(sizeof(PacketData));
       packetData->frameNum = frameData->num;
+      packetData->dataTrees = 0;
+      packetData->tmplTrees = 0;
+
+      position = &stacked_position;
+      position->offjmp = header_offset;
+      position->offset = 0;
+      position->nbytes = tvb_length (tvb);
+      position->bytes  = ep_tvb_memdup (tvb, 0, position->nbytes);
+
+      ShiftBytes(position);
+
+      while (position->nbytes) {
+        GNode* data;
+        GNode* tmpl;
+        data = g_node_new(0);
+        tmpl = dissect_fast_bytes (position, data);
+        if (!tmpl) {
+          g_free (data);
+          break;
+        }
+        packetData->dataTrees = g_list_append(packetData->dataTrees, data);
+        packetData->tmplTrees = g_list_append(packetData->tmplTrees, tmpl);
+      }
       
       if (implementation == CMEImplem || implementation == UMDFImplem) {
         set_dictionaries(full_templates_tree());
       }
       
-      g_hash_table_insert(parsed_packets_table, &(packetData->frameNum), packetData);
+      g_hash_table_insert(dissected_packets_table, &(packetData->frameNum), packetData);
     }
     
-    /* Setup for display. */
-    display_message (tvb, fast_tree, tmpl, parent);
+    {
+      GList* tmplTrees;
+      GList* dataTrees;
+      tmplTrees = packetData->tmplTrees;
+      dataTrees = packetData->dataTrees;
+      while (tmplTrees && dataTrees) {
+        display_message (tvb, fast_tree,
+                         (GNode*) tmplTrees->data,
+                         (GNode*) dataTrees->data);
+        tmplTrees = tmplTrees->next;
+        dataTrees = dataTrees->next;
+      }
+    }
   }
 }
+
 
 /*! \brief  Store all message data in a proto_tree.
  */
@@ -347,7 +365,7 @@ void display_message (tvbuff_t* tvb, proto_tree* tree,
     if(ftype->name){
       field_name = ftype->name;
     } else {
-      field_name = UN_NAMED;
+      field_name = UNNAMED;
     }
 
     item = proto_tree_add_none_format(tree, hf_fast_tid, tvb,
@@ -378,7 +396,7 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
     if(ftype->name){
       field_name = ftype->name;
     } else {
-      field_name = UN_NAMED;
+      field_name = UNNAMED;
     }
     
     if (ftype->type < FieldTypeEnumLimit) {

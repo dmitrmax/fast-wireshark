@@ -6,8 +6,10 @@ basedir="$testdir/.."
 port=5000
 template="$testdir/templates.xml"
 
-expect=$1
-pfx=$2
+send=$1
+shift
+pfx=""
+#pfx=$1
 if [ -z "$pfx" ]
 then
   pfx=output
@@ -16,9 +18,10 @@ fi
 "$basedir/bin/rwcompare" \
     runner "$testdir/OpenFastPlanRunner.jar" \
     tmpl "$template" \
-    expect "$expect" \
+    send "$send" \
     port "$port" \
     pcap "$pfx.pcap" \
     pdml "$pfx.pdml" \
-    plan "$pfx.plan"
+    plan "$pfx.plan" \
+    "$@"
 

@@ -26,7 +26,7 @@ typedef struct typed_value_struct TypedValue;
 /* Private (static) headers. */
 static GHashTable* dictionaries_table = 0;
 
-static GList* template_dictionaries;
+static GList* template_dictionaries = 0;
 
 /*!
  * \brief Retrieves a dictionary by name, or creates it if it doesn't exist.

@@ -132,30 +132,36 @@ include (CPack)
 enable_testing ()
 
 set (test_dir "test")
-set (tshark "tshark")
-set (rwcompare "${exe_dir}/rwcompare")
+set (tshark_exe "tshark")
+set (rwcompare_exe "${exe_dir}/rwcompare")
 set (plan_runner "${test_dir}/OpenFastPlanRunner.jar")
+set (port_num "5000")
 
-macro (regression_test test_name template plan)
+# Add an rwcompare test.
+macro (rwcompare test_name)
   add_test ("${test_name}"
-    "${rwcompare}"
-    "port" "5000" "tshark" "${tshark}"
+    "${rwcompare_exe}"
+    "port" "${port_num}" "tshark" "${tshark_exe}"
     "runner" "${plan_runner}"
-    "tmpl" "${template}" "expect" "${plan}")
+    "tmpl" "${test_dir}/templates.xml"
+    ${ARGN})
 endmacro ()
 
-regression_test (IntegerFields "${test_dir}/templates.xml" "${test_dir}/plans/intPlan.xml")
-regression_test (DecimalFields "${test_dir}/templates.xml" "${test_dir}/plans/decimal.xml")
-regression_test (StringFields  "${test_dir}/templates.xml" "${test_dir}/plans/stringPlan.xml")
-regression_test (GroupSequence "${test_dir}/templates.xml" "${test_dir}/plans/groupSequencePlan.xml")
-regression_test (OptionalFields "${test_dir}/templates.xml" "${test_dir}/plans/optional.xml")
-regression_test (UInt32CopyDictionary "${test_dir}/templates.xml" "${test_dir}/plans/uintDictionaryPlan.xml")
-regression_test (ByteVectorFields "${test_dir}/templates.xml" "${test_dir}/plans/byteVectorPlan.xml")
-regression_test (CopyEmptyFields "${test_dir}/templates.xml" "${test_dir}/plans/copyEmpty.xml")
-regression_test (OptionalNestedFields "${test_dir}/templates.xml" "${test_dir}/plans/optionalNested.xml")
-regression_test (Copy "${test_dir}/templates.xml" "${test_dir}/plans/copy.xml")
-regression_test (Default "${test_dir}/templates.xml" "${test_dir}/plans/default.xml")
-regression_test (Delta "${test_dir}/templates.xml" "${test_dir}/plans/delta.xml")
-regression_test (Increment "${test_dir}/templates.xml" "${test_dir}/plans/increment.xml")
-regression_test (Value "${test_dir}/templates.xml" "${test_dir}/plans/value.xml")
+rwcompare (IntegerFields send "${test_dir}/plans/intPlan.xml")
+rwcompare (DecimalFields send "${test_dir}/plans/decimal.xml")
+rwcompare (StringFields  send "${test_dir}/plans/stringPlan.xml")
+rwcompare (GroupSequence send "${test_dir}/plans/groupSequencePlan.xml")
+rwcompare (OptionalFields send "${test_dir}/plans/optional.xml")
+rwcompare (UInt32CopyDictionary send "${test_dir}/plans/uintDictionaryPlan.xml")
+rwcompare (ByteVectorFields send "${test_dir}/plans/byteVectorPlan.xml")
+rwcompare (CopyEmptyFields send "${test_dir}/plans/copyEmpty.xml")
+rwcompare (OptionalNestedFields send "${test_dir}/plans/optionalNested.xml")
+rwcompare (Copy send "${test_dir}/plans/copy.xml")
+rwcompare (Default send "${test_dir}/plans/default.xml")
+rwcompare (Delta send "${test_dir}/plans/delta.xml")
+rwcompare (Increment send "${test_dir}/plans/increment.xml")
+rwcompare (Value send "${test_dir}/plans/value.xml")
+
+rwcompare (MultiMessage send "${test_dir}/byteplans/multimessage.xml"
+  expect "${test_dir}/plans/multimessage.xml")
 

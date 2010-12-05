@@ -11,50 +11,38 @@
 #include "dissect.h"
   
 static gboolean dissect_int_op(gint64 * delta, const FieldType * ftype, 
-                        FieldData * fdata, DissectPosition * position);
+                               FieldData * fdata, DissectPosition * position);
 gboolean dissect_ascii_delta(const FieldType* ftype, FieldData* fdata,
-                        DissectPosition* position);
+                             DissectPosition* position);
   
 /*! \brief Dissect a FAST message by the bytes.
- * \param nbytes  Total number of bytes in the message.
- * \param bytes  The FAST message, sized to /nbytes/.
+ * \param position  Current position in bytes.
  * \param parent  Return value. The message data is built under it.
- * \return  The template that was used to parse.
+ * \return  The template that was used to dissect.
  */
-const GNode* dissect_fast_bytes (guint nbytes, const guint8* bytes,
-                                 GNode* parent, guint offset)
+GNode* dissect_fast_bytes (DissectPosition* position, GNode* parent)
 {
   static guint32 template_id = 0;
-
-  DissectPosition stacked_position;
-  DissectPosition* position;
-  const GNode* tmpl = 0; /* Template. */
-  FieldData* fdata; /* Template TID data node. */
-
-  position = &stacked_position;
-  position->offjmp = offset;
-  position->offset = 0;
-  position->nbytes = nbytes;
-  position->bytes  = bytes;
-  
-  ShiftBytes(position);
-
-  basic_dissect_pmap (position, position);
-
-  if (!position->pmap) {
-    BAILOUT(0,"PMAP not set.");
-  }
+  GNode* tmpl = 0; /* Template. */
+  FieldData* fdata; /* Template ID data node. */
 
   /* Initialize head node. */
   fdata = (FieldData*) g_malloc (sizeof (FieldData));
   if (!fdata) {
-    g_free (position->pmap);
     BAILOUT(0,"Could not allocate memory.");
   }
-  parent->data  = fdata;
   fdata->start  = position->offset;
   fdata->nbytes = 0;
   fdata->status  = FieldEmpty;
+  parent->data  = fdata;
+
+
+  basic_dissect_pmap (position, position);
+
+  if (!position->pmap) {
+    g_free (fdata);
+    BAILOUT(0,"PMAP not set.");
+  }
 
   /* Figure out current Template ID. */
   if (dissect_shift_pmap (position)) {

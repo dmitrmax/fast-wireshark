@@ -25,6 +25,7 @@ int ArgParseBailOut(const char* arg, const char* reason)
   fputs ("            [tshark <TShark executable>]\n", out);
   fputs ("            [tmpl <template file>]\n", out);
   fputs ("            [pcap <pcap file>]\n", out);
+  fputs ("            [send <plan file>]\n", out);
   fputs ("            [expect <plan file>]\n", out);
   fputs ("            [pdml <pdml output file>]\n", out);
   fputs ("            [plan <plan output file>]\n", out);
@@ -46,6 +47,7 @@ int ArgParseBailOut(const char* arg, const char* reason)
 int main (const int argc, const char* const* argv)
 {
   const char* template_filename = 0;
+  const char* send_filename = 0;
   const char* expect_filename = 0;
   char* pcap_filename = 0;
   char* pdml_filename = 0;
@@ -89,8 +91,13 @@ int main (const int argc, const char* const* argv)
       pcap_filename = g_strdup (argv[++argi]);
       givenp_pcap = TRUE;
     }
+    else if (!strcmp("send", arg)) {
+      send_filename = argv[++argi];
+      if (!expect_filename)  expect_filename = send_filename;
+    }
     else if (!strcmp("expect", arg)) {
       expect_filename = argv[++argi];
+      if (!send_filename)  send_filename = expect_filename;
     }
     else if (!strcmp("pdml", arg)) {
       pdml_filename = g_strdup (argv[++argi]);
@@ -116,7 +123,7 @@ int main (const int argc, const char* const* argv)
       pdml_filename = g_strdup_printf ("%s-pdml.xml", pcap_filename);
     }
 
-    if (plan_runner_jar && networkp && expect_filename) {
+    if (plan_runner_jar && networkp && send_filename) {
       /* Do an actual capture. */
       unsigned duration = 5;
       GThread* thread;
@@ -138,7 +145,7 @@ int main (const int argc, const char* const* argv)
       g_usleep (2*G_USEC_PER_SEC);
       goodp = run_plan (plan_runner_jar,
                         template_filename,
-                        expect_filename,
+                        send_filename,
                         0,
                         port);
       if (!g_thread_join (thread)) {
@@ -151,7 +158,7 @@ int main (const int argc, const char* const* argv)
       if (plan_runner_jar && !networkp) {
         goodp = run_plan (plan_runner_jar,
                           template_filename,
-                          expect_filename,
+                          send_filename,
                           pcap_filename,
                           port);
       }
