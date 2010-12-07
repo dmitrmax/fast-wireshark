@@ -22,6 +22,7 @@ int ArgParseBailOut(const char* arg, const char* reason)
   fputs ("  rwcompare [p[ort] <port>]\n", out);
   fputs ("            [runner <PlanRunner jar>]\n", out);
   fputs ("            [network]\n", out);
+  fputs ("            [bypass]\n", out);
   fputs ("            [tshark <TShark executable>]\n", out);
   fputs ("            [tmpl <template file>]\n", out);
   fputs ("            [pcap <pcap file>]\n", out);
@@ -60,6 +61,7 @@ int main (const int argc, const char* const* argv)
   gboolean givenp_plan = FALSE;
   gboolean networkp = FALSE;
   gboolean goodp = TRUE;
+  gboolean bypassp_fastsend = FALSE;
   int argi;
 
   if (argc == 1) {
@@ -71,6 +73,9 @@ int main (const int argc, const char* const* argv)
     const char* arg = argv[argi];
     if (!strcmp("network", arg)) {
       networkp = TRUE;
+    }
+    else if (!strcmp("bypass", arg)) {
+      bypassp_fastsend = TRUE;
     }
     else if (argc == argi+1) {
       return ArgParseBailOut(arg, "Trailing flag without a value.");
@@ -115,6 +120,10 @@ int main (const int argc, const char* const* argv)
 
   /* Run a TShark capture session. */
   if (goodp && template_filename) {
+    const char* send_template_filename = 0;
+    if (!bypassp_fastsend) {
+      send_template_filename = template_filename;
+    }
     fputs (">-> Run TShark.\n", stderr);
     if (!givenp_pcap) {
       pcap_filename = g_strdup_printf ("%s.pcap", expect_filename);
@@ -144,7 +153,7 @@ int main (const int argc, const char* const* argv)
       }
       g_usleep (2*G_USEC_PER_SEC);
       goodp = run_plan (plan_runner_jar,
-                        template_filename,
+                        send_template_filename,
                         send_filename,
                         0,
                         port);
@@ -157,7 +166,7 @@ int main (const int argc, const char* const* argv)
       /* Generate a pcap file. */
       if (plan_runner_jar && !networkp) {
         goodp = run_plan (plan_runner_jar,
-                          template_filename,
+                          send_template_filename,
                           send_filename,
                           pcap_filename,
                           port);

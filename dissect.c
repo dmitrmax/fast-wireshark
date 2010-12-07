@@ -350,7 +350,10 @@ gboolean dissect_default(const GNode* tnode,
  * \param dnode  Dissect tree node.
  * \return true if we need to still do a basic dissect
  */
-gboolean dissect_int_op(gint64 * delta, const FieldType * ftype, FieldData * fdata, DissectPosition * position)
+gboolean dissect_int_op(gint64* delta,
+                        const FieldType* ftype,
+                        FieldData* fdata,
+                        DissectPosition* position)
 {
   gboolean presence_bit;
   gboolean dissect_it = FALSE;
@@ -582,7 +585,7 @@ void dissect_ascii_string (const GNode* tnode,
  * 
  */
 gboolean dissect_ascii_delta(const FieldType* ftype, FieldData* fdata,
-                        DissectPosition* position)
+                             DissectPosition* position)
 {
   FieldData fdata_temp;
   FieldData input_str;

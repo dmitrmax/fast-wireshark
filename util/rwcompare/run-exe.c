@@ -271,8 +271,10 @@ gboolean run_plan (const char* plan_runner_jar,
     argv[argi++] = "java";
     argv[argi++] = "-jar";
     argv[argi++] = plan_runner_jar;
-    argv[argi++] = "-t";
-    argv[argi++] = template_filename;
+    if (template_filename) {
+      argv[argi++] = "-t";
+      argv[argi++] = template_filename;
+    }
     argv[argi++] = "-p";
     argv[argi++] = expect_filename;
     argv[argi++] = "-n";
