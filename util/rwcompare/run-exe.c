@@ -102,8 +102,8 @@ gboolean run_tshark (const char* tshark_exe,
   const char* proto_abbr = "fast";
 
   guint        pref_idx  ;
-  const guint nprefs = 5 ;
-  char*        prefs  [5];
+  const guint nprefs = 6 ;
+  char*        prefs  [6];
 
   char* output = 0;
   char** output_ptr = 0;
@@ -121,6 +121,7 @@ gboolean run_tshark (const char* tshark_exe,
     prefs[pref_idx++] = g_strdup_printf ("%s.port:%d", proto_abbr, port);
   }
   prefs[pref_idx++] = g_strdup_printf ("%s.enabled:true", proto_abbr);
+  prefs[pref_idx++] = g_strdup_printf ("%s.sci_notation:true", proto_abbr);
   prefs[pref_idx++] = g_strdup_printf ("%s.show_empty:true", proto_abbr);
   prefs[pref_idx++] = g_strdup_printf ("%s.implementation:Generic", proto_abbr);
 

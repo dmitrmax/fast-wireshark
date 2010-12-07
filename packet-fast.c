@@ -61,6 +61,8 @@ static const char* config_template_xml_path = 0;
 static gboolean show_empty_optional_fields = 1;
 /*! If true does not capture or dissect packets */
 static gboolean enabled = 0;
+/*! If true display decimal fields in scientific notation */
+static gboolean sciNotation = 1;
 
 enum ProtocolImplem { GenericImplem, CMEImplem, UMDFImplem, NImplem };
 /*! The specific implementation of FAST to use. */
@@ -87,6 +89,7 @@ static void display_message (tvbuff_t* tvb, proto_tree* tree,
                              const GNode* tmpl, const GNode* parent);
 static void display_fields (tvbuff_t* tvb, proto_tree* tree,
                             const GNode* tnode, const GNode* dnode);
+static char * toDecimal(gint32 expt, gint64 mant);
 
 
 /*** Required hooks if the plugin is dynamically linked to. ***/
@@ -171,6 +174,7 @@ void proto_register_fast ()
                                  "Enter a valid port number (1024-65535)",
                                  10,
                                  &config_port_number);
+                                 
   prefs_register_string_preference(module,
                                    "template",
                                    "XML template file",
@@ -182,6 +186,12 @@ void proto_register_fast ()
                                    "Show empty optional fields",
                                    "Check if you want to see fields that are empty and were not sent in the packet",
                                    &show_empty_optional_fields);
+                                   
+  prefs_register_bool_preference(module,
+                                   "sci_notation",
+                                   "Show all decimals in scientific notation",
+                                   "Check if you want to see all decimal fields in scientific notation",
+                                   &sciNotation);
                                    
                                   
   prefs_register_enum_preference(module,
@@ -378,6 +388,8 @@ void display_message (tvbuff_t* tvb, proto_tree* tree,
   }
 }
 
+
+
 /*! \brief  Add field data to a proto_tree.
  */
 void display_fields (tvbuff_t* tvb, proto_tree* tree,
@@ -391,6 +403,7 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
     const FieldType* ftype;
     const FieldData* fdata;
     char * field_name;
+    char * decimalNum;
     ftype = (FieldType*) tnode->data;
     fdata = (FieldData*) dnode->data;
     if(ftype->name){
@@ -438,13 +451,25 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
                                      fdata->value.i64);
           break;
         case FieldTypeDecimal:
-          proto_tree_add_none_format(tree, header_field, tvb,
+          if(!sciNotation){
+            /* get the decimal representation of the field */
+            decimalNum = toDecimal(fdata->value.decimal.exponent, fdata->value.decimal.mantissa);
+          } else { decimalNum = NULL; } 
+          if(sciNotation || decimalNum==NULL ){
+            proto_tree_add_none_format(tree, header_field, tvb,
                                      fdata->start, fdata->nbytes,
                                      "decimal - %s (%d): %" G_GINT64_MODIFIER "de%d",
                                      field_name,
                                      ftype->id,
                                      fdata->value.decimal.mantissa,
                                      fdata->value.decimal.exponent);
+          } else {
+            proto_tree_add_none_format(tree, header_field, tvb,
+                                     fdata->start, fdata->nbytes,
+                                     "decimal - %s (%d): %s",
+                                     field_name,
+                                     ftype->id, decimalNum);
+          }
           break;
         case FieldTypeAsciiString:
           proto_tree_add_none_format(tree, header_field, tvb,
@@ -562,6 +587,73 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
 
     tnode = tnode->next;
     dnode = dnode->next;
+  } 
+  
+}
+
+
+#define MaxMant 21 /* max char length (decimal) of 64bit number including sign */
+#define MaxExpt 10
+char * toDecimal(gint32 expt, gint64 mant)
+{
+  char * decimalNum;
+  char zeros[MaxExpt+1]; /*array to hold zero padding */
+  char neg[2]; /* array to hold negative sign or null string*/
+  int i;
+  
+  if(expt==0){
+    return "1";
   }
+  
+  if(expt<-MaxExpt || expt>MaxExpt){
+    return NULL;
+  }
+  
+  /* Char* to hold string represenation of mant */
+  decimalNum = (char *) malloc(sizeof(char)*MaxMant);
+  
+  if(expt<0){
+    char left [MaxExpt+2];
+    char right [MaxMant];
+    int point;
+    int len;
+    int r;
+  
+    expt = (-1)*expt; /*abs(expt) */
+    if(mant<0){
+      mant = (-1) * mant;
+      neg[0]='-'; neg[1]='\0';
+    } else { neg[0]='\0'; } 
+    len = sprintf (decimalNum, "%" G_GINT64_MODIFIER "d", mant); /* print base to string and get length */
+    point = len-expt; /* figure out where the decimal should be */
+    if(point>0){ /*point in middle of base */
+      /* break into two parts and put back together */
+      for(i=0; i<point; i++) left[i] = decimalNum[i];
+      left[i]='\0';
+      r=0;
+      for(i=point; i<MaxMant; i++){
+        right[r]=decimalNum[i];
+        r++;
+        if(decimalNum[i]=='\0') break;
+      }
+      sprintf(decimalNum, "%s%s.%s", neg, left, right);
+    } else { /* point to left of base */
+      point = (-1)*point;
+      for(i=0; i<point; i++){ /* gen zeros for left of base */
+        zeros[i]='0';
+      }
+      zeros[i] = '\0';
+      sprintf(right, "%s.%s%s", neg, zeros, decimalNum);
+      sprintf(decimalNum, "%s", right);
+    }
+  } else {
+    for(i=0; i<expt; i++){
+      zeros[i]='0';
+    }
+    zeros[i] = '\0';
+    sprintf (decimalNum, "%" G_GINT64_MODIFIER "d%s", mant, zeros);
+  }
+  
+  return decimalNum;
 }
 
