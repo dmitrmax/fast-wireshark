@@ -731,8 +731,8 @@ void dissect_byte_vector (const GNode* tnode,
           break;
         
         /* get the input string */
-        /* -----------------------------TODO: generalize this. */
-        vec = &fdata->value.bytevec;
+        /* ----------------------------- TODO: generalize this. */
+        vec = &input_str.value.bytevec;
 
         /* See how big the byte vector is. */
         dissect_value (length_node, position, dnode);

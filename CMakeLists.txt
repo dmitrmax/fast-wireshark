@@ -167,3 +167,5 @@ rwcompare (MultiMessage send "${test_dir}/byteplans/multimessage.xml"
 rwcompare (TooManyIntBits send "${test_dir}/byteplans/toomanyintbits.xml"
   expect "${test_dir}/plans/toomanyintbits.xml")
 
+#rwcompare (ByteVectorDelta send "${test_dir}/byteplans/bv_delta.xml"
+ # expect "${test_dir}/plans/bv_delta.xml" bypass "tmpl" "${test_dir}/bv_templates.xml")

@@ -328,7 +328,7 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
         data = g_node_new(0);
         tmpl = dissect_fast_bytes (position, data);
         if (!tmpl) {
-          g_free (data);
+          g_node_destroy(data);
           break;
         }
         packetData->dataTrees = g_list_append(packetData->dataTrees, data);

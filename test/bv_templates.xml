@@ -1,0 +1,12 @@
+<templates xmlns="http://www.fixprotocol.org/ns/template-definition" 
+		   templateNs="http://www.fixprotocol.org/ns/templates/sample" 
+		   ns="http://www.fixprotocol.org/ns/fix">
+		   
+  <template name="t_bv_delta" id="0" dictionary="template">
+    <!-- 
+    <string id="1" presence="mandatory" charset="unicode" name="delta_uni"> <delta/> </string> 
+    -->
+	  <byteVector id="1" presence="mandatory" name="delta_bv"> <delta/> </byteVector>
+	</template>
+	
+</templates>
