@@ -1,0 +1,32 @@
+<plan>
+  <message value="1">
+    <uint32 value="4294967295"/>
+  </message>
+  <message value="14">
+    <uint32 value="[ERR D2] Too many bits for UInt32"/>
+  </message>
+  <message value="14">
+    <uint32 value="41"/>
+  </message>
+  <message value="1">
+    <uint32 value="[ERR D2] Too many bits for UInt32"/>
+  </message>
+  <message value="0">
+    <int32 value="[ERR D2] Too many bits for Int32"/>
+  </message>
+  <message value="0">
+    <int32 value="[ERR D2] Too many bits for Int32"/>
+  </message>
+  <message value="2">
+    <int64 value="[ERR D2] Too many bits for Int64"/>
+  </message>
+  <message value="2">
+    <int64 value="[ERR D2] Too many bits for Int64"/>
+  </message>
+  <message value="2">
+    <int64 value="[ERR D2] Too many bits for Int64"/>
+  </message>
+  <message value="3">
+    <uint64 value="[ERR D2] Too many bits for UInt64"/>
+  </message>
+</plan>

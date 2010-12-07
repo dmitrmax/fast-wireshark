@@ -164,4 +164,6 @@ rwcompare (Value send "${test_dir}/plans/value.xml")
 
 rwcompare (MultiMessage send "${test_dir}/byteplans/multimessage.xml"
   expect "${test_dir}/plans/multimessage.xml")
+rwcompare (TooManyIntBits send "${test_dir}/byteplans/toomanyintbits.xml"
+  expect "${test_dir}/plans/toomanyintbits.xml")
 

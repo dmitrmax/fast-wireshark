@@ -9,6 +9,19 @@
 #include "decode.h"
 #include <string.h>
 
+/*! \brief The sign bit for a 5 byte encoded Int32 */
+#define Int32SignBit 0x08
+/*! \brief The sign bit for a 10 byte encoded Int64 */
+#define Int64SignBit 0x01
+/*! \brief The extra bits after the sign bit for an Int32 comprised of 5 bytes */
+#define Int32ExtraBits 0x70
+/*! \brief The extra bits after the sign bit for an Int64 comprised of 10 bytes */
+#define Int64ExtraBits 0x7E
+/*! \brief The maximum number of stop bit encoded bytes an Int32 can occupy */
+#define Int32MaxBytes 5
+/*! \brief The maximum number of stop bit encoded bytes an Int64 can occupy */
+#define Int64MaxBytes 10
+
 
 /*! \brief  Shift a buffer by a certain amount.
  *
@@ -144,6 +157,12 @@ void basic_dissect_uint32 (DissectPosition* position, FieldData* fdata)
   fdata->nbytes = position->offjmp;
   fdata->value.u32 = decode_uint32 (position->offjmp,
                                     position->bytes);
+  if (Int32MaxBytes == fdata->nbytes) {
+    if ((position->bytes[0] & Int32ExtraBits) > 0) {
+      fdata->status = FieldError;
+      fdata->value.ascii.bytes = (guint8*)g_strdup_printf("[ERR D2] Too many bits for UInt32");
+    }
+  }
   ShiftBytes(position);
 }
 
@@ -159,6 +178,12 @@ void basic_dissect_uint64 (DissectPosition* position, FieldData* fdata)
   fdata->nbytes = position->offjmp;
   fdata->value.u64 = decode_uint64 (position->offjmp,
                                     position->bytes);
+   if (Int64MaxBytes == fdata->nbytes) {
+    if ((position->bytes[0] & Int64ExtraBits) > 0) {
+      fdata->status = FieldError;
+      fdata->value.ascii.bytes = (guint8*)g_strdup_printf("[ERR D2] Too many bits for UInt64");
+    }
+  }
   ShiftBytes(position);
 }
 
@@ -173,6 +198,19 @@ void basic_dissect_int32 (DissectPosition* position, FieldData* fdata)
   fdata->nbytes = position->offjmp;
   fdata->value.i32 = decode_int32 (position->offjmp,
                                    position->bytes);
+  if (Int32MaxBytes == fdata->nbytes) {
+    if ((position->bytes[0] & Int32SignBit) == Int32SignBit) {
+      if ((position->bytes[0] & Int32ExtraBits) != Int32ExtraBits) {
+        fdata->status = FieldError;
+        fdata->value.ascii.bytes = (guint8*)g_strdup_printf("[ERR D2] Too many bits for Int32");
+      }
+    } else {
+      if ((position->bytes[0] & Int32ExtraBits) > 0) {
+        fdata->status = FieldError;
+        fdata->value.ascii.bytes = (guint8*)g_strdup_printf("[ERR D2] Too many bits for Int32");
+      }
+    }
+  }
   ShiftBytes(position);
 }
 
@@ -188,6 +226,19 @@ void basic_dissect_int64 (DissectPosition* position, FieldData* fdata)
   fdata->nbytes = position->offjmp;
   fdata->value.i64 = decode_int64 (position->offjmp,
                                    position->bytes);
+  if (Int64MaxBytes == fdata->nbytes) {
+    if ((position->bytes[0] & Int64SignBit) == Int64SignBit) {
+      if ((position->bytes[0] & Int64ExtraBits) != Int64ExtraBits) {
+        fdata->status = FieldError;
+        fdata->value.ascii.bytes = (guint8*)g_strdup_printf("[ERR D2] Too many bits for Int64");
+      }
+    } else {
+      if ((position->bytes[0] & Int64ExtraBits) > 0) {
+        fdata->status = FieldError;
+        fdata->value.ascii.bytes = (guint8*)g_strdup_printf("[ERR D2] Too many bits for Int64");
+      }
+    }
+  }
   ShiftBytes(position);
 }
 
