@@ -76,9 +76,6 @@ public class Main {
 						pcapFile = args[++i];
 					}
 				}
-				if(templateFiles == null){
-					throw new RuntimeException("No template files specified");
-				}
 				if(dataPlanFile == null){
 					throw new RuntimeException("No data plan file specified");
 				}
@@ -109,15 +106,16 @@ public class Main {
 			}
 			MessageOutputStream messageOut = new MessageOutputStream(out);
 			
-			for(String templateFile : cargs.templateFiles){
-				MessageTemplateRepository.loadTemplates(templateFile);
+			if(cargs.templateFiles != null){
+				for(String templateFile : cargs.templateFiles){
+					MessageTemplateRepository.loadTemplates(templateFile);
+				}
+			
+				for(int i = 0 ; i < MessageTemplateRepository.getTemplates().size() ; i++)
+				{
+					messageOut.registerTemplate(i, MessageTemplateRepository.getTemplates().get(i));
+				}
 			}
-
-			for(int i = 0 ; i < MessageTemplateRepository.getTemplates().size() ; i++)
-			{
-				messageOut.registerTemplate(i, MessageTemplateRepository.getTemplates().get(i));
-			}
-
 
 			/*
 			 * LOAD PLAN

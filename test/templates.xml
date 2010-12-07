@@ -306,16 +306,18 @@
   <!-- END Dictionary test templates. -->
 
   <!-- Error Templates  -->
-  <template name="t_int32_error1" id="25" dictionary="error">
+  <template name="t_int32_error1" id="100" dictionary="error">
     <int32 id="1" name="int32" key="error">
       <copy/>
     </int32>
   </template>
-  <template name="t_int32_error2" id="26" dictionary="error">
+  <template name="t_int32_error2" id="101" dictionary="error">
     <int64 id="1" name="int64" key="error">
       <copy/>
     </int64>
   </template>
+  <!-- End Error Templates -->
+
 </templates>
 
 
