@@ -1,22 +1,18 @@
 <plan>
 
   <message value="0">
-    <!--<unicode value="FAST is awesome!!!!"/> -->
     <bytevector value="11"/>
   </message>
   
   <message value="0">
-    <!--<unicode value="FAST is too complicated"/> -->
     <bytevector value="1100"/>
   </message>
   
   <message value="0">
-    <!--<unicode value="women are too complicated"/> -->
-    <bytevector value="0000"/>
+    <bytevector value="ff00"/>
   </message>
   
   <message value="0">
-    <!--<unicode value=""/> -->
     <bytevector value=""/>
   </message>
   

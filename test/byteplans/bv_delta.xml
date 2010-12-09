@@ -3,30 +3,27 @@
     11000000 <!-- pmap -->
     10000000 <!-- tid -->
     10000000 <!-- subtraction: 0 -->
-    10000010 <!-- bv length: 1 -->
-    00000001 <!-- 1 -->
-    00000001 <!-- 1 -->
+    10000001 <!-- bv length: 1 -->
+    00010001 <!-- 1 -->
   </bytemessage>
 
   <bytemessage>
     10000000 <!-- pmap -->
     10000000 <!-- subtraction: 0 -->
-    10000010 <!-- bv length: 2 -->
-    00000000 <!-- 0 -->
-    00000000 <!-- 0 -->
+    10000001 <!-- bv length: 1 -->
+    00000000 <!-- 00 -->
+  </bytemessage>
+
+  <bytemessage>
+    10000000 <!-- pmap -->
+    11111110 <!-- subtraction: -1 (a.k.a. -2) -->
+    10000001 <!-- bv length: 2 -->
+    11111111 <!-- FF -->
   </bytemessage>
 
   <bytemessage>
     10000000 <!-- pmap -->
     11111101 <!-- subtraction: -2 (a.k.a. -3) -->
-    10000010 <!-- bv length: 2 -->
-    00000000 <!-- 0 -->
-    00000000 <!-- 0 -->
-  </bytemessage>
-
-  <bytemessage>
-    11000000 <!-- pmap -->
-    11111011 <!-- subtraction: -4 (a.k.a. -5) -->
     10000000 <!-- (nothing to add) -->
   </bytemessage>
 </Plan>

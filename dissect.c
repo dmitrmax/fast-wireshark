@@ -728,7 +728,10 @@ void dissect_byte_vector (const GNode* tnode,
         
         /* get the previous string */
         if(!get_dictionary_value(ftype, &lookup)) 
+        {
+          dissect_it = TRUE;
           break;
+        }
         
         /* get the input string */
         /* ----------------------------- TODO: generalize this. */
