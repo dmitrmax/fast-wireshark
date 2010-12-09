@@ -18,7 +18,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <string.h>
 #include <glib.h>
 #include <gmodule.h>
 #include <epan/prefs.h>
@@ -63,6 +63,10 @@ static gboolean show_empty_optional_fields = 1;
 static gboolean enabled = 0;
 /*! If true display decimal fields in scientific notation */
 static gboolean sciNotation = 1;
+static gboolean showFieldKeys = 0;
+static gboolean showFieldDictionaries = 0;
+static gboolean showFieldOperators = 0;
+static gboolean showFieldMandatoriness = 0;
 
 enum ProtocolImplem { GenericImplem, CMEImplem, UMDFImplem, NImplem };
 /*! The specific implementation of FAST to use. */
@@ -90,6 +94,7 @@ static void display_message (tvbuff_t* tvb, proto_tree* tree,
 static void display_fields (tvbuff_t* tvb, proto_tree* tree,
                             const GNode* tnode, const GNode* dnode);
 static char * toDecimal(gint32 expt, gint64 mant);
+static char * generate_field_info(const FieldType* ftype);
 
 
 /*** Required hooks if the plugin is dynamically linked to. ***/
@@ -201,7 +206,32 @@ void proto_register_fast ()
                                   &implementation,
                                   radio_buttons,
                                   FALSE);
-    
+  
+  prefs_register_bool_preference(module,
+                                  "show_field_dictionaries",
+                                  "Show each field's dictionary",
+                                  "Show each field's dictionary",
+                                  &showFieldDictionaries);
+                                  
+  prefs_register_bool_preference(module,
+                                  "show_field_keys",
+                                  "Show each field's dictionary key",
+                                  "Show each field's dictionary key",
+                                  &showFieldKeys);
+                                  
+ 
+  prefs_register_bool_preference(module,
+                                  "show_field_operators",
+                                  "Show each field's operator (if any)",
+                                  "Show each field's operator (if any)",
+                                  &showFieldOperators);
+                                 
+  prefs_register_bool_preference(module,
+                                  "show_field_mandatoriness",
+                                  "Show if each field is mandatory",
+                                  "Show if each field is mandatory",
+                                  &showFieldMandatoriness);
+                                  
 
   register_dissector("fast", &dissect_fast, proto_fast);
 }
@@ -403,15 +433,21 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
     const FieldType* ftype;
     const FieldData* fdata;
     char * field_name;
+    char * field_info;
     char * decimalNum;
     ftype = (FieldType*) tnode->data;
     fdata = (FieldData*) dnode->data;
+    
+    
     if(ftype->name){
       field_name = ftype->name;
     } else {
       field_name = UNNAMED;
     }
     
+    /* Generate optional field_info string */
+    field_info = generate_field_info(ftype);
+      
     if (ftype->type < FieldTypeEnumLimit) {
       header_field = hf_fast[ftype->type];
     }
@@ -421,33 +457,37 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
           /*type - name (id): value*/
           proto_tree_add_none_format(tree, header_field, tvb,
                                      fdata->start, fdata->nbytes,
-                                     "uInt32 - %s (%d): %u",
+                                     "uInt32 - %s (%d)%s: %u",
                                      field_name,
                                      ftype->id,
+                                     field_info,
                                      fdata->value.u32);
           break;
         case FieldTypeUInt64:
           proto_tree_add_none_format(tree, header_field, tvb,
                                      fdata->start, fdata->nbytes,
-                                     "uInt64 - %s (%d): %" G_GINT64_MODIFIER "u",
+                                     "uInt64 - %s (%d)%s: %" G_GINT64_MODIFIER "u",
                                      field_name,
                                      ftype->id,
+                                     field_info,
                                      fdata->value.u64);
           break;
         case FieldTypeInt32:
           proto_tree_add_none_format(tree, header_field, tvb,
                                      fdata->start, fdata->nbytes,
-                                     "int32 - %s (%d): %d",
+                                     "int32 - %s (%d)%s: %d",
                                      field_name,
                                      ftype->id,
+                                     field_info,
                                      fdata->value.i32);
           break;
         case FieldTypeInt64:
           proto_tree_add_none_format(tree, header_field, tvb,
                                      fdata->start, fdata->nbytes,
-                                     "int64 - %s (%d): %" G_GINT64_MODIFIER "d",
+                                     "int64 - %s (%d)%s: %" G_GINT64_MODIFIER "d",
                                      field_name,
                                      ftype->id,
+                                     field_info,
                                      fdata->value.i64);
           break;
         case FieldTypeDecimal:
@@ -458,31 +498,36 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
           if(sciNotation || decimalNum==NULL ){
             proto_tree_add_none_format(tree, header_field, tvb,
                                      fdata->start, fdata->nbytes,
-                                     "decimal - %s (%d): %" G_GINT64_MODIFIER "de%d",
+                                     "decimal - %s (%d)%s: %" G_GINT64_MODIFIER "de%d",
                                      field_name,
                                      ftype->id,
+                                     field_info,
                                      fdata->value.decimal.mantissa,
                                      fdata->value.decimal.exponent);
           } else {
             proto_tree_add_none_format(tree, header_field, tvb,
                                      fdata->start, fdata->nbytes,
-                                     "decimal - %s (%d): %s",
+                                     "decimal - %s (%d)%s: %s",
                                      field_name,
-                                     ftype->id, decimalNum);
+                                     ftype->id,
+                                     field_info,
+                                     decimalNum);
           }
           break;
         case FieldTypeAsciiString:
           proto_tree_add_none_format(tree, header_field, tvb,
                                      fdata->start, fdata->nbytes,
-                                     "ascii - %s (%d): %s", field_name,
+                                     "ascii - %s (%d)%s: %s", field_name,
                                      ftype->id,
+                                     field_info,
                                      fdata->value.ascii.bytes);
           break;
         case FieldTypeUnicodeString:
           proto_tree_add_none_format(tree, header_field, tvb,
                                      fdata->start, fdata->nbytes,
-                                     "unicode - %s (%d): %s", field_name,
+                                     "unicode - %s (%d)%s: %s", field_name,
                                      ftype->id,
+                                     field_info,
                                      fdata->value.unicode.bytes);
           break;
         case FieldTypeByteVector:
@@ -500,8 +545,9 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
               str[2*vec->nbytes] = 0;
               proto_tree_add_none_format(tree, header_field, tvb,
                                          fdata->start, fdata->nbytes,
-                                         "byteVector - %s (%d): %s", field_name,
+                                         "byteVector - %s (%d)%s: %s", field_name,
                                          ftype->id,
+                                         field_info,
                                          str);
               g_free (str);
             }
@@ -509,8 +555,8 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
               DBG0("Error allocating memory.");
               proto_tree_add_none_format(tree, header_field, tvb,
                                          fdata->start, fdata->nbytes,
-                                         "byteVector - %s (%d): %s", field_name,
-                                         ftype->id,
+                                         "byteVector - %s (%d)%s: %s", field_name,
+                                         ftype->id, field_info,
                                          "");
             }
           }
@@ -536,8 +582,8 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
             GNode* length_tnode;
             item = proto_tree_add_none_format(tree, header_field, tvb,
                                               fdata->start, fdata->nbytes,
-                                              "sequence - %s (%d):", field_name,
-                                              ftype->id
+                                              "sequence - %s (%d)%s:", field_name,
+                                              ftype->id, field_info
                                               );
 
             subtree = proto_item_add_subtree(item, ett_fast);
@@ -592,6 +638,59 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
 }
 
 
+char * generate_field_info(const FieldType* ftype){
+  char * field_info;
+  char * temp;
+  
+  field_info=NULL;
+  if(showFieldDictionaries){
+    if(ftype->dictionary==NULL){
+      field_info = g_strdup_printf("[dictionary=global");
+    } else {
+      field_info = g_strdup_printf("[dictionary=%s", ftype->dictionary);
+    }
+  }
+  if(showFieldKeys && ftype->key!=NULL){
+    temp = field_info;
+    if(temp){
+      field_info = g_strdup_printf("%s key=%s", temp, ftype->key);
+      g_free(temp);
+    } else {
+      field_info = g_strdup_printf("[key=%s", ftype->key);
+    }
+  }
+  if(showFieldOperators){
+    temp = field_info;
+    if(temp){
+      field_info = g_strdup_printf("%s operator=%s", temp, operator_typename(ftype->op));
+      g_free(temp);
+    } else {
+      field_info = g_strdup_printf("[operator=%s", operator_typename(ftype->op));
+    }
+  }
+  if(showFieldMandatoriness){
+    temp = field_info;
+    if(temp){
+      if(ftype->mandatory) field_info = g_strdup_printf("%s mandatory", temp);
+      else field_info = g_strdup_printf("%s not mandatory", temp);
+      g_free(temp);
+    } else {
+      if(ftype->mandatory) field_info = g_strdup_printf("[mandatory");
+      else field_info = g_strdup_printf("[not mandatory");
+    }
+  }
+  if(field_info!=NULL){
+    temp=field_info;
+    field_info = g_strdup_printf("%s]", temp);
+    g_free(temp);
+  } else {
+    field_info = "";
+  }
+  
+  return field_info;
+}
+  
+
 #define MaxMant 21 /* max char length (decimal) of 64bit number including sign */
 #define MaxExpt 10
 char * toDecimal(gint32 expt, gint64 mant)
@@ -610,7 +709,7 @@ char * toDecimal(gint32 expt, gint64 mant)
   }
   
   /* Char* to hold string represenation of mant */
-  decimalNum = (char *) malloc(sizeof(char)*MaxMant);
+  decimalNum = (char *) g_malloc(sizeof(char)*MaxMant);
   
   if(expt<0){
     char left [MaxExpt+2];
@@ -647,7 +746,7 @@ char * toDecimal(gint32 expt, gint64 mant)
       sprintf(decimalNum, "%s", right);
     }
   } else {
-    for(i=0; i<expt; i++){
+    for(i=0; i<expt; i++){/* gen zeros to pad right side of base */
       zeros[i]='0';
     }
     zeros[i] = '\0';
