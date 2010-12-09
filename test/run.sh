@@ -15,7 +15,7 @@ then
   pfx=output
 fi
 
-valgrind "$basedir/bin/rwcompare" \
+"$basedir/bin/rwcompare" \
     runner "$testdir/OpenFastPlanRunner.jar" \
     tmpl "$template" \
     send "$send" \

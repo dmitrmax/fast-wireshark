@@ -1,8 +1,21 @@
 <plan>
-    <message value="0">
-        <int32 value="0"/>
-    </message>
-    <message value="0">
-        <int32 value="1"/>
-    </message>
+  <message value="0">
+    <int32 value="0"/>
+  </message>
+  <message value="0">
+    <int32 value="1"/>
+  </message>
+  <message value="5">
+    <ascii value="Hello World!"/>
+  </message>
+
+  <message value="0">
+    <int32 value="2"/>
+  </message>
+  <message value="0">
+    <int32 value="3"/>
+  </message>
+  <message value="5">
+    <ascii value="Idmmn!Vnsme "/>
+  </message>
 </plan>

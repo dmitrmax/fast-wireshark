@@ -840,6 +840,7 @@ void dissect_byte_vector (const GNode* tnode,
   set_dictionary_value(ftype, fdata);
 }
 
+
 /*! \brief  Given a byte stream, dissect a group.
  *
  * \param tnode  Template tree node.
