@@ -162,10 +162,12 @@ rwcompare (Delta send "${test_dir}/plans/delta.xml")
 rwcompare (Increment send "${test_dir}/plans/increment.xml")
 rwcompare (Value send "${test_dir}/plans/value.xml")
 
+
 rwcompare (MultiMessage send "${test_dir}/byteplans/multimessage.xml"
   expect "${test_dir}/plans/multimessage.xml" bypass)
 rwcompare (TooManyIntBits send "${test_dir}/byteplans/toomanyintbits.xml"
   expect "${test_dir}/plans/toomanyintbits.xml")
-
+rwcompare (TooMantIntBytes send "${test_dir}/byteplans/toomanyintbytes.xml"
+  expect "${test_dir}/plans/toomanyintbytes.xml")
 rwcompare (ByteVectorDelta send "${test_dir}/byteplans/bv_delta.xml"
   expect "${test_dir}/plans/bv_delta.xml" bypass "tmpl" "${test_dir}/bv_templates.xml")

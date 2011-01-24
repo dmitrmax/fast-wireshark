@@ -162,6 +162,9 @@ void basic_dissect_uint32 (DissectPosition* position, FieldData* fdata)
       fdata->status = FieldError;
       fdata->value.ascii.bytes = (guint8*)g_strdup_printf("[ERR D2] Too many bits for UInt32");
     }
+  }else if(Int32MaxBytes < fdata->nbytes) {
+    fdata->status = FieldError;
+    fdata->value.ascii.bytes = (guint8*)g_strdup_printf("[ERR D2] Too many bytes for UInt32");
   }
   ShiftBytes(position);
 }
@@ -183,6 +186,9 @@ void basic_dissect_uint64 (DissectPosition* position, FieldData* fdata)
       fdata->status = FieldError;
       fdata->value.ascii.bytes = (guint8*)g_strdup_printf("[ERR D2] Too many bits for UInt64");
     }
+  }else if(Int64MaxBytes < fdata->nbytes) {
+    fdata->status = FieldError;
+    fdata->value.ascii.bytes = (guint8*)g_strdup_printf("[ERR D2] Too many bytes for UInt64");
   }
   ShiftBytes(position);
 }
@@ -211,6 +217,10 @@ void basic_dissect_int32 (DissectPosition* position, FieldData* fdata)
       }
     }
   }
+  else if(Int32MaxBytes < fdata->nbytes) {
+    fdata->status = FieldError;
+    fdata->value.ascii.bytes = (guint8*)g_strdup_printf("[ERR D2] Too many bytes for Int32");
+  }
   ShiftBytes(position);
 }
 
@@ -238,6 +248,9 @@ void basic_dissect_int64 (DissectPosition* position, FieldData* fdata)
         fdata->value.ascii.bytes = (guint8*)g_strdup_printf("[ERR D2] Too many bits for Int64");
       }
     }
+  }else if(Int64MaxBytes < fdata->nbytes) {
+    fdata->status = FieldError;
+    fdata->value.ascii.bytes = (guint8*)g_strdup_printf("[ERR D2] Too many bytes for Int64");
   }
   ShiftBytes(position);
 }

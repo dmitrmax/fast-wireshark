@@ -1,0 +1,113 @@
+<plan>
+  <!-- Sends a simple uint32 field with a max int32 -->
+  <bytemessage>
+    11000000
+    10000001
+    00001111
+    01111111
+    01111111
+    01111111
+    11111111
+  </bytemessage>
+  <!-- Sends a uint32 field with some extra bytes on a template with copy -->
+  <bytemessage>
+    11100000
+    10001110
+    00000000
+    00000000
+    00000000
+    00000000
+    00000000
+    10101010
+  </bytemessage>
+  <!-- Copies to previous value: This does work as the error value is just blindly used -->
+  <bytemessage>
+    10000000
+  </bytemessage>
+  <!-- UInt32 Error -->
+  <bytemessage>
+    11000000
+    10000001
+    00000000
+    00000000
+    00000000
+    00000000
+    00000000
+    00000000
+    10000101
+  </bytemessage>
+ 
+  <!-- Int32 Error -->
+  <bytemessage>
+    11000000
+    10000000
+    00000000
+    00000000
+    00000000
+    00000000
+    00000000
+    10000101
+  </bytemessage>
+  <!-- Negative Int32 Error -->
+  <bytemessage>
+    11000000
+    10000000
+    00000000
+    00000000
+    00000000
+    00000000
+    00000000
+    10000101
+  </bytemessage>
+  <!-- Start int64 tests -->
+   <!-- Int64 Error -->
+  <bytemessage>
+    11000000
+    10000010
+    00000000
+    00000000
+    00000000
+    00000000
+    00000000
+    00000000
+    00000000
+    00000000
+    00000000
+    00000000
+    10000101
+  </bytemessage>
+  <!-- Positive int64 -->
+  <bytemessage>
+    11000000
+    10000010
+    00000000
+    00000000
+    00000000
+    00000000
+    00000000
+    00000000
+    00000000
+    00000000
+    00000000
+    00000000
+    00000000
+    10000000
+  </bytemessage>
+  <!-- uint64 -->
+  <bytemessage>
+    11000000
+    10000011
+    00000000
+    00000000
+    00000000
+    00000000
+    00000000
+    00000000
+    00000000
+    00000000
+    00000000
+    00000000
+    10000000
+  </bytemessage>
+  
+</plan>
