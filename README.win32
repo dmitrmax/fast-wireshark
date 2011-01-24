@@ -22,9 +22,23 @@ This is important for all steps, even for running Wireshark.
 Move it to ../wireshark relative to this directory.
 Basically, follow the steps here to build Wireshark:
 http://www.wireshark.org/docs/wsdg_html_chunked/ChSetupWin32.html
+NOTE: use the default paths unless you want to edit build files.
 
-For the first of these commands, you'll need Cygwin.
-It'll tell you what packages you need when they're not present.
+Make sure you have installed Cygwin with these packages:
+Archive/unzip
+Devel/bison
+Devel/flex
+Interpreters/perl
+Utils/patch
+Web/wget
+
+cmd = use windows command prompt
+cygwin = use a cygwin shell
+
+also install cmake
+http://www.cmake.org/cmake/resources/software.html
+
+First
 cmd:
   nmake -f Makefile.nmake setup
   nmake -f Makefile.nmake distclean
@@ -36,10 +50,11 @@ That last one may fail, but the .dll we need may have been made.
 
 >-> Unscrewup the libraries.
 Get in a cygwin shell.
-sh:
+cygwin:
   devroot=/cygdrive/c/dev
   mkdir $devroot
-  cd $devroot/..
+  cd $devroot/
+  cd ..
   mkdir compile
   cd wireshark-win32-libs-1.4
   cp -r gtk2/* ../dev
@@ -49,8 +64,10 @@ sh:
   rmdir glib-2.0
 
 >-> Install libiconv.
-sh:
-  cd $devroot/../compile
+cygwin:
+  cd $devroot
+  cd ..
+  cd compile
   libiconv=iconv-1.9.2.win32
   wget http://xmlsoft.org/sources/win32/$libiconv.zip
   unzip $libiconv.zip
@@ -59,8 +76,10 @@ sh:
 
 
 >-> Compile/install libxml2.
-sh:
-  cd $devroot/../compile
+cygwin:
+  cd $devroot
+  cd ..
+  cd compile
   libxml=libxml2-2.7.6
 #Note: I've had problems with newer versions.
   wget ftp://xmlsoft.org/libxml2/$libxml.tar.gz
