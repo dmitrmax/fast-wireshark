@@ -11,6 +11,7 @@ import com.google.code.fastwireshark.io.AsciiBinaryOutputStream;
 import com.google.code.fastwireshark.io.BinaryOutputStream;
 import com.google.code.fastwireshark.io.MessageTemplateRepository;
 import com.google.code.fastwireshark.io.PcapFileWriter;
+import com.google.code.fastwireshark.io.TCPLoopBackOutputStream;
 import com.google.code.fastwireshark.io.UDPLoopBackOutputStream;
 import com.google.code.fastwireshark.io.XMLDataPlanLoader;
 import com.google.code.fastwireshark.runner.DataPlanRunner;
@@ -34,6 +35,7 @@ public class Main {
 			public boolean binaryOutput;
 			public short port = -1;
 			public String pcapFile;
+			public boolean tcpip;
 
 			/**
 			 * Parses out the command line arguments and sets the public fields
@@ -45,8 +47,9 @@ public class Main {
 							"\t[-t <templateFile>[ <templateFile2>...]]\n" +
 							"\t[-p <planFile>]\n" +
 							"\t[-b]\n" +
-							"\t[-n <port>]" +
-							"\t[-P <pcap file>"
+							"\t[-n <port>]\n" +
+							"\t[-P <pcap file>]\n" +
+							"\t[-T]"
 							);
 					System.exit(0);
 				}
@@ -75,6 +78,10 @@ public class Main {
 						if(pcapFile != null){throw new RuntimeException("Multiple pcap file definitions");}
 						pcapFile = args[++i];
 					}
+					if(cur.equals("-T")){
+						if(tcpip){throw new RuntimeException("Multiple TCP/IP definitions");}
+						tcpip = true;
+					}
 				}
 				if(dataPlanFile == null){
 					throw new RuntimeException("No data plan file specified");
@@ -95,6 +102,9 @@ public class Main {
 			OutputStream out;
 			if(cargs.pcapFile != null && cargs.port > 0){
 				out = new PcapFileWriter(cargs.port, cargs.pcapFile);
+			} else
+			if(cargs.tcpip && cargs.port > 0){
+				out = new TCPLoopBackOutputStream(Constants.MAX_PACKET_SIZE, cargs.port);
 			} else
 			if(cargs.port > 0){
 				out = new UDPLoopBackOutputStream(Constants.MAX_PACKET_SIZE, cargs.port);

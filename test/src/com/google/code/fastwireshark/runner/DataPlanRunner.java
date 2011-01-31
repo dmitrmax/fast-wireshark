@@ -62,6 +62,12 @@ public class DataPlanRunner implements Constants{
 				runByteMessagePlan((ByteMessagePlan)mp);
 			}
 		}
+		messageOut.close();
+		try {
+			messageOut.getUnderlyingStream().close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	
