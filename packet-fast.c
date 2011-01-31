@@ -59,6 +59,7 @@ static guint config_port_number = 0;
 static const char* config_template_xml_path = 0;
 /*! Shows empty fields in data tree if true */
 static gboolean show_empty_optional_fields = 1;
+static gboolean use_tcp = 0;
 /*! If true does not capture or dissect packets */
 static gboolean enabled = 0;
 /*! If true display decimal fields in scientific notation */
@@ -179,6 +180,12 @@ void proto_register_fast ()
                                  "Enter a valid port number (1024-65535)",
                                  10,
                                  &config_port_number);
+  
+  prefs_register_bool_preference(module,
+                                   "use_tcp",
+                                   "Use TCP",
+                                   "Use TCP instead of UDP",
+                                   &use_tcp);
                                  
   prefs_register_string_preference(module,
                                    "template",
@@ -249,6 +256,10 @@ void proto_reg_handoff_fast ()
   static guint currentPort = 0;
   static dissector_handle_t fast_handle;
   const char* portField = "udp.port";
+
+  if(use_tcp){
+    portField = "tcp.port";
+  }
   
   if(enabled && !initialized){
     fast_handle = create_dissector_handle(&dissect_fast, proto_fast);
