@@ -1,14 +1,12 @@
 package com.google.code.fastwireshark.net;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
-import com.google.code.fastwireshark.io.AsciiBinaryOutputStream;
 import com.google.code.fastwireshark.util.Constants;
 
 
@@ -42,13 +40,9 @@ public class TCPLoopBackServer {
 	
 	public void write(ByteBuffer buf){
 		ByteBuffer read_buf = ByteBuffer.allocate(Constants.MAX_PACKET_SIZE);
-		OutputStream out = new AsciiBinaryOutputStream(System.out, true);
 		try {
 			serverclient.write(buf);
 			client.read(read_buf);
-			for(int i = 0 ; i < read_buf.position() ; i++){
-				out.write(read_buf.array()[i]);
-			}
 			read_buf.clear();
 		} catch (IOException e) {
 			e.printStackTrace();
