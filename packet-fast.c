@@ -55,11 +55,11 @@ static gint ett_fast = -1;
 /****** Preference controls ******/
 /*! Port number to use. */
 static guint config_port_number = 0;
+static char * config_port_field = "udp.port";
 /*! Template xml file, absolute or relative pathname. */
 static const char* config_template_xml_path = 0;
 /*! Shows empty fields in data tree if true */
 static gboolean show_empty_optional_fields = 1;
-static gboolean use_tcp = 0;
 /*! If true does not capture or dissect packets */
 static gboolean enabled = 0;
 /*! If true display decimal fields in scientific notation */
@@ -70,8 +70,10 @@ static gboolean showFieldOperators = 0;
 static gboolean showFieldMandatoriness = 0;
 
 enum ProtocolImplem { GenericImplem, CMEImplem, UMDFImplem, NImplem };
+enum Protocol { UDPImplem, TCPImplem, NOImplem };
 /*! The specific implementation of FAST to use. */
 static gint implementation = 0;
+static gint protocol = 0;
 /*! Table to hold pointers to previously dissected
  * packets to assure sequential disection.
  */
@@ -143,6 +145,12 @@ void proto_register_fast ()
     { "UMDF", "UMDF", UMDFImplem },
     { 0, 0, 0 }
   };
+  static enum_val_t protocol_buttons[] = 
+  {
+    { "UDP", "UDP", UDPImplem },
+    { "TCP", "TCP", TCPImplem },
+    { 0, 0, 0 }
+  };
   
   /* Subtree array. */
   static gint *ett[] = {
@@ -181,11 +189,13 @@ void proto_register_fast ()
                                  10,
                                  &config_port_number);
   
-  prefs_register_bool_preference(module,
-                                   "use_tcp",
-                                   "Use TCP",
-                                   "Use TCP instead of UDP",
-                                   &use_tcp);
+  prefs_register_enum_preference(module,
+                                  "protocol",
+                                  "Protocol",
+                                  "Network Protocol",
+                                  &protocol,
+                                  protocol_buttons,
+                                  FALSE);
                                  
   prefs_register_string_preference(module,
                                    "template",
@@ -255,10 +265,12 @@ void proto_reg_handoff_fast ()
   static gboolean initialized = FALSE;
   static guint currentPort = 0;
   static dissector_handle_t fast_handle;
-  const char* portField = "udp.port";
+  static char* currentPortField = "udp.port";
 
-  if(use_tcp){
-    portField = "tcp.port";
+  if(protocol){
+    config_port_field = "tcp.port";
+  } else {
+    config_port_field = "udp.port";
   }
   
   if(enabled && !initialized){
@@ -268,7 +280,7 @@ void proto_reg_handoff_fast ()
   
   if(enabled && initialized){
   
-    dissector_delete(portField, currentPort, fast_handle);
+    dissector_delete(currentPortField, currentPort, fast_handle);
 
     /* Set up port number. */
     if (initialized && config_port_number == 0) {
@@ -276,6 +288,7 @@ void proto_reg_handoff_fast ()
       fprintf(stderr, "FAST - WARNING: Port is not set, using default %u\n", config_port_number);
     }
     currentPort = config_port_number;
+    currentPortField = config_port_field;
 
     /* Read templates file. */
     if (initialized && config_template_xml_path) {
@@ -289,10 +302,10 @@ void proto_reg_handoff_fast ()
     }
 
     /* Tell Wireshark what underlying protocol and port we use. */
-    dissector_add(portField, config_port_number, fast_handle);
+    dissector_add(config_port_field, config_port_number, fast_handle);
   
   } else {
-    dissector_delete(portField, currentPort, fast_handle);  
+    dissector_delete(currentPortField, currentPort, fast_handle);  
   }
   
 }
