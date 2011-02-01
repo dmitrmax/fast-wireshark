@@ -517,6 +517,8 @@ gboolean ignore_xml_node (xmlNodePtr xmlnode)
 {
   return (0 == xmlStrcasecmp(xmlnode->name, (xmlChar*) "text") ||
           0 == xmlStrcasecmp(xmlnode->name, (xmlChar*) "comment") ||
+          0 == xmlStrcasecmp(xmlnode->name, (xmlChar*) "typeRef") ||
+          0 == xmlStrcasecmp(xmlnode->name, (xmlChar*) "templateRef") ||
           0 == xmlStrcasecmp(xmlnode->name, (xmlChar*) "length"));
 }
 
