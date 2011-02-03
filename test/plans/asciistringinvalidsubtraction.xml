@@ -1,0 +1,17 @@
+<plan>
+  <message value="25">
+    <ascii value="String"/>
+  </message>
+  <message value="25">
+    <ascii value="[ERR D7] The value of subtraction exceeds the bounds of int32"/>
+  </message>
+  <message value="25">
+    <ascii value="[ERR D7] The value of subtraction exceeds the bounds of int32"/>
+  </message>
+  <message value="25">
+    <ascii value="[ERR D7] The value of subtraction exceeds the bounds of int32"/>
+  </message>
+  <message value="25">
+    <ascii value="[ERR D7] The subtraction length is larger than the number of characters in the base value"/>
+  </message>
+</plan>

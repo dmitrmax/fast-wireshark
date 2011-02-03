@@ -4,6 +4,19 @@
 
 #include "basic-field.h"
 
+/*! \brief The sign bit for a 5 byte encoded Int32 */
+#define Int32SignBit 0x08
+/*! \brief The sign bit for a 10 byte encoded Int64 */
+#define Int64SignBit 0x01
+/*! \brief The extra bits after the sign bit for an Int32 comprised of 5 bytes */
+#define Int32ExtraBits 0x70
+/*! \brief The extra bits after the sign bit for an Int64 comprised of 10 bytes */
+#define Int64ExtraBits 0x7E
+/*! \brief The maximum number of stop bit encoded bytes an Int32 can occupy */
+#define Int32MaxBytes 5
+/*! \brief The maximum number of stop bit encoded bytes an Int64 can occupy */
+#define Int64MaxBytes 10
+
 enum field_status_enum
 {
   FieldExists,

@@ -171,3 +171,5 @@ rwcompare (TooMantIntBytes send "${test_dir}/byteplans/toomanyintbytes.xml"
   expect "${test_dir}/plans/toomanyintbytes.xml")
 rwcompare (ByteVectorDelta send "${test_dir}/byteplans/bv_delta.xml"
   expect "${test_dir}/plans/bv_delta.xml" bypass "tmpl" "${test_dir}/bv_templates.xml")
+rwcompare (AsciiStringSubtraction send "${test_dir}/byteplans/asciistringinvalidsubtraction.xml"
+  expect "${test_dir}/plans/asciistringinvalidsubtraction.xml" bypass "tmpl" "${test_dir}/templates.xml")

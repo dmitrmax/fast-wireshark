@@ -1,0 +1,86 @@
+<plan>
+  <!-- A normal string to set previous value -->
+  <bytemessage>
+    11000000
+    10011001
+    10000000
+    01010011
+    01110100
+    01110010
+    01101001
+    01101110
+    11100111
+  </bytemessage>
+  
+  <!-- A Delta with too many bytes for the delta -->
+  <bytemessage>
+    11000000
+    10011001
+    01000000
+    00000000
+    00000000
+    00000000
+    00000000
+    10000000
+    01010011
+    01110100
+    01110010
+    01101001
+    01101110
+    11100111
+  </bytemessage>
+  
+  <!-- A Delta with too many bits for the delta -->
+  <bytemessage>
+    11000000
+    10011001
+    00010000
+    00000000
+    00001100
+    00000000
+    10110000
+    01010011
+    01110100
+    01110010
+    01101001
+    01101110
+    11100111
+  </bytemessage>
+  
+  <!-- A Delta with too many bits for the delta -->
+  <bytemessage>
+    11000000
+    10011001
+    00011000
+    01111111
+    01111111
+    01111111
+    11111110
+    01010011
+    01110100
+    01110010
+    01101001
+    01101110
+    11100111
+  </bytemessage>
+  
+  <!-- A Delta with subtraction length greater than previous value -->
+  <bytemessage>
+    11000000
+    10011001
+    10001000
+    01010011
+    01110100
+    01110010
+    01010011
+    01110100
+    01110010
+    01101001
+    01101110
+    00100111
+    01101001
+    01101110
+    11100111
+  </bytemessage>
+  
+</plan>

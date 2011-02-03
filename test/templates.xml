@@ -304,6 +304,10 @@
     </uInt32>
   </template>
   <!-- END Dictionary test templates. -->
+  
+  <template name="t_ascii_delta" id="25" dictionary="template">
+    <string id="1" presence="mandatory" charset="ascii" name="delta_ascii"> <delta/> </string>
+  </template>
 
   <!-- Error Templates  -->
   <template name="t_int32_error1" id="100" dictionary="error">

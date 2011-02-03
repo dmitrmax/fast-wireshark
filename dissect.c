@@ -55,6 +55,7 @@ GNode* dissect_fast_bytes (DissectPosition* position, GNode* parent)
 
   /* Bail out if template not found. */
   if (!tmpl) {
+
     g_free(position->pmap);
     g_free(fdata);
     DBG1("Template %d not defined.", template_id);
@@ -74,7 +75,8 @@ GNode* dissect_fast_bytes (DissectPosition* position, GNode* parent)
 }
 
 
-/*! \brief  Construct a message data tree (of FieldData).
+/*! \brief  Construct
+ a message data tree (of FieldData).
  * \param tnode  Template node, contains type definition.
  * \param position  Current position in message.
  * \param parent  Parent node in data tree.
@@ -243,6 +245,7 @@ void dissect_optional (const GNode* tnode,
   gboolean set_dict   = FALSE;
   SetupDissectStack(ftype, fdata,  tnode, dnode);
   if (ftype->mandatory) {
+
     BAILOUT(;,"Don't call this function on a mandatory field.");
   }
   if ((FieldTypeDecimal == ftype->type ||
@@ -590,14 +593,14 @@ gboolean dissect_ascii_delta(const FieldType* ftype, FieldData* fdata,
   FieldData fdata_temp;
   FieldData input_str;
   FieldData lookup;
-  gint64 subtract;
+  gint32 subtract;
   gint64 cut_length;
   gint64 input_str_len;
   gboolean append_to_front;
   
   /* get the subtraction length */
-  basic_dissect_int64(position, &fdata_temp);
-  subtract = fdata_temp.value.i64;
+  basic_dissect_int32(position, &fdata_temp);
+  subtract = fdata_temp.value.i32;
   
   /* get the previous string */
   if(!get_dictionary_value(ftype, &lookup)) {
@@ -606,6 +609,28 @@ gboolean dissect_ascii_delta(const FieldType* ftype, FieldData* fdata,
   
   /* get the input string */
   basic_dissect_ascii_string (position, &input_str);
+  
+  /* ERROR catching for D7 */
+  
+  /* subtration length is greater than 5 */
+  if(fdata_temp.nbytes > 5){
+    
+    fdata->status = FieldError;
+    fdata->value.ascii.bytes = (guint8*)g_strdup_printf(
+        "[ERR D7] The value of subtraction exceeds the bounds of int32");
+    cleanup_field_value(FieldTypeAsciiString, &lookup.value);
+    return FALSE;
+  }
+  /* subtraction length equal to 5 and... */
+  if(fdata_temp.nbytes == 5 && 
+     (FieldError == fdata_temp.status)) {
+    
+    fdata->status = FieldError;      
+    fdata->value.ascii.bytes = (guint8*)g_strdup_printf(
+        "[ERR D7] The value of subtraction exceeds the bounds of int32");
+    cleanup_field_value(FieldTypeAsciiString, &lookup.value);
+    return FALSE;
+  }
   
   /* append to front or tail? */
   append_to_front = (subtract < 0);
@@ -616,13 +641,15 @@ gboolean dissect_ascii_delta(const FieldType* ftype, FieldData* fdata,
   {
     /* if the previous value is shorter than the
      * subtraction length, this is an error.
-     *
-     * TODO: make this a legit error.
      */
     cleanup_field_value(FieldTypeAsciiString, &input_str.value);
     cleanup_field_value(FieldTypeAsciiString, &lookup.value); 
-    BAILOUT(FALSE;,"[ERR D7]: The subtraction length is larger than the"
-                " number of characters in the base value");
+    
+    fdata->status = FieldError;
+    fdata->value.ascii.bytes = (guint8*)g_strdup_printf(
+      "[ERR D7] The subtraction length is larger than the %s",
+       "number of characters in the base value");
+    return FALSE;
 
   }
   
@@ -666,6 +693,7 @@ gboolean dissect_ascii_delta(const FieldType* ftype, FieldData* fdata,
   
   return FALSE;
 }
+
 
 
 /*! \brief  Given a byte stream, dissect a unicode string.
