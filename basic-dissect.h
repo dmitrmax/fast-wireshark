@@ -21,6 +21,7 @@ enum field_status_enum
 {
   FieldExists,
   FieldEmpty,
+  FieldUndefined,
   FieldError
 };
 typedef enum field_status_enum FieldStatus;

@@ -200,6 +200,9 @@ gboolean get_dictionary_value(const FieldType* ftype,
       fdata->status = FieldError;
     }
   }
+  else {
+    fdata->status = FieldUndefined;
+  }
   return found;
 }
 

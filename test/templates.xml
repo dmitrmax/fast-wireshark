@@ -308,7 +308,19 @@
   <template name="t_ascii_delta" id="25" dictionary="template">
     <string id="1" presence="mandatory" charset="ascii" name="delta_ascii"> <delta/> </string>
   </template>
-
+  
+  <template name="t_error_d5_copy" id="26" dictionary="template">
+    <int32 id="1" name="int32" presence="mandatory" key="key">
+      <copy/>
+    </int32>
+  </template>  
+  
+  <template name="t_error_d5_inc" id="27" dictionary="template">
+    <int64 id="1" name="int64" presence="mandatory" key="key">
+      <increment/>
+    </int64>
+  </template>  
+  
   <!-- Error Templates  -->
   <template name="t_int32_error1" id="100" dictionary="error">
     <int32 id="1" name="int32" key="error">

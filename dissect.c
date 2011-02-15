@@ -320,6 +320,15 @@ gboolean dissect_copy(const GNode* tnode,
   } else {
     /* TODO: Check return status. */
     get_dictionary_value(ftype, fdata);
+    
+    if(FieldUndefined == fdata->status && ftype->mandatory)
+    {
+      fdata->status = FieldError;
+      fdata->value.ascii.bytes = (guint8*)g_strdup_printf(
+          "[ERR D5] Mandatory field not present, undefined previous value");
+      return FALSE;
+    }
+    
   }
   return used;
 }                      
@@ -360,7 +369,8 @@ gboolean dissect_int_op(gint64* delta,
 {
   gboolean presence_bit;
   gboolean dissect_it = FALSE;
-
+  
+  
   switch(ftype->op) {
     case FieldOperatorConstant:
       BAILOUT(FALSE;,"Don't try to set the dictionary value on a constant");
@@ -369,13 +379,18 @@ gboolean dissect_int_op(gint64* delta,
     case FieldOperatorDelta:
       {
         FieldData fdata_temp; 
-        gboolean undefined;
-        undefined = !get_dictionary_value(ftype, fdata);
-        if(undefined && !ftype->empty) {
-          copy_field_value(ftype->type, &ftype->value, &fdata->value);
-        } else if(undefined && ftype->empty) {
-          /* Zero out all bytes (regardless of integer type) */
-          memset(&fdata->value, 0, sizeof(FieldValue));
+        get_dictionary_value(ftype, fdata);
+        
+        if(FieldUndefined == fdata->status)
+        {
+          fdata->status = FieldExists;
+          
+          if(!ftype->empty) {
+            copy_field_value(ftype->type, &ftype->value, &fdata->value);
+          } else {
+            /* Zero out all bytes (regardless of integer type) */
+            memset(&fdata->value, 0, sizeof(FieldValue));
+          }
         }
         
         basic_dissect_int64(position, &fdata_temp);
@@ -383,6 +398,7 @@ gboolean dissect_int_op(gint64* delta,
         if (!ftype->mandatory && 0 < *delta) {
           *delta -= 1;
         }
+      
       }      
       break;
       
@@ -390,7 +406,13 @@ gboolean dissect_int_op(gint64* delta,
       presence_bit = dissect_shift_pmap(position);
       if(presence_bit) {
         dissect_it = TRUE;
-      } else {
+      } else if(ftype->mandatory) {
+        fdata->status = FieldError;
+        fdata->value.ascii.bytes = (guint8*)g_strdup_printf(
+          "[ERR D5] Mandatory field not present, undefined previous value");
+        return FALSE;
+      }
+      else {
         *delta = 1;
       }
       break;
@@ -423,7 +445,16 @@ void dissect_uint32 (const GNode* tnode,
       delta = -1;
     }
   }
-  
+  else if(FieldUndefined == fdata->status && 
+         (FieldOperatorIncrement == ftype->op ||
+          FieldOperatorCopy == ftype->op))
+  {
+    fdata->status = FieldError;
+    fdata->value.ascii.bytes = (guint8*)g_strdup_printf(
+          "[ERR D5] Mandatory field not present, undefined previous value");
+    return;
+  }
+    
   fdata->value.u32 = (guint32) (fdata->value.u32 + delta);
   set_dictionary_value(ftype, fdata);
 }
@@ -449,6 +480,16 @@ void dissect_uint64 (const GNode* tnode,
       delta = -1;
     }
   }
+  else if(FieldUndefined == fdata->status && 
+         (FieldOperatorIncrement == ftype->op ||
+          FieldOperatorCopy == ftype->op))
+  {
+    fdata->status = FieldError;
+    fdata->value.ascii.bytes = (guint8*)g_strdup_printf(
+          "[ERR D5] Mandatory field not present, undefined previous value");
+    return;
+  }
+  
   fdata->value.u64 += delta;
   set_dictionary_value(ftype, fdata);
 }
@@ -472,7 +513,18 @@ void dissect_int32 (const GNode* tnode,
     if (!ftype->mandatory && 0 < fdata->value.i32) {
       delta = -1;
     }
+    
   }
+  else if(FieldUndefined == fdata->status && 
+         (FieldOperatorIncrement == ftype->op ||
+          FieldOperatorCopy == ftype->op))
+  {
+    fdata->status = FieldError;
+    fdata->value.ascii.bytes = (guint8*)g_strdup_printf(
+          "[ERR D5] Mandatory field not present, undefined previous value");
+    return;
+  }
+  
   fdata->value.i32 = (gint32) (fdata->value.i32 + delta);
   set_dictionary_value(ftype, fdata);
 }
@@ -494,10 +546,21 @@ void dissect_int64 (const GNode* tnode,
   
   if (dissect_it) {
     basic_dissect_int64 (position, fdata);
+    
     if (!ftype->mandatory && 0 < fdata->value.i64) {
       delta = -1;
     }
   }
+  else if(FieldUndefined == fdata->status && 
+         (FieldOperatorIncrement == ftype->op ||
+          FieldOperatorCopy == ftype->op))
+  {
+    fdata->status = FieldError;
+    fdata->value.ascii.bytes = (guint8*)g_strdup_printf(
+          "[ERR D5] Mandatory field not present, undefined previous value");
+    return;
+  }
+  
   fdata->value.i64 += delta;
   set_dictionary_value(ftype, fdata);
 }
@@ -581,6 +644,7 @@ void dissect_ascii_string (const GNode* tnode,
   if (dissect_it) {
     basic_dissect_ascii_string (position, fdata);
   }
+  
   set_dictionary_value(ftype, fdata);
 }
 
@@ -693,8 +757,6 @@ gboolean dissect_ascii_delta(const FieldType* ftype, FieldData* fdata,
   
   return FALSE;
 }
-
-
 
 /*! \brief  Given a byte stream, dissect a unicode string.
  * \param tnode  Template tree node.
