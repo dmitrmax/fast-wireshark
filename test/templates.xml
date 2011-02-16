@@ -316,9 +316,9 @@
   </template>  
   
   <template name="t_error_d5_inc" id="27" dictionary="template">
-    <int64 id="1" name="int64" presence="mandatory" key="key">
+    <uInt64 id="1" name="uInt64" presence="mandatory" key="key">
       <increment/>
-    </int64>
+    </uInt64>
   </template>  
   
   <!-- Error Templates  -->

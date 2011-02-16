@@ -1,0 +1,10 @@
+<Plan>
+  <bytemessage>
+    11000000 <!-- pmap   -->
+    10011010 <!-- tid 26 -->
+  </bytemessage>     
+  <bytemessage>
+    11000000 <!-- pmap   -->
+    10011011 <!-- tid 27 -->
+  </bytemessage>
+</Plan>

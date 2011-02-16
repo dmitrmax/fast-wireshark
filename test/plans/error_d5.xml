@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<Plan>
+ <Message value="26">
+  <int32 value="[ERR D5] Mandatory field not present, undefined previous value"/>
+ </Message>
+ <Message value="27">
+  <uint64 value="[ERR D5] Mandatory field not present, undefined previous value"/>
+ </Message>
+</Plan>
