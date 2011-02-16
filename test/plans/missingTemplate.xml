@@ -1,0 +1,14 @@
+<plan>
+  <message value="0">
+    <int32 value="42"/>
+  </message>
+  <message value="2112">
+    <ascii value="[ERR D9] Template does not exist"/>
+  </message>
+  <message value="6208">
+    <ascii value="[ERR D9] Template does not exist"/>
+  </message>
+  <message value="0">
+    <int32 value="42"/>
+  </message>
+</plan>

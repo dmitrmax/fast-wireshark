@@ -17,8 +17,6 @@ import com.google.code.fastwireshark.io.XMLDataPlanLoader;
 import com.google.code.fastwireshark.runner.DataPlanRunner;
 import com.google.code.fastwireshark.util.Constants;
 
-
-
 public class Main {
 
 
@@ -86,6 +84,18 @@ public class Main {
 				if(dataPlanFile == null){
 					throw new RuntimeException("No data plan file specified");
 				}
+			}
+			
+			@Override
+			public String toString(){
+				StringBuilder builder = new StringBuilder();
+				builder.append(templateFiles).append('\n');
+				builder.append(dataPlanFile).append('\n');
+				builder.append(binaryOutput).append('\n');
+				builder.append(port).append('\n');
+				builder.append(pcapFile).append('\n');
+				builder.append(tcpip).append('\n');
+				return builder.toString();
 			}
 		}
 		CommandLineArguments cargs = null;

@@ -381,10 +381,49 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
         GNode* tmpl;
         data = g_node_new(0);
         tmpl = dissect_fast_bytes (position, data);
-        if (!tmpl) {
+        /* If no template is found for the message make a fake message/template then break out */
+        if(tmpl == NULL){
+          GNode* tnode;
+          GNode* vnode;
+          GNode* dnode;
+          FieldType* tfield;
+          FieldType* vfield;
+          FieldData* fdata;
+
+          /* Create a template that contains one ascii field */
+          tnode = create_field(FieldTypeUInt32, FieldOperatorCopy);
+          tfield = (FieldType*) tnode->data;
+          tfield->name = "Error Template";
+          /* Put the erronous tid in as this templates id */
+          fdata = data->data;
+          tfield->id = fdata->value.u32;
+          vnode = create_field(FieldTypeAsciiString, FieldOperatorNone);
+          vfield = (FieldType*) vnode->data;
+          vfield->name = "Error Message";
+          vfield->id = 0;
+          g_node_insert_after(tnode,0,vnode);
+          tmpl = tnode;
+          
+          /* Create data for the above template that describes the error */
+          fdata = (FieldData*) g_malloc(sizeof(FieldData));
+          g_free(data->data);
           g_node_destroy(data);
-          break;
-        }
+          data = g_node_new(fdata);
+          fdata->start = 0;
+          fdata->nbytes = 0;
+          fdata-> status = FieldEmpty;
+          fdata->value.u32 = -1;
+          fdata = (FieldData*) g_malloc(sizeof(FieldData));
+          dnode = g_node_new(fdata);
+          g_node_insert_after(data,NULL,dnode);
+          fdata->start = 0;
+          fdata->nbytes = 0;
+          fdata->value.ascii.bytes = (guint8*)g_strdup_printf("[ERR D9] Template does not exist");
+          fdata->status = FieldError;
+          
+          /* Stop parsing the packet as we don't know whats going on any more */
+          position->nbytes = 0;
+        } 
         packetData->dataTrees = g_list_append(packetData->dataTrees, data);
         packetData->tmplTrees = g_list_append(packetData->tmplTrees, tmpl);
       }

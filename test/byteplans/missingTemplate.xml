@@ -1,0 +1,28 @@
+<plan>
+  <!-- Send a perfectly valid packet -->
+  <bytemessage>
+    11000000
+    10000000
+    10101010
+  </bytemessage>
+  <!-- Send a error packet with the minimal number of bytes -->
+  <bytemessage>
+    11000000
+    00010000
+    11000000
+  </bytemessage>
+  <!-- Send a error packet with extra bytes -->
+  <bytemessage>
+    11000000
+    00110000
+    11000000
+    11000000
+    10000000
+  </bytemessage>
+  <!-- Send a perfectly valid packet, though state means nothing at this point -->
+  <bytemessage>
+    11000000
+    10000000
+    10101010
+  </bytemessage>
+</plan>
