@@ -5,6 +5,7 @@
 #include <glib.h>
 
 GNode* parse_templates_xml (const char* filename);
+void quick_message (gchar *message);
 
 #endif
 

@@ -1,7 +1,7 @@
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <gtk/gtk.h>
 
 #include <libxml/xmlmemory.h>
 #include <libxml/parser.h>
@@ -28,6 +28,34 @@ static gboolean parse_decimal (xmlNodePtr xmlnode, FieldType * tfield, GNode * t
 static gboolean parse_sequence (xmlNodePtr xmlnode, FieldType* tfield, GNode* tnode);
 static gboolean operator_type_match (xmlNodePtr node, FieldOperatorIdentifier type);
 
+
+/* Function to open a dialog box displaying the message provided. */
+void quick_message (gchar *message)
+{
+   GtkWidget *dialog, *label, *content_area;
+
+   /* Create the widgets */
+   dialog = gtk_dialog_new_with_buttons ("Message",
+                                         NULL,
+                                         GTK_DIALOG_DESTROY_WITH_PARENT,
+                                         GTK_STOCK_OK,
+                                         GTK_RESPONSE_NONE,
+                                         NULL);
+   content_area = gtk_dialog_get_content_area (GTK_DIALOG (dialog));
+   label = gtk_label_new (message);
+
+   /* Ensure that the dialog box is destroyed when the user responds */
+   g_signal_connect_swapped (dialog,
+                             "response",
+                             G_CALLBACK (gtk_widget_destroy),
+                             dialog);
+
+   /* Add the label, and show everything we've added to the dialog */
+
+   gtk_container_add (GTK_CONTAINER (content_area), label);
+   gtk_widget_show_all (dialog);
+}
+
 /*! \brief  Convert an XML file into an internal representation of
  *          the templates.
  * \param filename  Name of the XML file to parse.
@@ -43,7 +71,8 @@ GNode* parse_templates_xml(const char* filename)
 	doc = xmlParseFile(filename); /* attempt to parse xml file and get pointer to parsed document */
 	
 	if (doc == NULL) {
-		fprintf(stderr,"Document not parsed successfully. \n");
+		quick_message("Document not parsed successfully.");
+    fprintf(stderr,"Document not parsed successfully. \n");
 		return 0;
 	}
 

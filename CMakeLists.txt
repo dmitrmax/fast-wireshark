@@ -90,16 +90,22 @@ endif ()
 
 find_package (GLIB2 REQUIRED)
 
-
 include_directories (${wireshark_src}) 
 include_directories (${GLIB2_INCLUDE_DIRS})
 include_directories (${LIBXML2_INCLUDE_DIR}) 
-
 
 add_library (plugin SHARED ${plugin_srcs})
 target_link_libraries (plugin ${wireshark_libs})
 target_link_libraries (plugin ${LIBXML2_LIBRARIES})
 target_link_libraries (plugin ${GLIB2_LIBRARIES})
+
+#Attempting to add GTK to the build
+FIND_PACKAGE(GTK2 COMPONENTS gtk)
+INCLUDE_DIRECTORIES(${GTK2_INCLUDE_DIRS})
+#  ADD_EXECUTABLE(foo foo.cc)
+TARGET_LINK_LIBRARIES(plugin ${GTK2_LIBRARIES})
+
+
 
 set_target_properties(plugin PROPERTIES
   OUTPUT_NAME "${plugin_name}"
