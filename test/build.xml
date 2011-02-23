@@ -2,14 +2,15 @@
 <project default="jar" name="Create Runnable Jar for openFast Data Plan Runner">
 	
 	<property name="lib.dir" value="lib"/>
+	<property name="openfast.jar" value="${lib.dir}/openfast.jar" />
 	
 	<path id="libraries">
 		<fileset dir="${lib.dir}" includes="*.jar"/>
 	</path>
 	
-	<target name="fetchLib">
+	<target name="fetchlib">
 		<mkdir dir="lib"/>
-		<get src="http://sourceforge.net/projects/openfast/files/openfast4j/openfast4j-0.9.8/openfast-0.9.8.jar/download" dest="lib/openfast.jar"/>
+		<get src="http://sourceforge.net/projects/openfast/files/openfast4j/openfast4j-0.9.8/openfast-0.9.8.jar/download" dest="${openfast.jar}"/>
 	</target>
 	
 	<target name="clean">
@@ -29,22 +30,22 @@
 	<target name="jar" depends="compile">
 		<jar destfile="OpenFastPlanRunner.jar" filesetmanifest="mergewithoutmain">
 			<manifest>
-				<attribute name="Main-Class" value="com.google.code.fastwireshark.Main"/>
+				<attribute name="Main-Class" value="fastwireshark.Main"/>
 				<attribute name="Class-Path" value="."/>
 			</manifest>
 			<fileset dir="bin"/>
-			<zipfileset excludes="META-INF/*.SF" src="lib/openfast.jar"/>
+			<zipfileset excludes="META-INF/*.SF" src="${openfast.jar}"/>
 		</jar>
 	</target>
 
 	<target name="debugjar" depends="debugcompile">
 		<jar destfile="OpenFastPlanRunner.jar" filesetmanifest="mergewithoutmain">
 			<manifest>
-				<attribute name="Main-Class" value="com.google.code.fastwireshark.Main"/>
+				<attribute name="Main-Class" value="fastwireshark.Main"/>
 				<attribute name="Class-Path" value="."/>
 			</manifest>
 			<fileset dir="bin"/>
-			<zipfileset excludes="META-INF/*.SF" src="lib/openfast.jar"/>
+			<zipfileset excludes="META-INF/*.SF" src="${openfast.jar}"/>
 		</jar>
 	</target>
 </project>
