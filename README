@@ -21,16 +21,23 @@ Move dist\fast-ARCH.dll to C:\Program Files\Wireshark\plugins\WS_VERSION
 
 - local install
 
-cp dist/fast-ARCH.so $HOME/wireshark/plugins/packet-fast.so
+cp dist/fast-ARCH.so $HOME/wireshark/plugins/fast.so
 
-See "Linux Capture Permissions" for how to run Wireshark as a user if you
-can't already. If Wireshark is invoked with 'sudo', this install method will
+The wireshark directory may be hidden in the home directory,
+so it may also be $HOME/.wireshark/plugins/fast.so
+Once the fast.so file is in the wireshark plugins directory,
+FAST should be sucessfully installed.
+
+-
+
+See "Linux Capture Permissions" page on the wireshark Wiki...
+
+- http://wiki.wireshark.org/CaptureSetup/CapturePrivileges
+
+...for how to run Wireshark as a user if you can't already
+If Wireshark is invoked with 'sudo', this install method will
 not work.
 
-
-- global install
-
-Place dist/fast-ARCH.so into /usr/lib/wireshark/plugins/WS_VERSION
 
 -------------
 - Seeing Something Happen
