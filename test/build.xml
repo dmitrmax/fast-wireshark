@@ -3,6 +3,7 @@
 	
 	<property name="lib.dir" value="lib"/>
 	<property name="openfast.jar" value="${lib.dir}/openfast.jar" />
+	<property name="main.class" value="com.google.code.fastwireshark.Main" />
 	
 	<path id="libraries">
 		<fileset dir="${lib.dir}" includes="*.jar"/>
@@ -30,7 +31,7 @@
 	<target name="jar" depends="compile">
 		<jar destfile="OpenFastPlanRunner.jar" filesetmanifest="mergewithoutmain">
 			<manifest>
-				<attribute name="Main-Class" value="fastwireshark.Main"/>
+				<attribute name="Main-Class" value="${main.class}"/>
 				<attribute name="Class-Path" value="."/>
 			</manifest>
 			<fileset dir="bin"/>
@@ -41,7 +42,7 @@
 	<target name="debugjar" depends="debugcompile">
 		<jar destfile="OpenFastPlanRunner.jar" filesetmanifest="mergewithoutmain">
 			<manifest>
-				<attribute name="Main-Class" value="fastwireshark.Main"/>
+				<attribute name="Main-Class" value="${main.class}"/>
 				<attribute name="Class-Path" value="."/>
 			</manifest>
 			<fileset dir="bin"/>
