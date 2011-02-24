@@ -1,4 +1,4 @@
-package com.google.code.fastwireshark;
+package fastwireshark;
 
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -6,16 +6,16 @@ import java.util.List;
 
 import org.openfast.*;
 
-import com.google.code.fastwireshark.data.DataPlan;
-import com.google.code.fastwireshark.io.AsciiBinaryOutputStream;
-import com.google.code.fastwireshark.io.BinaryOutputStream;
-import com.google.code.fastwireshark.io.MessageTemplateRepository;
-import com.google.code.fastwireshark.io.PcapFileWriter;
-import com.google.code.fastwireshark.io.TCPLoopBackOutputStream;
-import com.google.code.fastwireshark.io.UDPLoopBackOutputStream;
-import com.google.code.fastwireshark.io.XMLDataPlanLoader;
-import com.google.code.fastwireshark.runner.DataPlanRunner;
-import com.google.code.fastwireshark.util.Constants;
+import fastwireshark.data.DataPlan;
+import fastwireshark.io.AsciiBinaryOutputStream;
+import fastwireshark.io.BinaryOutputStream;
+import fastwireshark.io.MessageTemplateRepository;
+import fastwireshark.io.PcapFileWriter;
+import fastwireshark.io.TCPLoopBackOutputStream;
+import fastwireshark.io.UDPLoopBackOutputStream;
+import fastwireshark.io.XMLDataPlanLoader;
+import fastwireshark.runner.DataPlanRunner;
+import fastwireshark.util.Constants;
 
 public class Main {
 

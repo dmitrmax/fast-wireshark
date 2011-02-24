@@ -1,4 +1,4 @@
-package com.google.code.fastwireshark.net;
+package fastwireshark.net;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -7,7 +7,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
-import com.google.code.fastwireshark.util.Constants;
+import fastwireshark.util.Constants;
 
 
 

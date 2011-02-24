@@ -1,4 +1,4 @@
-package com.google.code.fastwireshark.util;
+package fastwireshark.util;
 
 /**
  * Defines constants that are used between multiple classes

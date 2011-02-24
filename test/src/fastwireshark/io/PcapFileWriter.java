@@ -1,4 +1,4 @@
-package com.google.code.fastwireshark.io;
+package fastwireshark.io;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
-import com.google.code.fastwireshark.util.Constants;
+import fastwireshark.util.Constants;
 
 /**
  * Writes bytes to a pcap-style file

@@ -1,4 +1,4 @@
-package com.google.code.fastwireshark.data;
+package fastwireshark.data;
 
 public class ByteMessagePlan implements Message{
 

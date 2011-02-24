@@ -1,4 +1,4 @@
-package com.google.code.fastwireshark.runner;
+package fastwireshark.runner;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -17,10 +17,10 @@ import org.openfast.template.Group;
 import org.openfast.template.Scalar;
 import org.openfast.template.Sequence;
 
-import com.google.code.fastwireshark.data.ByteMessagePlan;
-import com.google.code.fastwireshark.data.DataPlan;
-import com.google.code.fastwireshark.data.MessagePlan;
-import com.google.code.fastwireshark.util.Constants;
+import fastwireshark.data.ByteMessagePlan;
+import fastwireshark.data.DataPlan;
+import fastwireshark.data.MessagePlan;
+import fastwireshark.util.Constants;
 
 public class DataPlanRunner implements Constants{
 
@@ -55,7 +55,7 @@ public class DataPlanRunner implements Constants{
 		if(messageOut == null){
 			throw new RuntimeException("messageOut is null");
 		}
-		for(com.google.code.fastwireshark.data.Message mp : dp){
+		for(fastwireshark.data.Message mp : dp){
 			if(mp instanceof MessagePlan){
 				runMessagePlan((MessagePlan)mp);
 			} else if (mp instanceof ByteMessagePlan){

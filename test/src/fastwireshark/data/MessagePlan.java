@@ -1,4 +1,4 @@
-package com.google.code.fastwireshark.data;
+package fastwireshark.data;
 import java.util.List;
 
 import org.openfast.template.MessageTemplate;

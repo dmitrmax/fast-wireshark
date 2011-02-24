@@ -1,4 +1,4 @@
-package com.google.code.fastwireshark.io;
+package fastwireshark.io;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;

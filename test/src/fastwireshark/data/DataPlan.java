@@ -1,4 +1,4 @@
-package com.google.code.fastwireshark.data;
+package fastwireshark.data;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;

@@ -1,4 +1,4 @@
-package com.google.code.fastwireshark.net;
+package fastwireshark.net;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -53,9 +53,6 @@ public class UDPLoopBackServer{
 		} catch (IOException e) {
 			System.err.println("Error reading packet in");
 			throw new RuntimeException(e);
-		}
-		if(p == null){
-			throw new RuntimeException("Packet not recieved correctly");
 		}
 	}
 	

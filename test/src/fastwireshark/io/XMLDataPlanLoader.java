@@ -1,4 +1,4 @@
-package com.google.code.fastwireshark.io;
+package fastwireshark.io;
 
 
 import java.io.IOException;
@@ -17,10 +17,10 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import com.google.code.fastwireshark.data.ByteMessagePlan;
-import com.google.code.fastwireshark.data.DataPlan;
-import com.google.code.fastwireshark.data.MessagePlan;
-import com.google.code.fastwireshark.util.Constants;
+import fastwireshark.data.ByteMessagePlan;
+import fastwireshark.data.DataPlan;
+import fastwireshark.data.MessagePlan;
+import fastwireshark.util.Constants;
 
 public class XMLDataPlanLoader extends DefaultHandler implements Constants{
 

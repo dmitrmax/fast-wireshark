@@ -3,7 +3,7 @@
 	
 	<property name="lib.dir" value="lib"/>
 	<property name="openfast.jar" value="${lib.dir}/openfast.jar" />
-	<property name="main.class" value="com.google.code.fastwireshark.Main" />
+	<property name="main.class" value="fastwireshark.Main" />
 	
 	<path id="libraries">
 		<fileset dir="${lib.dir}" includes="*.jar"/>

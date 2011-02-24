@@ -1,4 +1,4 @@
-package com.google.code.fastwireshark.io;
+package fastwireshark.io;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -8,7 +8,7 @@ import java.io.OutputStream;
  * @author pmiele
  *
  */
-public class BinaryOutputStream extends OutputStream{
+public class AsciiBinaryOutputStream extends OutputStream{
 
 	private final OutputStream out;
 	private boolean newLineOnByte = false;
@@ -18,7 +18,7 @@ public class BinaryOutputStream extends OutputStream{
 	 * The output stream itself doesn't output, but converts for another output stream.
 	 * @param o OutputStream to wrap
 	 */
-	public BinaryOutputStream(OutputStream o){
+	public AsciiBinaryOutputStream(OutputStream o){
 		out = o;
 	}
 	
@@ -28,7 +28,7 @@ public class BinaryOutputStream extends OutputStream{
 	 * @param o OutputStream to wrap
 	 * @param newLineOnByte
 	 */
-	public BinaryOutputStream(OutputStream o, boolean newLineOnByte){
+	public AsciiBinaryOutputStream(OutputStream o, boolean newLineOnByte){
 		out = o;
 		this.newLineOnByte = newLineOnByte;
 	}
@@ -38,7 +38,14 @@ public class BinaryOutputStream extends OutputStream{
 	public void write(int i) throws IOException {
 		//Take the lower byte
 		byte b = (byte) i;
-		out.write(b);
+		String s = Integer.toBinaryString(b);
+		//If the byte is negative there will be 1's in the front, just grab the last 8 bits
+		if(s.length() == 32){
+			s = s.substring(24);
+		}
+		//Positive numbers drop leading zeros, Pad
+		while(s.length() < 8) { s = "0" + s; }
+		out.write(s.getBytes());
 		if(getNewLineOnByte()){
 			out.write('\n');
 		}
