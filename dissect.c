@@ -315,7 +315,6 @@ gboolean dissect_copy(const GNode* tnode,
   if(presence_bit) {
     used = FALSE;
   } else {
-    /* TODO: Check return status. */
     get_dictionary_value(ftype, fdata);
     
     if(FieldUndefined == fdata->status && ftype->mandatory)
@@ -442,15 +441,6 @@ void dissect_uint32 (const GNode* tnode,
       delta = -1;
     }
   }
-  else if(FieldUndefined == fdata->status && 
-         (FieldOperatorIncrement == ftype->op ||
-          FieldOperatorCopy == ftype->op))
-  {
-    fdata->status = FieldError;
-    fdata->value.ascii.bytes = (guint8*)g_strdup_printf(
-          "[ERR D5] Mandatory field not present, undefined previous value");
-    return;
-  }
     
   fdata->value.u32 = (guint32) (fdata->value.u32 + delta);
   set_dictionary_value(ftype, fdata);
@@ -476,15 +466,6 @@ void dissect_uint64 (const GNode* tnode,
     if (!ftype->mandatory) {
       delta = -1;
     }
-  }
-  else if(FieldUndefined == fdata->status && 
-         (FieldOperatorIncrement == ftype->op ||
-          FieldOperatorCopy == ftype->op))
-  {
-    fdata->status = FieldError;
-    fdata->value.ascii.bytes = (guint8*)g_strdup_printf(
-          "[ERR D5] Mandatory field not present, undefined previous value");
-    return;
   }
   
   fdata->value.u64 += delta;
@@ -512,16 +493,7 @@ void dissect_int32 (const GNode* tnode,
     }
     
   }
-  else if(FieldUndefined == fdata->status && 
-         (FieldOperatorIncrement == ftype->op ||
-          FieldOperatorCopy == ftype->op))
-  {
-    fdata->status = FieldError;
-    fdata->value.ascii.bytes = (guint8*)g_strdup_printf(
-          "[ERR D5] Mandatory field not present, undefined previous value");
-    return;
-  }
-  
+
   fdata->value.i32 = (gint32) (fdata->value.i32 + delta);
   set_dictionary_value(ftype, fdata);
 }
@@ -547,15 +519,6 @@ void dissect_int64 (const GNode* tnode,
     if (!ftype->mandatory && 0 < fdata->value.i64) {
       delta = -1;
     }
-  }
-  else if(FieldUndefined == fdata->status && 
-         (FieldOperatorIncrement == ftype->op ||
-          FieldOperatorCopy == ftype->op))
-  {
-    fdata->status = FieldError;
-    fdata->value.ascii.bytes = (guint8*)g_strdup_printf(
-          "[ERR D5] Mandatory field not present, undefined previous value");
-    return;
   }
   
   fdata->value.i64 += delta;
@@ -797,9 +760,6 @@ void dissect_byte_vector (const GNode* tnode,
     case FieldOperatorDelta:
     case FieldOperatorTail:
       {    
-      
-        /* TODO: test this, then merge it with ascii_delta function */
-      
         SizedData* vec;
         FieldData fdata_temp;
         FieldData input_str;
