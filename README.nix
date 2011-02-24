@@ -5,13 +5,18 @@ ______________________________________________________________________________
 
 >-> Get dependencies.
 Last time I checked, this is all you need from a bare debian-based system.
-  apt-get install build-essential bison flex \
+sudo apt-get install build-essential bison flex \
                   libgtk2.0-dev libpcap-dev \
                   libxml2-dev cmake
 
 You may want to get Wireshark too.
   apt-get install wireshark
 
+These are pretty much the same packages you'll need for Fedora
+sudo yum install build-essential bison flex \
+                  glib2-devel libpcap-devel \
+                  libxml2-devel cmake \
+                  gtk+
 
 >-> Setup Wireshark source.
 Download the Wireshark source and move it to ../wireshark relative to this
@@ -47,6 +52,8 @@ interfaces without being run as root.
 
 You may need to install "setcap".
   apt-get install libcap2-bin
+  or
+  yum install libcap2-bin
 
 For more information on this, see:
 http://wiki.wireshark.org/CaptureSetup/CapturePrivileges
