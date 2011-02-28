@@ -1,3 +1,6 @@
+REM Setup paths
+paths.bat
+
 REM Compile/install libxml2
 cd c:\compile\libxml2-2.7.6\win32
 cscript configure.js compiler=msvc ^
