@@ -80,6 +80,7 @@ else ()
   set (pfx "C:/dev") # Hardcoded >:(
   list (APPEND CMAKE_PREFIX_PATH "${pfx}")
   list (APPEND CMAKE_PREFIX_PATH "${pfx}/lib/glib-2.0")
+  list (APPEND CMAKE_PREFIX_PATH "${pfx}/lib/gtk-2.0")
   set (wireshark_libs "${wireshark_src}/epan/libwireshark.lib")
   find_package (LibXml2 REQUIRED)
   set (LIBXML2_LIBRARIES "")
