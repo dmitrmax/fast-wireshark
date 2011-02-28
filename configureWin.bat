@@ -1,5 +1,5 @@
 REM Setup paths
-paths.bat
+call paths.bat
 
 REM Compile/install libxml2
 cd c:\compile\libxml2-2.7.6\win32
@@ -16,5 +16,5 @@ mkdir "%HOMEPATH%\Application Data\Wireshark\plugins"
 
 REM Build the plugin
 cd c:\fast-wireshark
-build.bat
+call build.bat
 

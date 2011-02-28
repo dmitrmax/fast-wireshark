@@ -1,7 +1,7 @@
 REM Setup paths
-paths.bat
+call paths.bat
 
 REM Build the plugin
 cmake -G "NMake Makefiles"
 nmake
-install.bat
+call install.bat
