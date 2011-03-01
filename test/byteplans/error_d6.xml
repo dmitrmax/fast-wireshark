@@ -1,0 +1,35 @@
+<Plan>
+  <bytemessage>
+    11100000 <!-- pmap                    -->
+    10011101 <!-- tid 29: optional int32  -->
+    10000000 <!-- empty value             -->
+  </bytemessage>
+  <bytemessage>
+    11000000 <!-- pmap                    -->
+    10011010 <!-- tid 26: mandatory copy  -->
+             <!-- not present,
+                  empty previous value    -->
+  </bytemessage>     
+  <bytemessage>
+    11100000 <!-- pmap                    -->
+    10011101 <!-- tid 29: optional int32  -->
+    10000000 <!-- empty value             -->
+  </bytemessage>
+  <bytemessage>
+    11000000 <!-- pmap                    -->
+    10011011 <!-- tid 27: mandatory inc.  -->
+             <!-- not present,
+                  empty previous value    -->
+  </bytemessage>
+  <bytemessage>
+    11100000 <!-- pmap                    -->
+    10011101 <!-- tid 29: optional int32  -->
+    10000000 <!-- empty value             -->
+  </bytemessage>
+  <bytemessage>
+    11000000 <!-- pmap                    -->
+    10011100 <!-- tid 28: mandatory delta -->
+             <!-- not present,
+                  empty previous value    -->
+  </bytemessage>
+</Plan>
