@@ -309,17 +309,35 @@
     <string id="1" presence="mandatory" charset="ascii" name="delta_ascii"> <delta/> </string>
   </template>
   
-  <template name="t_error_d5_copy" id="26" dictionary="template">
+  <template name="t_error_d5_d6_copy" id="26" dictionary="err_d5d6">
     <int32 id="1" name="int32" presence="mandatory" key="key">
       <copy/>
     </int32>
   </template>  
   
-  <template name="t_error_d5_inc" id="27" dictionary="template">
-    <uInt64 id="1" name="uInt64" presence="mandatory" key="key">
+  <template name="t_error_d6_inc" id="27" dictionary="err_d5d6">
+    <int32 id="1" name="int32" presence="mandatory" key="key">
       <increment/>
-    </uInt64>
+    </int32>
   </template>  
+  
+  <template name="t_error_d6_delta" id="28" dictionary="err_d5d6">
+    <int32 id="1" name="int32" presence="mandatory" key="key">
+      <delta/>
+    </int32>
+  </template> 
+ 
+  <template name="t_error_setup" id = "29" dictionary="err_d5d6">
+    <int32 id="1" name="int32" presence="optional" key="key">
+    </int32>
+  </template>
+  
+  <template name="t_error_d5_inc" id="30" dictionary="template">
+    <int32 id="1" name="int32" presence="mandatory" key="key">
+      <increment/>
+    </int32>
+  </template> 
+
   
   <!-- Error Templates  -->
   <template name="t_int32_error1" id="100" dictionary="error">

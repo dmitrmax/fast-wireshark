@@ -324,6 +324,13 @@ gboolean dissect_copy(const GNode* tnode,
           "[ERR D5] Mandatory field not present, undefined previous value");
       return FALSE;
     }
+    else if(FieldEmpty == fdata->status && ftype->mandatory)
+    {
+      fdata->status = FieldError;
+      fdata->value.ascii.bytes = (guint8*)g_strdup_printf(
+          "[ERR D6] Mandatory field not present, empty previous value");
+      return FALSE;
+    }
     
   }
   return used;
@@ -388,6 +395,13 @@ gboolean dissect_int_op(gint64* delta,
             memset(&fdata->value, 0, sizeof(FieldValue));
           }
         }
+        else if(FieldEmpty == fdata->status && ftype->mandatory)
+        {
+          fdata->status = FieldError;
+          fdata->value.ascii.bytes = (guint8*)g_strdup_printf(
+              "[ERR D6] Mandatory field not present, empty previous value");
+          return FALSE;
+        }
         
         basic_dissect_int64(position, &fdata_temp);
         *delta = fdata_temp.value.i64;
@@ -402,14 +416,27 @@ gboolean dissect_int_op(gint64* delta,
       presence_bit = dissect_shift_pmap(position);
       if(presence_bit) {
         dissect_it = TRUE;
-      } else if(ftype->mandatory) {
-        fdata->status = FieldError;
-        fdata->value.ascii.bytes = (guint8*)g_strdup_printf(
-          "[ERR D5] Mandatory field not present, undefined previous value");
-        return FALSE;
       }
       else {
-        *delta = 1;
+        /* do a dictionary lookup */
+        get_dictionary_value(ftype, fdata);
+          
+        if(FieldEmpty == fdata->status && ftype->mandatory)
+        {
+          fdata->status = FieldError;
+          fdata->value.ascii.bytes = (guint8*)g_strdup_printf(
+              "[ERR D6] Mandatory field not present, empty previous value");
+          return FALSE;
+        }
+        else if(FieldUndefined == fdata->status && ftype->mandatory) {
+          fdata->status = FieldError;
+          fdata->value.ascii.bytes = (guint8*)g_strdup_printf(
+            "[ERR D5] Mandatory field not present, undefined previous value");
+          return FALSE;
+        }
+        else {
+          *delta = 1;
+        }
       }
       break;
       

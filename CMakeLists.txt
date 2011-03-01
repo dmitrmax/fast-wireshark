@@ -184,3 +184,5 @@ rwcompare (MissingTemplate send "${test_dir}/byteplans/missingTemplate.xml"
   expect "${test_dir}/plans/missingTemplate.xml" bypass "tmpl" "${test_dir}/templates.xml")
 rwcompare (ErrorD5 send "${test_dir}/byteplans/error_d5.xml"
   expect "${test_dir}/plans/error_d5.xml" bypass "tmpl" "${test_dir}/templates.xml")
+rwcompare (ErrorD6 send "${test_dir}/byteplans/error_d6.xml"
+  expect "${test_dir}/plans/error_d6.xml" bypass "tmpl" "${test_dir}/templates.xml")
