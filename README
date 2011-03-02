@@ -13,7 +13,8 @@ WS_VERSION - Wireshark version, something like 1.2.6
 - Windows Install
 -------------
 
-Move dist\fast-ARCH.dll to C:\Program Files\Wireshark\plugins\WS_VERSION
+Double click the 'install' batch script, it will install 'fast.dll' to the
+correct location. This installation is local to the user.
 
 -------------
 - Linux Install
