@@ -1,12 +1,18 @@
 
-______________________________________________________________________________
+___________________________________________________________________________________________________________
 --- Building
 
+Currently the plugin only works with the 32bit version of wireshark on windows.
+The 32bit version does work on 64bit windows though.  While building, remember
+to only use 32bit libraries.
 
->>
-Download and install "Microsoft Visual C++ 2008 Express Edition SP1."
+>-> Download and Install wireshark for windows 32bit  (still works on 64bit windows)
+
+
+>-> Download and install "Microsoft Visual C++ 2008 Express Edition SP1."
 Other Microsoft Visual C++ compilers may work, but only 2008 Express Edition has been tested.
-Link to free download on the wireshark guide below. \/
+Download Link: http://www.microsoft.com/express/Downloads/#Visual_Studio_2008_Express_Downloads
+
 
 >-> Get Wireshark source (not plugin source!) from website or wireshark svn.
 Move it to c:\wireshark  (you can change the directory, but that involves changing a bunch of build scripts, so don't)
@@ -14,13 +20,19 @@ Follow the steps here to build Wireshark:
 http://www.wireshark.org/docs/wsdg_html_chunked/ChSetupWin32.html
 NOTE: use the default paths unless you want to edit build files.
 
+
 >-> Setup your build/run environment.
 Set up your MSVC 2008 environment (plus other stuff).
 This is important for all steps, even for running Wireshark.
-  cd /path/to/plugin/source
-  paths.bat
+Place the plugin source in c:\fast-wireshark
+run c:\fast-wireshark\paths.bat
 
-Make sure you have installed Cygwin with these packages:
+
+>-> Install cmake for windows 32bit (also works on 64bit windows)
+http://www.cmake.org/cmake/resources/software.html
+
+
+>->Make sure you have installed Cygwin with these packages:
 Archive/unzip
 Devel/bison
 Devel/flex
@@ -28,80 +40,47 @@ Interpreters/perl
 Utils/patch
 Web/wget
 
-also install cmake
-http://www.cmake.org/cmake/resources/software.html
 
-cmd = use windows command prompt
-cygwin = use a cygwin shell
-
-First
-cmd:
+>-> Check that the wirshark libraries are setup
+Open a command prompt window
+cd to c:\wireshark
+run:
   nmake -f Makefile.nmake setup
   nmake -f Makefile.nmake distclean
   nmake -f Makefile.nmake config.h
   nmake -f Makefile.nmake all
 
-That last one may fail, but the .dll we need may have been made.
+  That last one may fail, but the .dll we need may have been made.
 
 
->-> Configure the libraries.
-Get in a cygwin shell.
-cygwin:
-  devroot=/cygdrive/c/dev
-  mkdir $devroot
-  cd $devroot/
-  cd ..
-  mkdir compile
-  cd wireshark-win32-libs-1.4
-  cp -r gtk2/* ../dev
-  cd $devroot/include
-  mv glib-2.0/* ./
-  rmdir glib-2.0
-
->-> Install libiconv.
-cygwin:
-  cd $devroot
-  cd ..
-  cd compile
-  libiconv=iconv-1.9.2.win32
-  wget http://xmlsoft.org/sources/win32/$libiconv.zip
-  unzip $libiconv.zip
-  cp -r $libiconv/* ../dev
-  unset libiconv
+>-> Open a cygwin console
+cd to /cygdrive/c/fast-wireshark/
+run configureCygwin.sh
+This will download and setup the libraries needed to build the plugin
 
 
->-> Compile/install libxml2.
-cygwin:
-  cd $devroot
-  cd ..
-  cd compile
-  libxml=libxml2-2.7.6
-#Note: We've had problems with newer versions.
-  wget ftp://xmlsoft.org/libxml2/$libxml.tar.gz
-  tar xf $libxml.tar.gz
-  unset libxml
-cmd: (Are your paths.bat still set up?)
-  cd c:\compile\libxml\win32
-  cscript configure.js compiler=msvc ^
-    prefix=c:\dev include=c:\dev\include lib=c:\dev\lib ^
-    http=no ftp=no
-  nmake /f Makefile.msvc
-  nmake /f Makefile.msvc install
+>-> Open a command prompt window
+cd to c:\fast-wireshark
+run configureWin.bat
+This will finish setting up the libraries and build the plugin
 
 
->-> Build the plugin.
-Download the plugin source.  From website or svn.
-http://code.google.com/p/fast-wireshark/
-move/extract source to c:\fast-wireshark
+>-> Re-Building the plugin
+If you want to quickly build and install the plugin you can
+use c:\fast-wireshark\build.bat
 
-cmd: (Are your paths.bat still set up?)
+otherwise, here are the steps
+
+Are your paths.bat still set up?
+  run c:\fast-wireshark\paths.bat  to setup paths
+
   cd c:\fast-wireshark
-Generate an NMake Makefile.
-  cmake -G "NMake Makefiles"
-Build the plugin.
-  nmake
-Install it.
-  nmake install
+  Generate an NMake Makefile.
+    cmake -G "NMake Makefiles"
+  Build the plugin.
+    nmake
+  Install it.
+    install.bat or manualy copy fast.dll to %HOMEPATH%\Application Data\Wireshark\plugins\fast.dll
 
 
 >-> Running Wireshark
