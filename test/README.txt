@@ -28,10 +28,10 @@ openFAST can be obtained from:
 ant can be obtained from:
   http://ant.apache.org/
 
-There is also an ant build rule fetchlib which will download the dependencies
+There is also an ant build rule fetchlib which will download openFAST
 automatically.
 
-The dependencies need to be located in lib/ relative to this directory.
+openFAST needs to be located in lib/ relative to this directory.
 
 >-> Run Ant.
 Run the ant build script and it will generate an executeable jar file named
