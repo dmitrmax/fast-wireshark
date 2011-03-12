@@ -14,6 +14,7 @@ include_directories (${debug_include_dir})
 
 target_link_libraries (rwcompare ${LIBXML2_LIBRARIES})
 target_link_libraries (rwcompare ${GLIB2_LIBRARIES})
+target_link_libraries (rwcompare ${GTHREAD2_LIBRARIES})
 
 set_target_properties(rwcompare PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY "${exe_dir}"
