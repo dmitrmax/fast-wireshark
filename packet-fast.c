@@ -418,8 +418,7 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
           g_node_insert_after(data,NULL,dnode);
           fdata->start = 0;
           fdata->nbytes = 0;
-          fdata->value.ascii.bytes = (guint8*)g_strdup_printf("[ERR D9] Template does not exist");
-          fdata->status = FieldError;
+	  err_d(9, fdata);
           
           /* Stop parsing the packet as we don't know whats going on any more */
           position->nbytes = 0;

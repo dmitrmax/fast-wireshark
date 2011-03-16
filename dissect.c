@@ -319,16 +319,12 @@ gboolean dissect_copy(const GNode* tnode,
     
     if(FieldUndefined == fdata->status && ftype->mandatory)
     {
-      fdata->status = FieldError;
-      fdata->value.ascii.bytes = (guint8*)g_strdup_printf(
-          "[ERR D5] Mandatory field not present, undefined previous value");
+      err_d(5, fdata);
       return FALSE;
     }
     else if(FieldEmpty == fdata->status && ftype->mandatory)
     {
-      fdata->status = FieldError;
-      fdata->value.ascii.bytes = (guint8*)g_strdup_printf(
-          "[ERR D6] Mandatory field not present, empty previous value");
+      err_d(6, fdata);
       return FALSE;
     }
     
@@ -397,9 +393,7 @@ gboolean dissect_int_op(gint64* delta,
         }
         else if(FieldEmpty == fdata->status && ftype->mandatory)
         {
-          fdata->status = FieldError;
-          fdata->value.ascii.bytes = (guint8*)g_strdup_printf(
-              "[ERR D6] Mandatory field not present, empty previous value");
+	  err_d(6, fdata);
           return FALSE;
         }
         
@@ -423,15 +417,11 @@ gboolean dissect_int_op(gint64* delta,
           
         if(FieldEmpty == fdata->status && ftype->mandatory)
         {
-          fdata->status = FieldError;
-          fdata->value.ascii.bytes = (guint8*)g_strdup_printf(
-              "[ERR D6] Mandatory field not present, empty previous value");
+	  err_d(6, fdata);
           return FALSE;
         }
         else if(FieldUndefined == fdata->status && ftype->mandatory) {
-          fdata->status = FieldError;
-          fdata->value.ascii.bytes = (guint8*)g_strdup_printf(
-            "[ERR D5] Mandatory field not present, undefined previous value");
+	  err_d(5, fdata);
           return FALSE;
         }
         else {
@@ -666,9 +656,7 @@ gboolean dissect_ascii_delta(const FieldType* ftype, FieldData* fdata,
   /* subtration length is greater than 5 */
   if(fdata_temp.nbytes > 5){
     
-    fdata->status = FieldError;
-    fdata->value.ascii.bytes = (guint8*)g_strdup_printf(
-        "[ERR D7] The value of subtraction exceeds the bounds of int32");
+    err_d(7, fdata);
     cleanup_field_value(FieldTypeAsciiString, &lookup.value);
     return FALSE;
   }
@@ -676,9 +664,7 @@ gboolean dissect_ascii_delta(const FieldType* ftype, FieldData* fdata,
   if(fdata_temp.nbytes == 5 && 
      (FieldError == fdata_temp.status)) {
     
-    fdata->status = FieldError;      
-    fdata->value.ascii.bytes = (guint8*)g_strdup_printf(
-        "[ERR D7] The value of subtraction exceeds the bounds of int32");
+    err_d(7, fdata);
     cleanup_field_value(FieldTypeAsciiString, &lookup.value);
     return FALSE;
   }
@@ -696,10 +682,7 @@ gboolean dissect_ascii_delta(const FieldType* ftype, FieldData* fdata,
     cleanup_field_value(FieldTypeAsciiString, &input_str.value);
     cleanup_field_value(FieldTypeAsciiString, &lookup.value); 
     
-    fdata->status = FieldError;
-    fdata->value.ascii.bytes = (guint8*)g_strdup_printf(
-      "[ERR D7] The subtraction length is larger than the %s",
-       "number of characters in the base value");
+    err_d(7, fdata);
     return FALSE;
 
   }
@@ -839,12 +822,10 @@ void dissect_byte_vector (const GNode* tnode,
           /* if the previous value is shorter than the
            * subtraction length, this is an error.
            *
-           * TODO: make this a legit error.
            */
           cleanup_field_value(FieldTypeByteVector, &input_str.value);
           cleanup_field_value(FieldTypeByteVector, &lookup.value); 
-          BAILOUT(;,"[ERR D7]: The subtraction length is larger than the"
-                      " number of characters in the base value");
+	  err_d(7, fdata);
         }
         
         /* malloc space for new string */

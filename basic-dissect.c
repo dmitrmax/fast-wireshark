@@ -27,6 +27,29 @@
     offjmp  = 0; \
   } while (0)
 
+/*! \brief  Throw a dynamic error
+* \param err_no the dynamic error code
+* \param fdata the field data
+*/
+void err_d(guint8 err_no, FieldData* fdata)
+{
+  char * string_err_d[15] =
+  {
+    "[ERR D1] ",
+    "[ERR D2] Integer does not fall within the bounds of the specified type",
+    "[ERR D3] ",
+    "[ERR D4] Retrieved differently typed value from dictionary",
+    "[ERR D5] Mandatory field not present, undefined previous value",
+    "[ERR D6] Mandatory field not present, empty previous value",
+    "[ERR D7] Invalid subtraction length",
+    "[ERR D8] ",
+    "[ERR D9] Template does not exist"  
+  };
+  
+  fdata->status = FieldError;
+  fdata->value.ascii.bytes = (guint8*)g_strdup_printf("%s",
+    string_err_d[err_no - 1]); 
+}
 
 /*! \brief  Shift the byte position of a dissection.
  * \sa ShiftBuffer
@@ -145,12 +168,10 @@ void basic_dissect_uint32 (DissectPosition* position, FieldData* fdata)
                                     position->bytes);
   if (Int32MaxBytes == fdata->nbytes) {
     if ((position->bytes[0] & Int32ExtraBits) > 0) {
-      fdata->status = FieldError;
-      fdata->value.ascii.bytes = (guint8*)g_strdup_printf("[ERR D2] Too many bits for UInt32");
+      err_d(2, fdata);
     }
   }else if(Int32MaxBytes < fdata->nbytes) {
-    fdata->status = FieldError;
-    fdata->value.ascii.bytes = (guint8*)g_strdup_printf("[ERR D2] Too many bytes for UInt32");
+    err_d(2, fdata);
   }
   ShiftBytes(position);
 }
@@ -169,12 +190,10 @@ void basic_dissect_uint64 (DissectPosition* position, FieldData* fdata)
                                     position->bytes);
    if (Int64MaxBytes == fdata->nbytes) {
     if ((position->bytes[0] & Int64ExtraBits) > 0) {
-      fdata->status = FieldError;
-      fdata->value.ascii.bytes = (guint8*)g_strdup_printf("[ERR D2] Too many bits for UInt64");
+      err_d(2, fdata);
     }
   }else if(Int64MaxBytes < fdata->nbytes) {
-    fdata->status = FieldError;
-    fdata->value.ascii.bytes = (guint8*)g_strdup_printf("[ERR D2] Too many bytes for UInt64");
+    err_d(2, fdata);
   }
   ShiftBytes(position);
 }
@@ -193,22 +212,16 @@ void basic_dissect_int32 (DissectPosition* position, FieldData* fdata)
   if (Int32MaxBytes == fdata->nbytes) {
     if ((position->bytes[0] & Int32SignBit) == Int32SignBit) {
       if ((position->bytes[0] & Int32ExtraBits) != Int32ExtraBits) {
-        
-        fdata->status = FieldError;
-        fdata->value.ascii.bytes = (guint8*)g_strdup_printf("[ERR D2] Too many bits for Int32");
+	err_d(2, fdata);
       }
     } else {
       if ((position->bytes[0] & Int32ExtraBits) != 0) {
-        
-        fdata->status = FieldError;
-        fdata->value.ascii.bytes = (guint8*)g_strdup_printf("[ERR D2] Too many bits for Int32");
+	err_d(2, fdata);
       }
     }
   }
   else if(Int32MaxBytes < fdata->nbytes) {
-
-    fdata->status = FieldError;
-    fdata->value.ascii.bytes = (guint8*)g_strdup_printf("[ERR D2] Too many bytes for Int32");
+    err_d(2, fdata);
   }
   ShiftBytes(position);
 }
@@ -228,18 +241,15 @@ void basic_dissect_int64 (DissectPosition* position, FieldData* fdata)
   if (Int64MaxBytes == fdata->nbytes) {
     if ((position->bytes[0] & Int64SignBit) == Int64SignBit) {
       if ((position->bytes[0] & Int64ExtraBits) != Int64ExtraBits) {
-        fdata->status = FieldError;
-        fdata->value.ascii.bytes = (guint8*)g_strdup_printf("[ERR D2] Too many bits for Int64");
+	err_d(2, fdata);
       }
     } else {
       if ((position->bytes[0] & Int64ExtraBits) > 0) {
-        fdata->status = FieldError;
-        fdata->value.ascii.bytes = (guint8*)g_strdup_printf("[ERR D2] Too many bits for Int64");
+	err_d(2, fdata);
       }
     }
   }else if(Int64MaxBytes < fdata->nbytes) {
-    fdata->status = FieldError;
-    fdata->value.ascii.bytes = (guint8*)g_strdup_printf("[ERR D2] Too many bytes for Int64");
+    err_d(2, fdata);
   }
   ShiftBytes(position);
 }

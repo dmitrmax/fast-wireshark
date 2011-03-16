@@ -196,8 +196,7 @@ gboolean get_dictionary_value(const FieldType* ftype,
       /* An the types differ which is a dynamic error
        * The cast is to change the gchar* to guint8* so that our types will work with it
        */
-      fdata->value.ascii.bytes = (guint8*)g_strdup_printf("[ERR D4] Retrieved differently typed value from dictionary");
-      fdata->status = FieldError;
+      err_d(4, fdata);
     }
   }
   else {

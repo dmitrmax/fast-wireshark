@@ -3,15 +3,15 @@
     <ascii value="String"/>
   </message>
   <message value="25">
-    <ascii value="[ERR D7] The value of subtraction exceeds the bounds of int32"/>
+    <ascii value="[ERR D7] Invalid subtraction length"/>
   </message>
   <message value="25">
-    <ascii value="[ERR D7] The value of subtraction exceeds the bounds of int32"/>
+    <ascii value="[ERR D7] Invalid subtraction length"/>
   </message>
   <message value="25">
-    <ascii value="[ERR D7] The value of subtraction exceeds the bounds of int32"/>
+    <ascii value="[ERR D7] Invalid subtraction length"/>
   </message>
   <message value="25">
-    <ascii value="[ERR D7] The subtraction length is larger than the number of characters in the base value"/>
+    <ascii value="[ERR D7] Invalid subtraction length"/>
   </message>
 </plan>

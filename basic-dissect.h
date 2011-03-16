@@ -53,7 +53,7 @@ struct dissect_position_struct
 typedef struct dissect_position_struct DissectPosition;
 
 
-
+void err_d(guint8 err_no, FieldData* fdata);
 
 void ShiftBytes(DissectPosition* position);
 gboolean dissect_shift_pmap (DissectPosition* position);
