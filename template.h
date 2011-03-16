@@ -18,7 +18,8 @@ struct field_type_struct
 {
   char* name;
   /*! \brief  Field id. Typed for the hash lookup. */
-  gint id;
+  gint id;  /* id of the field or template */
+  gint tid;  /* id of the template or id of the template a field is in */
   char* key;
   gboolean mandatory;
   FieldTypeIdentifier type;

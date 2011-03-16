@@ -39,6 +39,8 @@ Devel/flex
 Interpreters/perl
 Utils/patch
 Web/wget
+Gnome/libgtk2.0-devel
+Gnome/libgtk2.0_0
 
 
 >-> Check that the wirshark libraries are setup

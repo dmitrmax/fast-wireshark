@@ -28,6 +28,7 @@ static gboolean parse_decimal (xmlNodePtr xmlnode, FieldType * tfield, GNode * t
 static gboolean parse_sequence (xmlNodePtr xmlnode, FieldType* tfield, GNode* tnode);
 static gboolean operator_type_match (xmlNodePtr node, FieldOperatorIdentifier type);
 
+static gint templateID = -1; /* Stores tid while parsing */
 
 /* Function to open a dialog box displaying the message provided. */
 void quick_message (gchar *message)
@@ -142,7 +143,10 @@ GNode* parseTemplate (xmlNodePtr cur)
 
   /* Get name, id, etc. */
   set_field_attributes(cur, tfield);
-
+  
+  /* Store templateID */
+  tfield->tid = tfield->id;
+  templateID = tfield->tid;
 
   cur = cur->xmlChildrenNode;
   parser_walk_children (cur, tnode, 0);
@@ -498,6 +502,8 @@ void set_field_attributes (xmlNodePtr xmlnode, FieldType* tfield)
     tfield->name = g_strdup ((char*)str);
   }
   xmlFree((void*)str);
+  /* set tid to parent template id */
+  tfield->tid = templateID;
   /* Identifier number. */
   str = xmlGetProp(xmlnode, (xmlChar*) "id");
   if (str) {
