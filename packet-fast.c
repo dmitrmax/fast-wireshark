@@ -685,12 +685,30 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
       }
     } else {
       /* The field has an error */
+      time_t ltime;   
+      FILE *log;
+      
       proto_tree_add_none_format(tree, header_field, tvb, 0, 0, 
                                  "%s - %s (%d): %s",
                                  field_typename(ftype->type),
                                  field_name,
                                  ftype->id,
                                  fdata->value.ascii.bytes);
+				 
+      /* get current cal time */
+      ltime=time(NULL); 
+      
+      /* write to error log file */
+      log = fopen("error_log.txt","a"); 
+      fprintf(log,
+	  "%s\n%s\n\nField Name:\t%s\nField ID:\t%d\nTemplate ID:\t%d\n\n%s\n",
+	  asctime(localtime(&ltime)),
+	  fdata->value.ascii.bytes,
+	  ftype->name,
+	  ftype->id,
+	  ftype->tid,
+	  "**********************************************************************");
+      fclose(log); 
     }
 
     tnode = tnode->next;
