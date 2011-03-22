@@ -93,9 +93,11 @@ static void proto_register_fast ();
 static void proto_reg_handoff_fast ();
 static void dissect_fast (tvbuff_t*, packet_info*, proto_tree*);
 static void display_message (tvbuff_t* tvb, proto_tree* tree,
-                             const GNode* tmpl, const GNode* parent);
+                             const GNode* tmpl, const GNode* parent,
+			     packet_info* pinfo);
 static void display_fields (tvbuff_t* tvb, proto_tree* tree,
-                            const GNode* tnode, const GNode* dnode);
+                            const GNode* tnode, const GNode* dnode,
+                            packet_info* pinfo);
 static char * toDecimal(gint32 expt, gint64 mant);
 static char * generate_field_info(const FieldType* ftype);
 
@@ -318,7 +320,6 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
   PacketData* packetData;
   frameData = pinfo->fd;
   
-  
   /* fill in protocol column */
   if (check_col(pinfo->cinfo, COL_PROTOCOL)) {
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "FAST");
@@ -352,6 +353,8 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
       DissectPosition stacked_position;
       DissectPosition* position;
       guint header_offset = 0;
+      guint message_cnt = 0;
+      gboolean error_packet = FALSE;
 
       if (implementation == CMEImplem) {
         header_offset = 5;
@@ -381,6 +384,9 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
         GNode* tmpl;
         data = g_node_new(0);
         tmpl = dissect_fast_bytes (position, data);
+	
+	message_cnt++;
+	
         /* If no template is found for the message make a fake message/template then break out */
         if(tmpl == NULL){
           GNode* tnode;
@@ -389,6 +395,8 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
           FieldType* tfield;
           FieldType* vfield;
           FieldData* fdata;
+	  
+	  error_packet = TRUE;
 
           /* Create a template that contains one ascii field */
           tnode = create_field(FieldTypeUInt32, FieldOperatorCopy);
@@ -425,6 +433,19 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
         } 
         packetData->dataTrees = g_list_append(packetData->dataTrees, data);
         packetData->tmplTrees = g_list_append(packetData->tmplTrees, tmpl);
+	
+	/* add info to the info column */
+	if (check_col(pinfo->cinfo, COL_INFO)) {
+	  if(error_packet) {
+	    /* do nothing */
+	  } else if(message_cnt > 1) {
+	    col_add_fstr(pinfo->cinfo, COL_INFO,"%d messages", message_cnt);
+	  } else {
+	    col_add_fstr(pinfo->cinfo, COL_INFO,"template id: %d, name: %s", 
+		       ((FieldType *)tmpl->data)->id,
+		       ((FieldType *)tmpl->data)->name);
+	  }
+	}
       }
       
       if (implementation == CMEImplem || implementation == UMDFImplem) {
@@ -442,7 +463,9 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
       while (tmplTrees && dataTrees) {
         display_message (tvb, fast_tree,
                          (GNode*) tmplTrees->data,
-                         (GNode*) dataTrees->data);
+                         (GNode*) dataTrees->data,
+			 pinfo);
+	
         tmplTrees = tmplTrees->next;
         dataTrees = dataTrees->next;
       }
@@ -454,7 +477,8 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
 /*! \brief  Store all message data in a proto_tree.
  */
 void display_message (tvbuff_t* tvb, proto_tree* tree,
-                      const GNode* tmpl, const GNode* parent)
+		      const GNode* tmpl, const GNode* parent,
+		      packet_info* pinfo)
 {
   if (tmpl) {
     proto_item* item;
@@ -476,7 +500,8 @@ void display_message (tvbuff_t* tvb, proto_tree* tree,
 
     newtree = proto_item_add_subtree(item, ett_fast);
     display_fields(tvb, newtree,
-                   tmpl->children, parent->children);
+                   tmpl->children, parent->children, pinfo);
+		   
   }
 }
 
@@ -485,7 +510,8 @@ void display_message (tvbuff_t* tvb, proto_tree* tree,
 /*! \brief  Add field data to a proto_tree.
  */
 void display_fields (tvbuff_t* tvb, proto_tree* tree,
-                     const GNode* tnode, const GNode* dnode)
+                     const GNode* tnode, const GNode* dnode,
+		     packet_info* pinfo)
 {
   if (!dnode) {
     BAILOUT(;,"Data node is null!");
@@ -634,7 +660,7 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
                                               );
 
             subtree = proto_item_add_subtree(item, ett_fast);
-            display_fields (tvb, subtree, tnode->children, dnode->children);
+	    display_fields (tvb, subtree, tnode->children, dnode->children, pinfo);
           }
           break;
         case FieldTypeSequence:
@@ -661,7 +687,7 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
               for (group_dnode = dnode->children;
                    group_dnode;
                    group_dnode = group_dnode->next) {
-                display_fields (tvb, subtree, group_tnode, group_dnode);
+		display_fields (tvb, subtree, group_tnode, group_dnode, pinfo);
               }
             }
             else {
@@ -697,6 +723,11 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
 				 
       /* get current cal time */
       ltime=time(NULL); 
+      
+      /* display error message in info column */
+      if(check_col(pinfo->cinfo, COL_INFO)) {
+	col_add_fstr(pinfo->cinfo, COL_INFO, "%s", fdata->value.ascii.bytes);
+      }
       
       /* write to error log file */
       log = fopen("error_log.txt","a"); 
