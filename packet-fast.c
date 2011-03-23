@@ -46,7 +46,8 @@ G_MODULE_EXPORT const gchar version[] = "0.1";
 static int proto_fast = -1;
 /* Initialize the protocol and registered fields. */
 static int hf_fast[FieldTypeEnumLimit];
-static int hf_fast_tid      = -1;
+static int hf_fast_tid        = -1;
+static gboolean hf_fast_error = FALSE;
 
 /* Initialize the subtree pointer. */
 static gint ett_fast = -1;
@@ -128,17 +129,19 @@ void proto_register_fast ()
   /* Header fields which always exist. */
   static hf_register_info hf[] =
   {
-    { &hf_fast[FieldTypeUInt32],        { "uInt32",     "fast.uint32",     FT_NONE, BASE_NONE, NULL, 0, "", HFILL } },
-    { &hf_fast[FieldTypeUInt64],        { "uInt64",     "fast.uint64",     FT_NONE, BASE_NONE, NULL, 0, "", HFILL } },
-    { &hf_fast[FieldTypeInt32],         { "int32",      "fast.int32",      FT_NONE, BASE_NONE, NULL, 0, "", HFILL } },
-    { &hf_fast[FieldTypeInt64],         { "int64",      "fast.int64",      FT_NONE, BASE_NONE, NULL, 0, "", HFILL } },
-    { &hf_fast[FieldTypeDecimal],       { "decimal",    "fast.decimal",    FT_NONE, BASE_NONE, NULL, 0, "", HFILL } },
-    { &hf_fast[FieldTypeAsciiString],   { "ascii",      "fast.ascii",      FT_NONE, BASE_NONE, NULL, 0, "", HFILL } },
-    { &hf_fast[FieldTypeUnicodeString], { "unicode",    "fast.unicode",    FT_NONE, BASE_NONE, NULL, 0, "", HFILL } },
-    { &hf_fast[FieldTypeByteVector],    { "byteVector", "fast.bytevector", FT_NONE, BASE_NONE, NULL, 0, "", HFILL } },
-    { &hf_fast[FieldTypeGroup],         { "group",      "fast.group",      FT_NONE, BASE_NONE, NULL, 0, "", HFILL } },
-    { &hf_fast[FieldTypeSequence],      { "sequence",   "fast.sequence",   FT_NONE, BASE_NONE, NULL, 0, "", HFILL } },
-    { &hf_fast_tid,                     { "tid",        "fast.tid",        FT_NONE, BASE_NONE, NULL, 0, "", HFILL } }
+    { &hf_fast[FieldTypeUInt32],        { "uInt32",     "fast.uint32",      FT_NONE,     BASE_NONE, NULL, 0, "", HFILL } },
+    { &hf_fast[FieldTypeUInt64],        { "uInt64",     "fast.uint64",      FT_NONE,     BASE_NONE, NULL, 0, "", HFILL } },
+    { &hf_fast[FieldTypeInt32],         { "int32",      "fast.int32",       FT_NONE,     BASE_NONE, NULL, 0, "", HFILL } },
+    { &hf_fast[FieldTypeInt64],         { "int64",      "fast.int64",       FT_NONE,     BASE_NONE, NULL, 0, "", HFILL } },
+    { &hf_fast[FieldTypeDecimal],       { "decimal",    "fast.decimal",     FT_NONE,     BASE_NONE, NULL, 0, "", HFILL } },
+    { &hf_fast[FieldTypeAsciiString],   { "ascii",      "fast.ascii",       FT_NONE,     BASE_NONE, NULL, 0, "", HFILL } },
+    { &hf_fast[FieldTypeUnicodeString], { "unicode",    "fast.unicode",     FT_NONE,     BASE_NONE, NULL, 0, "", HFILL } },
+    { &hf_fast[FieldTypeByteVector],    { "byteVector", "fast.bytevector",  FT_NONE,     BASE_NONE, NULL, 0, "", HFILL } },
+    { &hf_fast[FieldTypeGroup],         { "group",      "fast.group",       FT_NONE,     BASE_NONE, NULL, 0, "", HFILL } },
+    { &hf_fast[FieldTypeSequence],      { "sequence",   "fast.sequence",    FT_NONE,     BASE_NONE, NULL, 0, "", HFILL } },
+    { &hf_fast[FieldTypeError],         { "error",      "fast.ERROR",       FT_NONE,     BASE_NONE, NULL, 0, "Dynamic error in packet", HFILL } },
+    { &hf_fast_tid,                     { "tid",        "fast.tid",         FT_NONE,     BASE_NONE, NULL, 0, "", HFILL } }
+
   };
   static enum_val_t radio_buttons[] = 
   {
@@ -354,7 +357,6 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
       DissectPosition* position;
       guint header_offset = 0;
       guint message_cnt = 0;
-      gboolean error_packet = FALSE;
 
       if (implementation == CMEImplem) {
         header_offset = 5;
@@ -384,9 +386,9 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
         GNode* tmpl;
         data = g_node_new(0);
         tmpl = dissect_fast_bytes (position, data);
-	
-	message_cnt++;
-	
+        
+        message_cnt++;
+        
         /* If no template is found for the message make a fake message/template then break out */
         if(tmpl == NULL){
           GNode* tnode;
@@ -395,8 +397,8 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
           FieldType* tfield;
           FieldType* vfield;
           FieldData* fdata;
-	  
-	  error_packet = TRUE;
+          
+          hf_fast_error = TRUE;
 
           /* Create a template that contains one ascii field */
           tnode = create_field(FieldTypeUInt32, FieldOperatorCopy);
@@ -426,26 +428,27 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
           g_node_insert_after(data,NULL,dnode);
           fdata->start = 0;
           fdata->nbytes = 0;
-	  err_d(9, fdata);
+          
+          err_d(9, fdata);
           
           /* Stop parsing the packet as we don't know whats going on any more */
           position->nbytes = 0;
         } 
         packetData->dataTrees = g_list_append(packetData->dataTrees, data);
         packetData->tmplTrees = g_list_append(packetData->tmplTrees, tmpl);
-	
-	/* add info to the info column */
-	if (check_col(pinfo->cinfo, COL_INFO)) {
-	  if(error_packet) {
-	    /* do nothing */
-	  } else if(message_cnt > 1) {
-	    col_add_fstr(pinfo->cinfo, COL_INFO,"%d messages", message_cnt);
-	  } else {
-	    col_add_fstr(pinfo->cinfo, COL_INFO,"template id: %d, name: %s", 
-		       ((FieldType *)tmpl->data)->id,
-		       ((FieldType *)tmpl->data)->name);
-	  }
-	}
+        
+        /* add info to the info column */
+        if (check_col(pinfo->cinfo, COL_INFO)) {
+          if(hf_fast_error) {
+            /* do nothing */
+          } else if(message_cnt > 1) {
+            col_add_fstr(pinfo->cinfo, COL_INFO,"%d messages", message_cnt);
+          } else {
+            col_add_fstr(pinfo->cinfo, COL_INFO,"template id: %d, name: %s", 
+                ((FieldType *)tmpl->data)->id,
+                ((FieldType *)tmpl->data)->name);
+          }
+        }
       }
       
       if (implementation == CMEImplem || implementation == UMDFImplem) {
@@ -714,31 +717,33 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
       time_t ltime;   
       FILE *log;
       
+      header_field = hf_fast[FieldTypeError];
+      
       proto_tree_add_none_format(tree, header_field, tvb, 0, 0, 
                                  "%s - %s (%d): %s",
-                                 field_typename(ftype->type),
+                                 "ERROR",
                                  field_name,
                                  ftype->id,
                                  fdata->value.ascii.bytes);
-				 
+
       /* get current cal time */
       ltime=time(NULL); 
       
       /* display error message in info column */
       if(check_col(pinfo->cinfo, COL_INFO)) {
-	col_add_fstr(pinfo->cinfo, COL_INFO, "%s", fdata->value.ascii.bytes);
+        col_add_fstr(pinfo->cinfo, COL_INFO, "%s", fdata->value.ascii.bytes);
       }
       
       /* write to error log file */
       log = fopen("error_log.txt","a"); 
       fprintf(log,
-	  "%s\n%s\n\nField Name:\t%s\nField ID:\t%d\nTemplate ID:\t%d\n\n%s\n",
-	  asctime(localtime(&ltime)),
-	  fdata->value.ascii.bytes,
-	  ftype->name,
-	  ftype->id,
-	  ftype->tid,
-	  "**********************************************************************");
+      "%s\n%s\n\nField Name:\t%s\nField ID:\t%d\nTemplate ID:\t%d\n\n%s\n",
+      asctime(localtime(&ltime)),
+      fdata->value.ascii.bytes,
+      ftype->name,
+      ftype->id,
+      ftype->tid,
+      "**********************************************************************");
       fclose(log); 
     }
 

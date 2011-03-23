@@ -3,15 +3,15 @@
     <ascii value="String"/>
   </message>
   <message value="25">
-    <ascii value="[ERR D7] Invalid subtraction length"/>
+    <ERROR value="[ERR D7] Invalid subtraction length"/>
   </message>
   <message value="25">
-    <ascii value="[ERR D7] Invalid subtraction length"/>
+    <ERROR value="[ERR D7] Invalid subtraction length"/>
   </message>
   <message value="25">
-    <ascii value="[ERR D7] Invalid subtraction length"/>
+    <ERROR value="[ERR D7] Invalid subtraction length"/>
   </message>
   <message value="25">
-    <ascii value="[ERR D7] Invalid subtraction length"/>
+    <ERROR value="[ERR D7] Invalid subtraction length"/>
   </message>
 </plan>

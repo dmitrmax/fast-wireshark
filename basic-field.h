@@ -19,6 +19,7 @@ enum field_type_identifier_enum
   FieldTypeByteVector,
   FieldTypeGroup,
   FieldTypeSequence,
+  FieldTypeError,
   FieldTypeEnumLimit,
   FieldTypeInvalid
 };
