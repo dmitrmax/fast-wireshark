@@ -9,7 +9,7 @@ project (FastWireshark)
 set (plugin_srcs
   basic-dissect.c basic-field.c
   debug.c debug-tree.c decode.c dictionaries.c dissect.c
-  packet-fast.c parse-template.c template.c)
+  packet-fast.c parse-template.c template.c address-utils.c)
 
 set (plugin_name fast)
 set (wireshark_src "${CMAKE_CURRENT_SOURCE_DIR}/../wireshark")

@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <gtk/gtk.h>
-
+#include <glib/gprintf.h>
 #include <libxml/xmlmemory.h>
 #include <libxml/parser.h>
 
@@ -10,22 +10,23 @@
 #include "template.h"
 
 #include "parse-template.h"
+#include "dictionaries.h"
 
 /* Private (static) headers. */
 static GNode* parseTemplate (xmlNodePtr cur);
 static void set_field_attributes (xmlNodePtr node, FieldType* tfield);
 static gboolean ignore_xml_node (xmlNodePtr cur);
 static void parser_walk_children (xmlNodePtr cur,
-                                  GNode* parent, GNode* tnode_prev);
-static GNode* new_parsed_field (xmlNodePtr xmlnode);
+                                  GNode* parent, GNode* tnode_prev, char * dictionary);
+static GNode* new_parsed_field (xmlNodePtr xmlnode, char * dictionary);
 static gboolean field_type_match (xmlNodePtr node,
                                   FieldTypeIdentifier type);
 static gboolean parse_field_operator (xmlNodePtr xmlnode, FieldType * tfield);
 static gboolean parse_operator (xmlNodePtr xmlnode, FieldType * tfield);
 static gboolean prepend_length (xmlNodePtr xmlnode, const FieldType* parent,
-                                GNode* parent_node);
-static gboolean parse_decimal (xmlNodePtr xmlnode, FieldType * tfield, GNode * tnode);
-static gboolean parse_sequence (xmlNodePtr xmlnode, FieldType* tfield, GNode* tnode);
+                                GNode* parent_node, char * dictionary);
+static gboolean parse_decimal (xmlNodePtr xmlnode, FieldType * tfield, GNode * tnode, char * dictionary);
+static gboolean parse_sequence (xmlNodePtr xmlnode, FieldType* tfield, GNode* tnode, char * dictionary);
 static gboolean operator_type_match (xmlNodePtr node, FieldOperatorIdentifier type);
 
 static gint templateID = -1; /* Stores tid while parsing */
@@ -143,13 +144,16 @@ GNode* parseTemplate (xmlNodePtr cur)
 
   /* Get name, id, etc. */
   set_field_attributes(cur, tfield);
+  if(!tfield->dictionary){
+    tfield->dictionary = GLOBAL_DICTIONARY;
+  }
   
   /* Store templateID */
   tfield->tid = tfield->id;
   templateID = tfield->tid;
 
   cur = cur->xmlChildrenNode;
-  parser_walk_children (cur, tnode, 0);
+  parser_walk_children (cur, tnode, 0, tfield->dictionary);
 
   return tnode;
 }
@@ -164,12 +168,12 @@ GNode* parseTemplate (xmlNodePtr cur)
  * \param tnode_prev  Previous node in parse tree at this level.
  */
 void parser_walk_children (xmlNodePtr cur,
-                           GNode* parent, GNode* tnode_prev)
+                           GNode* parent, GNode* tnode_prev, char* dictionary)
 {
   while (cur != NULL) {
     if (!ignore_xml_node(cur)) {
       GNode* tnode;
-      tnode = new_parsed_field (cur);
+      tnode = new_parsed_field (cur, dictionary);
       if (tnode) {
         /* DBG0("adding tnode"); */
         g_node_insert_after (parent, tnode_prev, tnode);
@@ -186,7 +190,7 @@ void parser_walk_children (xmlNodePtr cur,
  * \return  The new GNode* containing a FieldType.
  *          NULL if something went wrong.
  */
-GNode* new_parsed_field (xmlNodePtr xmlnode)
+GNode* new_parsed_field (xmlNodePtr xmlnode, char* dictionary)
 {
   gboolean found = FALSE;  /* Field type found. */
   gboolean valid = FALSE;  /* Field type valid. */
@@ -200,6 +204,9 @@ GNode* new_parsed_field (xmlNodePtr xmlnode)
   tfield = (FieldType*) tnode->data;
 
   set_field_attributes(xmlnode, tfield);
+  if(!tfield->dictionary){
+    tfield->dictionary = dictionary;
+  }
 
   /* Try the integers. */
   if (!found) {
@@ -230,7 +237,7 @@ GNode* new_parsed_field (xmlNodePtr xmlnode)
   if (!found && field_type_match (xmlnode, FieldTypeDecimal)) {
     
     found = TRUE;
-    valid = parse_decimal(xmlnode, tfield, tnode);
+    valid = parse_decimal(xmlnode, tfield, tnode, tfield->dictionary);
   }
 
   /* Try string */
@@ -243,7 +250,7 @@ GNode* new_parsed_field (xmlNodePtr xmlnode)
     found = TRUE;
     valid = parse_field_operator(xmlnode, tfield);
     if (valid) {
-      valid = prepend_length(xmlnode, tfield, tnode);
+      valid = prepend_length(xmlnode, tfield, tnode, tfield->dictionary);
     }
   }
 
@@ -253,7 +260,7 @@ GNode* new_parsed_field (xmlNodePtr xmlnode)
     found = TRUE;
     valid = parse_field_operator(xmlnode, tfield);
     if (valid) {
-      valid = prepend_length(xmlnode, tfield, tnode);
+      valid = prepend_length(xmlnode, tfield, tnode, tfield->dictionary);
     }
   }
 
@@ -263,15 +270,15 @@ GNode* new_parsed_field (xmlNodePtr xmlnode)
     tfield->type = FieldTypeGroup;
     found = TRUE;
     valid = TRUE;
-    parser_walk_children (xmlnode->xmlChildrenNode, tnode, 0);
+    parser_walk_children (xmlnode->xmlChildrenNode, tnode, 0, tfield->dictionary);
   }
 
   /* Try sequence */
   if(!found && field_type_match(xmlnode, FieldTypeSequence)){
     found = TRUE;
-    valid = parse_sequence (xmlnode, tfield, tnode);
+    valid = parse_sequence (xmlnode, tfield, tnode, tfield->dictionary);
     if (valid) {
-      valid = prepend_length(xmlnode, tfield, tnode);
+      valid = prepend_length(xmlnode, tfield, tnode,tfield->dictionary);
     }
   }
 
@@ -301,7 +308,7 @@ GNode* new_parsed_field (xmlNodePtr xmlnode)
  * \return  TRUE iff the a child was added.
  */
 gboolean prepend_length (xmlNodePtr xmlnode, const FieldType* parent,
-                         GNode* parent_node)
+                         GNode* parent_node, char * dictionary)
 {
   GNode* tnode;
   FieldType* ftype;
@@ -321,6 +328,19 @@ gboolean prepend_length (xmlNodePtr xmlnode, const FieldType* parent,
       }
     }
   }
+  
+  if(!ftype->key){
+    if(!parent->name){
+      DBG0("******no name and parent had no name*******");
+    }
+    ftype->key = (char*)g_strdup_printf("%s-length",parent->name);
+  }
+  
+  if(!ftype->dictionary){
+	ftype->dictionary = dictionary;
+  }
+  ftype->tid = templateID;
+  
   ftype->mandatory = parent->mandatory;
   return TRUE;
 }
@@ -331,7 +351,7 @@ gboolean prepend_length (xmlNodePtr xmlnode, const FieldType* parent,
  * \param  A pointer to the template within the parse tree.
  * \return  True if sucessfully parsed
  */
-gboolean parse_decimal (xmlNodePtr xmlnode, FieldType * tfield, GNode * tnode)
+gboolean parse_decimal (xmlNodePtr xmlnode, FieldType * tfield, GNode * tnode, char * dictionary)
 {
   GNode* exptNode;
   GNode* mantNode;
@@ -372,6 +392,15 @@ gboolean parse_decimal (xmlNodePtr xmlnode, FieldType * tfield, GNode * tnode)
     }
     xmlnode = xmlnode->next;
   }
+  
+  if(!expt->dictionary){
+    expt->dictionary = dictionary;
+  }
+  if(!mant->dictionary){
+    mant->dictionary = dictionary;
+  }
+  expt->tid = templateID;
+  mant->tid = templateID;
 
   expt->mandatory = tfield->mandatory;
 
@@ -394,7 +423,7 @@ gboolean parse_decimal (xmlNodePtr xmlnode, FieldType * tfield, GNode * tnode)
  * \param tnode  A pointer to the template within the parse tree.
  * \return  True if sucessfully parsed
  */
-gboolean parse_sequence (xmlNodePtr xmlnode, FieldType* tfield, GNode* tnode)
+gboolean parse_sequence (xmlNodePtr xmlnode, FieldType* tfield, GNode* tnode, char * dictionary)
 {
   GNode* group_tnode;
 
@@ -407,7 +436,7 @@ gboolean parse_sequence (xmlNodePtr xmlnode, FieldType* tfield, GNode* tnode)
   g_node_insert_after (tnode, 0, group_tnode);
   
   /* Descend the tree on the group. */
-  parser_walk_children (xmlnode->xmlChildrenNode, group_tnode, 0);
+  parser_walk_children (xmlnode->xmlChildrenNode, group_tnode, 0, dictionary);
 
   return TRUE;
 }
@@ -476,11 +505,11 @@ gboolean parse_operator (xmlNodePtr xmlnode, FieldType * tfield){
   /* get value of operator if given */
   prop = xmlGetProp(xmlnode, (xmlChar*)"value");
   if (prop!=NULL) {
-    tfield->empty = FALSE;
+    tfield->hasDefault = TRUE;
     string_to_field_value((char*)prop, tfield->type, &tfield->value);
     /* DBG2("value is %s  tfield name is %s", (char *)prop, tfield->name); */
   } else {
-    tfield->empty = TRUE;			
+    tfield->hasDefault = FALSE;			
 	}
 		
   return TRUE;

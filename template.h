@@ -24,11 +24,10 @@ struct field_type_struct
   gboolean mandatory;
   FieldTypeIdentifier type;
   FieldOperatorIdentifier op;
-  gboolean empty;
+  gboolean hasDefault;
   FieldValue value;
   /*! \brief Name of the dictionary used for this field */
   char * dictionary;
-  GHashTable* dictionary_ptr;
   
 };
 typedef struct field_type_struct FieldType;

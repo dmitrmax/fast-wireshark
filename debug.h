@@ -26,7 +26,11 @@ void debug_out(const char*,
 #define DBG3(s,a,b,c)  debug_out(DBGN_FILENAME,__func__,__LINE__,s,a,b,c)
 #define DBG4(s,a,b,c,d)  debug_out(DBGN_FILENAME,__func__,__LINE__,s,a,b,c,d)
 #define DBG5(s,a,b,c,d,e) \
-  debug_out(DBGN_FNAME,__func__,__LINE__,s,a,b,c,d,e)
+  debug_out(DBGN_FILENAME,__func__,__LINE__,s,a,b,c,d,e)
+#define DBG6(s,a,b,c,d,e,f) \
+  debug_out(DBGN_FILENAME,__func__,__LINE__,s,a,b,c,d,e,f)
+#define DBG7(s,a,b,c,d,e,f,g) \
+  debug_out(DBGN_FILENAME,__func__,__LINE__,s,a,b,c,d,e,f,g)
 #if 0
 /* Use this if you like C99. */
 #define DBG(...)		debug_out(DBGN_FILENAME,__func__,__LINE__,## __VA_ARGS__)
@@ -38,6 +42,12 @@ void debug_out(const char*,
   do { \
     DBG1("%s", s); \
     return r; \
+  } while (0)
+  
+#define BAILOUT_VOID(s) \
+  do { \
+    DBG1("%s", s); \
+    return; \
   } while (0)
 
 #define TRACE() DBG0("trace")

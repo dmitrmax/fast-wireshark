@@ -2,12 +2,23 @@
  * \file dictionaries.c
  * \brief  Handle dictionary setting on field types in templates
  */
-
+#include <glib.h>
+#include <epan/address.h>
 #include <string.h>
-
 #include "debug.h"
-
 #include "dictionaries.h"
+
+  /*
+   * This is the general structure of how this works
+   * the double map after the dest table is done using
+   * the ConversationTables struct, defined above
+   * map<src,
+   *   map<dest,
+   *     map<dictionary_name,
+   *       map<field_key,value>
+   *     map<tempate_id (should be unique),
+   *       map<field_key,value>
+   */
 
 /*!
  * \brief Struct to allow a field type to be associated with the value.
@@ -22,25 +33,16 @@ struct typed_value_struct
 };
 typedef struct typed_value_struct TypedValue;
 
-
 /* Private (static) headers. */
-static GHashTable* dictionaries_table = 0;
-
-static GList* template_dictionaries = 0;
+static GHashTable* src_table = 0;
 
 /*!
  * \brief Retrieves a dictionary by name, or creates it if it doesn't exist.
  * \param name The name of the dictionary to retrieve
  */
-static GHashTable* get_dictionary(char* name);
+static GHashTable* get_dictionary(const FieldType * ftype, address src, address dest);
 
-/*!
- * \brief Removes a dictionary by name from the dictionary lookup.
- * Will not delete the dictionary, only remove the dictionary lookup table's
- * reference to it.
- * \param name The name of the dictionary to remove
- */
-static void remove_dictionary(char* name);
+static guint32* int_dup(guint32 i);
 
 /*!
  * \brief frees the memory used by a TypedValue
@@ -48,83 +50,123 @@ static void remove_dictionary(char* name);
  */
 static void free_typed_value(TypedValue* val);
 
-/*!
- * \brief Traverses the template tree and sets the dictionary that should be used at each field.
- * \param parent  The parent field. It should have a dictionary set.
- * \param parent_node  The parent's node in the tree
- */
-void set_dictionary_pointers(const FieldType* parent, GNode* parent_node);
+static void free_conversation_table(gconstpointer p);
 
-void set_dictionaries(GNode* template_tree){
-  GNode* template = 0;
+struct _conversation_tables {
+  GHashTable* normal;
+  GHashTable* templates;
+};
+typedef struct _conversation_tables ConversationTables;
+
+static ConversationTables * get_conversation_table(address src, address dest);
+
+GHashTable* get_dictionary(const FieldType * ftype, address src, address dest){
+  ConversationTables* conversation_tables = NULL;
+  GHashTable* dictionary = NULL;
   
-  clear_dictionaries();
-  if(!dictionaries_table) {
-    dictionaries_table =
-      g_hash_table_new_full(&g_str_hash, &g_str_equal, &g_free,
-                            (GDestroyNotify) &g_hash_table_destroy);
-  }
-  /* If we fail to make the table bail */
-  if(!dictionaries_table) { BAILOUT(;,"Dictionary lookup table not created."); }
-  template = g_node_first_child(template_tree);
-  /* Create the global dictionary */
-  get_dictionary(GLOBAL_DICTIONARY);
+  conversation_tables = get_conversation_table(src, dest);
   
-  /* 
-   * Loop through all the templates, add and remove template dictionaries from the dictionary
-   * reference for each template_tree
-   */
-  while(template){
-    FieldType* field_type;
-
-    field_type = (FieldType*) template->data;
-    if (!field_type->dictionary) {
-      field_type->dictionary = g_strdup(GLOBAL_DICTIONARY);
-    }
-    get_dictionary(TEMPLATE_DICTIONARY);
-    field_type->dictionary_ptr = get_dictionary(field_type->dictionary);
-    set_dictionary_pointers(field_type, template);
-    template_dictionaries =
-      g_list_prepend(template_dictionaries,
-                     get_dictionary(TEMPLATE_DICTIONARY));
-    g_hash_table_steal(dictionaries_table, TEMPLATE_DICTIONARY);
-    template = g_node_next_sibling(template);
+  /* Determine if we need a template or a non-template dictionary */
+  if(g_strcmp0(ftype->dictionary,TEMPLATE_DICTIONARY) == 0){
+    dictionary = g_hash_table_lookup(conversation_tables->templates, &(ftype->tid));
+    if(!dictionary){
+      dictionary = g_hash_table_new_full(&g_str_hash,&g_str_equal,
+				       (GDestroyNotify)&g_free,
+				       (GDestroyNotify)&free_typed_value);
+      g_hash_table_insert(conversation_tables->templates, int_dup(ftype->tid), dictionary);
+    } 
+  } else {
+    dictionary = g_hash_table_lookup(conversation_tables->normal, ftype->dictionary);
+    if(!dictionary){
+      dictionary = g_hash_table_new_full(&g_str_hash,&g_str_equal,
+				       (GDestroyNotify)&g_free,
+				       (GDestroyNotify)&free_typed_value);
+      g_hash_table_insert(conversation_tables->normal, ftype->dictionary, dictionary);
+    } 
   }
-
-}
-
-GHashTable* get_dictionary(char* name){
-  GHashTable* dictionary = 0;
-  dictionary = g_hash_table_lookup(dictionaries_table, name);
-  if(!dictionary){
-    dictionary = g_hash_table_new_full(&g_str_hash, &g_str_equal, &g_free,
-                                       (GDestroyNotify)&free_typed_value);
-    g_hash_table_insert(dictionaries_table, name, dictionary);
-  }
+  /* Should never be run */
+  if(!dictionary){BAILOUT(NULL,"Unable to retrieve dictionary");}
+  
   return dictionary;
 }
 
-void clear_dictionaries() 
+guint32* int_dup(guint32 i){
+  guint32* ret = NULL;
+  ret = g_malloc(sizeof(guint32));
+  *ret = i;
+  return ret;
+}
+
+ConversationTables * get_conversation_table(address src, address dest){
+  GHashTable* dest_table = NULL;
+  ConversationTables* conversation_tables = NULL;
+
+  /* On first src_table won't exist */
+  if(!src_table){
+    src_table = g_hash_table_new_full(&addressHash, &addressEqual,
+				      (GDestroyNotify)&addressDelete,
+				      (GDestroyNotify)&g_hash_table_destroy);
+  }
+  /* Get the table for this destination, or create if it doesn't exist */
+  dest_table = g_hash_table_lookup(src_table, &src);
+  if(!dest_table){
+    dest_table = g_hash_table_new_full(&addressHash, &addressEqual,
+				       (GDestroyNotify)&addressDelete,
+				       (GDestroyNotify)&free_conversation_table);
+    g_hash_table_insert(src_table, copyAddress(&src), dest_table);
+  }
+  /* Retrieve the conversation tables, or create if not exist */
+  conversation_tables = g_hash_table_lookup(dest_table, &dest);
+  if(!conversation_tables){
+    conversation_tables = g_malloc(sizeof(ConversationTables));
+    conversation_tables->normal = g_hash_table_new_full(&g_str_hash, &g_str_equal,
+				       &g_free,(GDestroyNotify)&g_hash_table_destroy);
+    conversation_tables->templates = g_hash_table_new_full(&g_int_hash, &g_int_equal,
+				       &g_free,(GDestroyNotify)&g_hash_table_destroy);
+    g_hash_table_insert(dest_table, copyAddress(&dest), conversation_tables);
+  }
+  
+  return conversation_tables;
+}
+
+void free_conversation_table(gconstpointer p){
+  
+  ConversationTables* conversation_tables = (ConversationTables*)p;
+  
+  if(conversation_tables->normal){
+    g_hash_table_destroy(conversation_tables->normal);
+  }
+  if(conversation_tables->templates){
+    g_hash_table_destroy(conversation_tables->templates);
+  }
+  g_free(conversation_tables);
+  
+}
+
+void clear_dictionaries(address src, address dest) 
 {
   GList* list;
-  list = g_hash_table_get_keys(dictionaries_table);
+  ConversationTables * ctables = get_conversation_table(src, dest);
   
+  list = g_hash_table_get_keys(ctables->normal);
   while(list) {
-    GHashTable* dictionary = g_hash_table_lookup(dictionaries_table,
+    GHashTable* dictionary = g_hash_table_lookup(ctables->normal,
                                                  ((char*)list->data));
     g_hash_table_remove_all(dictionary);
     list = g_list_next(list);
   }
+  g_list_free(list);
   
-  g_list_free(list);  
-  list = template_dictionaries;
-  
+  list = g_hash_table_get_keys(ctables->templates);
   while(list) {
-    GHashTable* dictionary = list->data;
+    GHashTable* dictionary = g_hash_table_lookup(ctables->templates,
+                                                 ((char*)list->data));
     g_hash_table_remove_all(dictionary);
     list = g_list_next(list);
   }
+  g_list_free(list);
   
+  return;
 }
 
 static void free_typed_value(TypedValue* val)
@@ -135,51 +177,16 @@ static void free_typed_value(TypedValue* val)
   g_free(val);
 }
 
-void remove_dictionary(char* name){
-  if(!g_hash_table_remove(dictionaries_table, name)){
-    DBG1("Attempt to remove non-existent dictionary: %s", name);
-  }
-}
-
-void set_dictionary_pointers(const FieldType* parent, GNode* parent_node)
-{
-  GNode* node = 0;
-  if (!parent_node) {
-    BAILOUT(;,"Passed NULL parent node.");
-  }
-  if (!parent->dictionary_ptr) {
-    BAILOUT(;,"Require parent field to have a dictionary.");
-  }
-
-  for (node = parent_node->children;  node;  node = node->next) {
-    FieldType* field_type = 0;
-    field_type = (FieldType*)(node->data);
-
-    if (field_type->dictionary) {
-      field_type->dictionary_ptr = get_dictionary(field_type->dictionary);
-    }
-    else {
-      field_type->dictionary_ptr = parent->dictionary_ptr;
-    }
-    if (!field_type->empty) {
-      FieldData fdata;
-      fdata.status = FieldExists;
-      /* Not using copy_field_value() to avoid extra malloc/free. */
-      memcpy(&fdata.value, &field_type->value, sizeof(FieldValue));
-      set_dictionary_value(field_type, &fdata);
-    }
-    /* Recurse into child nodes */
-    set_dictionary_pointers(field_type, node);
-  }
-}
 
 gboolean get_dictionary_value(const FieldType* ftype,
-                              FieldData* fdata)
+                              FieldData* fdata, address src, address dest)
 {
   gboolean found = FALSE;
   GHashTable* dictionary = 0;
   const TypedValue* prev = 0;
-  dictionary = (GHashTable*)ftype->dictionary_ptr;
+  
+  /* call getdictionary here */
+  dictionary = get_dictionary(ftype, src, dest);
   if (!ftype->key) {
     BAILOUT(FALSE, "No key on field.");
   }
@@ -199,19 +206,36 @@ gboolean get_dictionary_value(const FieldType* ftype,
       err_d(4, fdata);
     }
   }
+  /* TODO Revist does empty mean this has a default value, or that the default is empty?*/
+  else if(ftype->hasDefault){
+    /* TODO FIX THIS */
+    if(ftype->mandatory || TRUE){
+      fdata->status = FieldExists;
+      copy_field_value(ftype->type, &ftype->value, &fdata->value);
+    }
+    else {
+      /* TODO Determine if the default value is empty
+       * if so set status accordingly and return the value
+       * otherwise do the same as above but handle for optional (-1 for ints and such)
+       */
+      
+    }
+  }
   else {
     fdata->status = FieldUndefined;
   }
+  
   return found;
 }
 
 void set_dictionary_value(const FieldType* ftype,
-                          const FieldData* fdata)
+                          const FieldData* fdata, address src, address dest)
 {
   GHashTable* dictionary = 0;
   TypedValue* prev_value = 0;
   TypedValue* new_value = 0;
-  dictionary = (GHashTable*)ftype->dictionary_ptr;
+  
+  dictionary = get_dictionary(ftype, src, dest);
   
   if(!ftype->key) {
     return;
@@ -241,5 +265,5 @@ void set_dictionary_value(const FieldType* ftype,
   } else {
     DBG1("Failed to set value for field type: %s", ftype->name);
   }
+  
 }
-

@@ -11,16 +11,16 @@
 #include "dissect.h"
   
 static gboolean dissect_int_op(gint64 * delta, const FieldType * ftype, 
-                               FieldData * fdata, DissectPosition * position);
+                               FieldData * fdata, DissectPosition * position, address* src, address* dest);
 gboolean dissect_ascii_delta(const FieldType* ftype, FieldData* fdata,
-                             DissectPosition* position);
+                             DissectPosition* position, address* src, address* dest);
   
 /*! \brief Dissect a FAST message by the bytes.
  * \param position  Current position in bytes.
  * \param parent  Return value. The message data is built under it.
  * \return  The template that was used to dissect.
  */
-GNode* dissect_fast_bytes (DissectPosition* position, GNode* parent)
+GNode* dissect_fast_bytes (DissectPosition* position, GNode* parent, address* src, address* dest)
 {
   static guint32 template_id = 0;
   GNode* tmpl = 0; /* Template. */
@@ -63,7 +63,7 @@ GNode* dissect_fast_bytes (DissectPosition* position, GNode* parent)
   {
     GNode* data_node = 0;
     dissector_walk(tmpl->children, position,
-                   parent, data_node);
+                   parent, data_node, src, dest);
   }
 
   fdata->nbytes = position->offset - fdata->start;
@@ -81,10 +81,10 @@ GNode* dissect_fast_bytes (DissectPosition* position, GNode* parent)
  */
 void dissector_walk (const GNode* tnode,
                      DissectPosition* position,
-                     GNode* parent, GNode* dnode)
+                     GNode* parent, GNode* dnode, address* src, address* dest)
 {
   while (tnode) {
-    dnode = dissect_descend (tnode, position, parent, dnode);
+    dnode = dissect_descend (tnode, position, parent, dnode, src, dest);
     tnode = tnode->next;
   }
 }
@@ -99,7 +99,7 @@ void dissector_walk (const GNode* tnode,
  */
 GNode* dissect_descend (const GNode* tnode,
                         DissectPosition* position,
-                        GNode* parent, GNode* dnode)
+                        GNode* parent, GNode* dnode, address* src, address* dest)
 {
   const FieldType* ftype;
   FieldData* fdata;
@@ -128,7 +128,7 @@ GNode* dissect_descend (const GNode* tnode,
   }
   g_node_insert_after(parent, dnode, dnode_next);
 
-  dissect_value(tnode, position, dnode_next);
+  dissect_value(tnode, position, dnode_next, src, dest);
 
   if(!(dnode_next->parent)){
     g_node_destroy(dnode_next);   /* TODO: wat? */
@@ -161,10 +161,10 @@ GNode* dissect_descend (const GNode* tnode,
  * \param dnode  Dissect tree node.
  */
 void dissect_value (const GNode* tnode,
-                    DissectPosition* position, GNode* dnode)
+                    DissectPosition* position, GNode* dnode, address* src, address* dest)
 {
   /* Map to the dissect functions. */
-  static void (*dissect_fn_map[]) (const GNode*, DissectPosition*, GNode*) =
+  static void (*dissect_fn_map[]) (const GNode*, DissectPosition*, GNode*, address*, address*) =
   {
     &dissect_uint32, &dissect_uint64,
     &dissect_int32,  &dissect_int64,
@@ -192,7 +192,7 @@ void dissect_value (const GNode* tnode,
 
   if (!ftype->mandatory) {
     /* Set empty to false if there should be a value. */
-    dissect_optional(tnode, position, dnode);
+    dissect_optional(tnode, position, dnode, src, dest);
   }
   else {
     fdata->status = FieldExists;
@@ -203,7 +203,7 @@ void dissect_value (const GNode* tnode,
   
     switch (ftype->op) {
       case FieldOperatorCopy:
-        operator_used = dissect_copy(tnode, position, dnode);
+        operator_used = dissect_copy(tnode, position, dnode, src, dest);
         break;
         
       case FieldOperatorConstant:
@@ -212,7 +212,7 @@ void dissect_value (const GNode* tnode,
         break;
         
       case FieldOperatorDefault:
-        operator_used = dissect_default(tnode, position, dnode);
+        operator_used = dissect_default(tnode, position, dnode, src, dest);
         break;
         
       default:
@@ -221,7 +221,7 @@ void dissect_value (const GNode* tnode,
        
     if(!operator_used) {
       /* Call the dissect function. */
-      (*dissect_fn_map[ftype->type]) (tnode, position, dnode);
+      (*dissect_fn_map[ftype->type]) (tnode, position, dnode, src, dest);
     }
   }
   /* Make sure the window is correct. */
@@ -235,7 +235,7 @@ void dissect_value (const GNode* tnode,
  * \param dnode  Dissect tree node.
  */
 void dissect_optional (const GNode* tnode,
-                       DissectPosition* position, GNode* dnode)
+                       DissectPosition* position, GNode* dnode, address* src, address* dest)
 {
   gboolean check_pmap = FALSE;
   gboolean check_null = FALSE;
@@ -248,7 +248,7 @@ void dissect_optional (const GNode* tnode,
   if ((FieldTypeDecimal == ftype->type ||
        FieldTypeSequence == ftype->type) 
       && FieldOperatorNone == ftype->op) {
-    dissect_optional (tnode->children, position, dnode);
+    dissect_optional (tnode->children, position, dnode, src, dest);
     return;
   }
   switch (ftype->op) {
@@ -291,7 +291,7 @@ void dissect_optional (const GNode* tnode,
     fdata->status = dissect_shift_null(position) ? FieldEmpty : FieldExists;
   }
   if ((fdata->status == FieldEmpty) && set_dict) {
-    set_dictionary_value(ftype, fdata);
+    set_dictionary_value(ftype, fdata, *src, *dest);
   }
   if (check_pmap && (!check_null || (fdata->status == FieldEmpty))) {
     dissect_shift_pmap(position);
@@ -306,29 +306,34 @@ void dissect_optional (const GNode* tnode,
  * \return true if the copy operator is used
  */
 gboolean dissect_copy(const GNode* tnode,
-                      DissectPosition* position, GNode* dnode)
+                      DissectPosition* position, GNode* dnode, address* src, address* dest)
 {
   gboolean used = TRUE;
   gboolean presence_bit;
+  
   SetupDissectStack(ftype, fdata, tnode, dnode);
+  
   presence_bit = dissect_shift_pmap(position);
   if(presence_bit) {
     used = FALSE;
   } else {
-    get_dictionary_value(ftype, fdata);
+    get_dictionary_value(ftype, fdata, *src, *dest);
     
     if(FieldUndefined == fdata->status && ftype->mandatory)
     {
       err_d(5, fdata);
+      
       return FALSE;
     }
     else if(FieldEmpty == fdata->status && ftype->mandatory)
     {
       err_d(6, fdata);
+      
       return FALSE;
     }
     
   }
+  
   return used;
 }                      
 
@@ -340,7 +345,7 @@ gboolean dissect_copy(const GNode* tnode,
  * \return true if the default operator is used
  */
 gboolean dissect_default(const GNode* tnode,
-                         DissectPosition* position, GNode* dnode)
+                         DissectPosition* position, GNode* dnode, address* src, address* dest)
 {
   gboolean used = TRUE;  
   gboolean presence_bit;
@@ -350,7 +355,7 @@ gboolean dissect_default(const GNode* tnode,
     used = FALSE;
   } else {
     copy_field_value(ftype->type, &ftype->value, &fdata->value);
-    set_dictionary_value(ftype, fdata);
+    set_dictionary_value(ftype, fdata, *src, *dest);
   }
   return used;
 }
@@ -364,7 +369,7 @@ gboolean dissect_default(const GNode* tnode,
 gboolean dissect_int_op(gint64* delta,
                         const FieldType* ftype,
                         FieldData* fdata,
-                        DissectPosition* position)
+                        DissectPosition* position, address* src, address* dest)
 {
   gboolean presence_bit;
   gboolean dissect_it = FALSE;
@@ -378,13 +383,15 @@ gboolean dissect_int_op(gint64* delta,
     case FieldOperatorDelta:
       {
         FieldData fdata_temp; 
-        get_dictionary_value(ftype, fdata);
+        get_dictionary_value(ftype, fdata, *src, *dest);
         
         if(FieldUndefined == fdata->status)
         {
           fdata->status = FieldExists;
           
-          if(!ftype->empty) {
+	  /* TODO make sure this is correct and/or needed */
+	  /* was if(!ftype->empty) */
+          if(ftype->hasDefault) {
             copy_field_value(ftype->type, &ftype->value, &fdata->value);
           } else {
             /* Zero out all bytes (regardless of integer type) */
@@ -413,7 +420,7 @@ gboolean dissect_int_op(gint64* delta,
       }
       else {
         /* do a dictionary lookup */
-        get_dictionary_value(ftype, fdata);
+        get_dictionary_value(ftype, fdata, *src, *dest);
           
         if(FieldEmpty == fdata->status && ftype->mandatory)
         {
@@ -444,13 +451,13 @@ gboolean dissect_int_op(gint64* delta,
  * \param dnode  Dissect tree node.
  */
 void dissect_uint32 (const GNode* tnode,
-                     DissectPosition* position, GNode* dnode)
+                     DissectPosition* position, GNode* dnode, address* src, address* dest)
 {
   gint64 delta = 0;
   gboolean dissect_it = FALSE;
   SetupDissectStack(ftype, fdata,  tnode, dnode);
 
-  dissect_it = dissect_int_op(&delta, ftype, fdata, position);  
+  dissect_it = dissect_int_op(&delta, ftype, fdata, position, src, dest);  
   
   if(dissect_it) {
     basic_dissect_uint32(position, fdata);
@@ -460,7 +467,7 @@ void dissect_uint32 (const GNode* tnode,
   }
     
   fdata->value.u32 = (guint32) (fdata->value.u32 + delta);
-  set_dictionary_value(ftype, fdata);
+  set_dictionary_value(ftype, fdata, *src, *dest);
 }
 
 
@@ -470,13 +477,13 @@ void dissect_uint32 (const GNode* tnode,
  * \param dnode  Dissect tree node.
  */
 void dissect_uint64 (const GNode* tnode,
-                     DissectPosition* position, GNode* dnode)
+                     DissectPosition* position, GNode* dnode, address* src, address* dest)
 {
   gboolean dissect_it = FALSE;
   gint64 delta = 0;
   SetupDissectStack(ftype, fdata,  tnode, dnode);
 
-  dissect_it = dissect_int_op(&delta, ftype, fdata, position);
+  dissect_it = dissect_int_op(&delta, ftype, fdata, position, src, dest);
   
   if (dissect_it) {
     basic_dissect_uint64 (position, fdata);
@@ -486,7 +493,7 @@ void dissect_uint64 (const GNode* tnode,
   }
   
   fdata->value.u64 += delta;
-  set_dictionary_value(ftype, fdata);
+  set_dictionary_value(ftype, fdata, *src, *dest);
 }
 
 /*! \brief  Given a byte stream, dissect a signed 32bit integer.
@@ -495,13 +502,13 @@ void dissect_uint64 (const GNode* tnode,
  * \param dnode  Dissect tree node.
  */
 void dissect_int32 (const GNode* tnode,
-                    DissectPosition* position, GNode* dnode)
+                    DissectPosition* position, GNode* dnode, address* src, address* dest)
 {
   gboolean dissect_it = FALSE;
   gint64 delta = 0;
   SetupDissectStack(ftype, fdata,  tnode, dnode);
 
-  dissect_it = dissect_int_op(&delta, ftype, fdata, position);
+  dissect_it = dissect_int_op(&delta, ftype, fdata, position, src, dest);
   
   if (dissect_it) {
     basic_dissect_int32 (position, fdata);
@@ -512,7 +519,7 @@ void dissect_int32 (const GNode* tnode,
   }
 
   fdata->value.i32 = (gint32) (fdata->value.i32 + delta);
-  set_dictionary_value(ftype, fdata);
+  set_dictionary_value(ftype, fdata, *src, *dest);
 }
 
 
@@ -522,13 +529,13 @@ void dissect_int32 (const GNode* tnode,
  * \param dnode  Dissect tree node.
  */
 void dissect_int64 (const GNode* tnode,
-                    DissectPosition* position, GNode* dnode)
+                    DissectPosition* position, GNode* dnode, address* src, address* dest)
 {
   gboolean dissect_it = FALSE;
   gint64 delta = 0;
   SetupDissectStack(ftype, fdata,  tnode, dnode);
 
-  dissect_it = dissect_int_op(&delta, ftype, fdata, position);
+  dissect_it = dissect_int_op(&delta, ftype, fdata, position, src, dest);
   
   if (dissect_it) {
     basic_dissect_int64 (position, fdata);
@@ -539,7 +546,7 @@ void dissect_int64 (const GNode* tnode,
   }
   
   fdata->value.i64 += delta;
-  set_dictionary_value(ftype, fdata);
+  set_dictionary_value(ftype, fdata, *src, *dest);
 }
 
 
@@ -549,7 +556,7 @@ void dissect_int64 (const GNode* tnode,
  * \param dnode  Dissect tree node.
  */
 void dissect_decimal (const GNode* tnode,
-                      DissectPosition* position, GNode* dnode)
+                      DissectPosition* position, GNode* dnode, address* src, address* dest)
 {
   gint32 expt;       gint64 mant;
   GNode* expt_node;  GNode* mant_node;
@@ -568,25 +575,25 @@ void dissect_decimal (const GNode* tnode,
     gint64 delta = 0; 
     FieldData expt_data;
     FieldData mant_data;
-    dissect_int_op(&delta, ftype, &expt_data, position);
+    dissect_int_op(&delta, ftype, &expt_data, position, src, dest);
     expt = (gint32) (delta + expt_data.value.decimal.exponent);
     
-    dissect_int_op(&delta, ftype, &mant_data, position);    
+    dissect_int_op(&delta, ftype, &mant_data, position, src, dest);    
     mant = delta + mant_data.value.decimal.mantissa;
   }
   else {
     /* Grab exponent. */
-    dissect_value (expt_node, position, dnode);
+    dissect_value (expt_node, position, dnode, src, dest);
     expt = fdata->value.i32;
     /* Grab mantissa. */
-    dissect_value (mant_node, position, dnode);
+    dissect_value (mant_node, position, dnode, src, dest);
     mant = fdata->value.i64;
   }
   
   fdata->value.decimal.mantissa = mant;
   fdata->value.decimal.exponent = expt;
 
-  set_dictionary_value(ftype, fdata);
+  set_dictionary_value(ftype, fdata, *src, *dest);
 }
 
 
@@ -596,7 +603,7 @@ void dissect_decimal (const GNode* tnode,
  * \param dnode  Dissect tree node.
  */
 void dissect_ascii_string (const GNode* tnode,
-                           DissectPosition* position, GNode* dnode)
+                           DissectPosition* position, GNode* dnode, address* src, address* dest)
 {
   gboolean dissect_it = FALSE;
   SetupDissectStack(ftype, fdata,  tnode, dnode);
@@ -612,7 +619,7 @@ void dissect_ascii_string (const GNode* tnode,
       break;
     case FieldOperatorDelta:
     case FieldOperatorTail:
-        dissect_it = dissect_ascii_delta(ftype, fdata, position);
+        dissect_it = dissect_ascii_delta(ftype, fdata, position, src, dest);
       break; 
     default:
       DBG0("Invalid Operator.");
@@ -622,14 +629,14 @@ void dissect_ascii_string (const GNode* tnode,
     basic_dissect_ascii_string (position, fdata);
   }
   
-  set_dictionary_value(ftype, fdata);
+  set_dictionary_value(ftype, fdata, *src, *dest);
 }
 
 /*! \brief 
  * 
  */
 gboolean dissect_ascii_delta(const FieldType* ftype, FieldData* fdata,
-                             DissectPosition* position)
+                             DissectPosition* position, address* src, address* dest)
 {
   FieldData fdata_temp;
   FieldData input_str;
@@ -644,7 +651,7 @@ gboolean dissect_ascii_delta(const FieldType* ftype, FieldData* fdata,
   subtract = fdata_temp.value.i32;
   
   /* get the previous string */
-  if(!get_dictionary_value(ftype, &lookup)) {
+  if(!get_dictionary_value(ftype, &lookup, *src, *dest)) {
     return TRUE;
   }
   
@@ -735,9 +742,9 @@ gboolean dissect_ascii_delta(const FieldType* ftype, FieldData* fdata,
  * \sa dissect_byte_vector
  */
 void dissect_unicode_string (const GNode* tnode,
-                             DissectPosition* position, GNode* dnode)
+                             DissectPosition* position, GNode* dnode, address* src, address* dest)
 {
-  dissect_byte_vector (tnode, position, dnode);
+  dissect_byte_vector (tnode, position, dnode, src, dest);
 }
 
 
@@ -747,7 +754,7 @@ void dissect_unicode_string (const GNode* tnode,
  * \param dnode  Dissect tree node.
  */
 void dissect_byte_vector (const GNode* tnode,
-                          DissectPosition* position, GNode* dnode)
+                          DissectPosition* position, GNode* dnode, address* src, address* dest)
 {
   GNode* length_node;
   gboolean dissect_it = FALSE;
@@ -784,7 +791,7 @@ void dissect_byte_vector (const GNode* tnode,
         subtract = fdata_temp.value.i64;
         
         /* get the previous string */
-        if(!get_dictionary_value(ftype, &lookup)) 
+        if(!get_dictionary_value(ftype, &lookup, *src, *dest)) 
         {
           dissect_it = TRUE;
           break;
@@ -795,7 +802,7 @@ void dissect_byte_vector (const GNode* tnode,
         vec = &input_str.value.bytevec;
 
         /* See how big the byte vector is. */
-        dissect_value (length_node, position, dnode);
+        dissect_value (length_node, position, dnode, src, dest);
 
         vec->nbytes = fdata->value.u32;
 
@@ -876,7 +883,7 @@ void dissect_byte_vector (const GNode* tnode,
     vec = &fdata->value.bytevec;
 
     /* See how big the byte vector is. */
-    dissect_value (length_node, position, dnode);
+    dissect_value (length_node, position, dnode, src, dest);
 
     vec->nbytes = fdata->value.u32;
 
@@ -892,7 +899,7 @@ void dissect_byte_vector (const GNode* tnode,
 
     ShiftBytes(position);
   }
-  set_dictionary_value(ftype, fdata);
+  set_dictionary_value(ftype, fdata, *src, *dest);
 }
 
 
@@ -903,7 +910,7 @@ void dissect_byte_vector (const GNode* tnode,
  * \param dnode  Dissect tree node.
  */
 void dissect_group (const GNode* tnode,
-                    DissectPosition* position, GNode* dnode)
+                    DissectPosition* position, GNode* dnode, address* src, address* dest)
 {
   DissectPosition stacked_position;
   DissectPosition* nested_position;
@@ -919,7 +926,7 @@ void dissect_group (const GNode* tnode,
   }
 
   /* Recurse down the tree, building onto dnode. */
-  dissector_walk (tnode->children, nested_position, dnode, 0);
+  dissector_walk (tnode->children, nested_position, dnode, 0, src, dest);
 
   position->offjmp = nested_position->offset - position->offset;
   ShiftBytes(position);
@@ -937,7 +944,7 @@ void dissect_group (const GNode* tnode,
  * \param dnode  Dissect tree node.
  */
 void dissect_sequence (const GNode* tnode,
-                       DissectPosition* position, GNode* dnode)
+                       DissectPosition* position, GNode* dnode, address* src, address* dest)
 {
   guint32 length;
   guint32 i;
@@ -952,7 +959,7 @@ void dissect_sequence (const GNode* tnode,
   length_tnode = tnode->children;
   group_tnode  = length_tnode->next;
 
-  dissect_value (length_tnode, position, dnode);
+  dissect_value (length_tnode, position, dnode, src, dest);
   length = fdata->value.u32;
   parent = dnode;
   dnode  = 0;
@@ -965,7 +972,7 @@ void dissect_sequence (const GNode* tnode,
       DBG0("Sequence bailing, no space left in pmap.");
       break;
     }
-    dnode = dissect_descend (group_tnode, position, parent, dnode);
+    dnode = dissect_descend (group_tnode, position, parent, dnode, src, dest);
   }
 }
 

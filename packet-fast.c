@@ -29,6 +29,7 @@
 #include "parse-template.h"
 #include "template.h"
 #include "dictionaries.h"
+#include "debug-tree.h"
 
 
 
@@ -300,7 +301,6 @@ void proto_reg_handoff_fast ()
       GNode* templates;
       fprintf(stderr, "Using xml file %s ...\n",config_template_xml_path);
       templates = parse_templates_xml (config_template_xml_path);
-      set_dictionaries(templates);
       if (templates) {
         add_templates(templates);
       }
@@ -385,7 +385,7 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
         GNode* data;
         GNode* tmpl;
         data = g_node_new(0);
-        tmpl = dissect_fast_bytes (position, data);
+        tmpl = dissect_fast_bytes (position, data, &pinfo->src, &pinfo->dst);
         
         message_cnt++;
         
@@ -451,9 +451,10 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
         }
       }
       
+      /* TODO why was this here?
       if (implementation == CMEImplem || implementation == UMDFImplem) {
         set_dictionaries(full_templates_tree());
-      }
+      }*/
       
       g_hash_table_insert(dissected_packets_table, &(packetData->frameNum), packetData);
     }
@@ -497,6 +498,7 @@ void display_message (tvbuff_t* tvb, proto_tree* tree,
       field_name = UNNAMED;
     }
 
+    
     item = proto_tree_add_none_format(tree, hf_fast_tid, tvb,
                                       fdata->start, fdata->nbytes,
                                       "%s - tid: %d", field_name, ftype->id);
@@ -546,6 +548,7 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
       switch (ftype->type) {
         case FieldTypeUInt32:
           /*type - name (id): value*/
+	  
           proto_tree_add_none_format(tree, header_field, tvb,
                                      fdata->start, fdata->nbytes,
                                      "uInt32 - %s (%d)%s: %u",
@@ -554,7 +557,8 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
                                      field_info,
                                      fdata->value.u32);
           break;
-        case FieldTypeUInt64:
+	case FieldTypeUInt64:
+	  
           proto_tree_add_none_format(tree, header_field, tvb,
                                      fdata->start, fdata->nbytes,
                                      "uInt64 - %s (%d)%s: %" G_GINT64_MODIFIER "u",
@@ -564,6 +568,7 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
                                      fdata->value.u64);
           break;
         case FieldTypeInt32:
+	  
           proto_tree_add_none_format(tree, header_field, tvb,
                                      fdata->start, fdata->nbytes,
                                      "int32 - %s (%d)%s: %d",
@@ -573,6 +578,7 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
                                      fdata->value.i32);
           break;
         case FieldTypeInt64:
+	  
           proto_tree_add_none_format(tree, header_field, tvb,
                                      fdata->start, fdata->nbytes,
                                      "int64 - %s (%d)%s: %" G_GINT64_MODIFIER "d",
@@ -587,6 +593,7 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
             decimalNum = toDecimal(fdata->value.decimal.exponent, fdata->value.decimal.mantissa);
           } else { decimalNum = NULL; } 
           if(sciNotation || decimalNum==NULL ){
+	    
             proto_tree_add_none_format(tree, header_field, tvb,
                                      fdata->start, fdata->nbytes,
                                      "decimal - %s (%d)%s: %" G_GINT64_MODIFIER "de%d",
@@ -596,6 +603,7 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
                                      fdata->value.decimal.mantissa,
                                      fdata->value.decimal.exponent);
           } else {
+	    
             proto_tree_add_none_format(tree, header_field, tvb,
                                      fdata->start, fdata->nbytes,
                                      "decimal - %s (%d)%s: %s",
@@ -606,6 +614,7 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
           }
           break;
         case FieldTypeAsciiString:
+	  
           proto_tree_add_none_format(tree, header_field, tvb,
                                      fdata->start, fdata->nbytes,
                                      "ascii - %s (%d)%s: %s", field_name,
@@ -614,6 +623,7 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
                                      fdata->value.ascii.bytes);
           break;
         case FieldTypeUnicodeString:
+	  
           proto_tree_add_none_format(tree, header_field, tvb,
                                      fdata->start, fdata->nbytes,
                                      "unicode - %s (%d)%s: %s", field_name,
@@ -634,6 +644,7 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
                             "%02x", vec->bytes[i]);
               }
               str[2*vec->nbytes] = 0;
+	      
               proto_tree_add_none_format(tree, header_field, tvb,
                                          fdata->start, fdata->nbytes,
                                          "byteVector - %s (%d)%s: %s", field_name,
@@ -644,6 +655,7 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
             }
             else {
               DBG0("Error allocating memory.");
+	      
               proto_tree_add_none_format(tree, header_field, tvb,
                                          fdata->start, fdata->nbytes,
                                          "byteVector - %s (%d)%s: %s", field_name,
@@ -656,6 +668,7 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
           {
             proto_item* item;
             proto_tree* subtree;
+	    
             item = proto_tree_add_none_format(tree, header_field, tvb,
                                               fdata->start, fdata->nbytes,
                                               "group - %s (%d):", field_name,
@@ -671,10 +684,11 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
             proto_item* item;
             proto_tree* subtree;
             GNode* length_tnode;
+	    
             item = proto_tree_add_none_format(tree, header_field, tvb,
                                               fdata->start, fdata->nbytes,
-                                              "sequence - %s (%d)%s:", field_name,
-                                              ftype->id, field_info
+                                              "sequence - %s (%d)%s length %d:", field_name,
+                                              ftype->id, field_info,fdata->value.u32
                                               );
 
             subtree = proto_item_add_subtree(item, ett_fast);
@@ -706,6 +720,7 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
     else if (fdata->status == FieldEmpty) {
       /* The field is empty. */
       if(show_empty_optional_fields){
+	
         proto_tree_add_none_format(tree, header_field, tvb,
                                  fdata->start, fdata->nbytes,
                                  "%s (empty %s)",
@@ -714,6 +729,7 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
       }
     } else {
       /* The field has an error */
+
       time_t ltime;   
       FILE *log;
       

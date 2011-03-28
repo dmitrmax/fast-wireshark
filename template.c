@@ -109,16 +109,15 @@ GNode* create_field (FieldTypeIdentifier type,
     BAILOUT(0, "Error g_new_node().");
   }
 
-  field->name      = 0;
-  field->id        = 0;
-  field->key       = 0;
-  field->mandatory = TRUE;
-  field->type      = type;
-  field->op        = op;
-  field->empty     = TRUE;
+  field->name       = 0;
+  field->id         = 0;
+  field->key        = 0;
+  field->mandatory  = TRUE;
+  field->type       = type;
+  field->op         = op;
+  field->hasDefault = FALSE;
   init_field_value(&field->value);
   field->dictionary = 0;
-  field->dictionary_ptr = 0;
 
   return node;
 }

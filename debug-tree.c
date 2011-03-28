@@ -37,12 +37,14 @@ void debug_print_field_tree (GNode * node, int level){
 }
 
 void debug_print_field (FieldType* field, int indent){
-  fprintf(stderr,"%*stype: %s name: %s  operator: %s dictionaryname: %s dictionary_ptr: %p\n",
+  fprintf(stderr,"%*stype: %s name: %s id: %d operator: %s dictionaryname: %s key: %s tid: %d\n",
        indent, "",
        field_typename (field->type),
        field->name,
+       field->id,
        operator_typename (field->op),
        field->dictionary,
-       (void*)field->dictionary_ptr);
+       field->key,
+       field->tid);
 }
 
