@@ -48,7 +48,7 @@ static int proto_fast = -1;
 /* Initialize the protocol and registered fields. */
 static int hf_fast[FieldTypeEnumLimit];
 static int hf_fast_tid        = -1;
-static gboolean hf_fast_error = FALSE;
+static gboolean message_error = FALSE;
 
 /* Initialize the subtree pointer. */
 static gint ett_fast = -1;
@@ -356,7 +356,6 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
       DissectPosition stacked_position;
       DissectPosition* position;
       guint header_offset = 0;
-      guint message_cnt = 0;
 
       if (implementation == CMEImplem) {
         header_offset = 5;
@@ -387,8 +386,6 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
         data = g_node_new(0);
         tmpl = dissect_fast_bytes (position, data, &pinfo->src, &pinfo->dst);
         
-        message_cnt++;
-        
         /* If no template is found for the message make a fake message/template then break out */
         if(tmpl == NULL){
           GNode* tnode;
@@ -398,8 +395,6 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
           FieldType* vfield;
           FieldData* fdata;
           
-          hf_fast_error = TRUE;
-
           /* Create a template that contains one ascii field */
           tnode = create_field(FieldTypeUInt32, FieldOperatorCopy);
           tfield = (FieldType*) tnode->data;
@@ -436,19 +431,6 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
         } 
         packetData->dataTrees = g_list_append(packetData->dataTrees, data);
         packetData->tmplTrees = g_list_append(packetData->tmplTrees, tmpl);
-        
-        /* add info to the info column */
-        if (check_col(pinfo->cinfo, COL_INFO)) {
-          if(hf_fast_error) {
-            /* do nothing */
-          } else if(message_cnt > 1) {
-            col_add_fstr(pinfo->cinfo, COL_INFO,"%d messages", message_cnt);
-          } else {
-            col_add_fstr(pinfo->cinfo, COL_INFO,"template id: %d, name: %s", 
-                ((FieldType *)tmpl->data)->id,
-                ((FieldType *)tmpl->data)->name);
-          }
-        }
       }
       
       /* TODO why was this here?
@@ -462,14 +444,33 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
     {
       GList* tmplTrees;
       GList* dataTrees;
+      GNode* template;
+      GNode* parent;
+      guint message_cnt = 0;
       tmplTrees = packetData->tmplTrees;
       dataTrees = packetData->dataTrees;
+      
       while (tmplTrees && dataTrees) {
-        display_message (tvb, fast_tree,
-                         (GNode*) tmplTrees->data,
-                         (GNode*) dataTrees->data,
-			 pinfo);
-	
+        template  = (GNode*) tmplTrees->data;
+        parent    = (GNode*) dataTrees->data;   
+        message_error = FALSE;
+        display_message (tvb, fast_tree, template, parent, pinfo);
+                         
+        /* add info to the info column */
+        message_cnt++;
+        if (check_col(pinfo->cinfo, COL_INFO)) {
+          if(message_error) {
+            /* leave error message in info column */
+          } else if(message_cnt > 1) {
+            col_add_fstr(pinfo->cinfo, COL_INFO,"%d messages", message_cnt);
+          } else {
+            /* dig up template name and tid from previously dissected message */
+            col_add_fstr(pinfo->cinfo, COL_INFO,"%s - tid: %d", 
+                         ((FieldType *)template->data)->name,
+                         ((FieldType *)template->data)->id);
+          }
+        }
+         
         tmplTrees = tmplTrees->next;
         dataTrees = dataTrees->next;
       }
@@ -734,6 +735,7 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
       FILE *log;
       
       header_field = hf_fast[FieldTypeError];
+      message_error = TRUE;
       
       proto_tree_add_none_format(tree, header_field, tvb, 0, 0, 
                                  "%s - %s (%d): %s",
