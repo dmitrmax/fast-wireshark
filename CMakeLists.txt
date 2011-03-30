@@ -47,6 +47,8 @@ endif ()
 list (APPEND plugin_defines "HAVE_CONFIG_H")
 
 list (APPEND CMAKE_MODULE_PATH ${wireshark_src}/cmake/modules)
+      eclipse-swt.i686 1:3.5.2-4.fc13            
+
 
 # Usage:
 #   setup_dbgn_defines (${my_sources})
@@ -64,7 +66,8 @@ setup_dbgn_defines (${plugin_srcs})
 macro (staticlibify destlibs)
   foreach (lib ${ARGN})
     message ("${lib}")
-    string (REGEX REPLACE
+    string (REGEX R
+EPLACE
       "\\${CMAKE_SHARED_LIBRARY_SUFFIX}$"
       "${CMAKE_STATIC_LIBRARY_SUFFIX}"
       staticlib "${lib}")
@@ -103,7 +106,8 @@ target_link_libraries (plugin ${GLIB2_LIBRARIES})
 #Attempting to add GTK to the build
 FIND_PACKAGE(GTK2 COMPONENTS gtk)
 INCLUDE_DIRECTORIES(${GTK2_INCLUDE_DIRS})
-#  ADD_EXECUTABLE(foo foo.cc)
+#  ADD_EXECUTABLE
+(foo foo.cc)
 TARGET_LINK_LIBRARIES(plugin ${GTK2_LIBRARIES})
 
 
@@ -126,10 +130,11 @@ set (CPACK_PACKAGE_NAME "fastwireshark")
 set (CPACK_PACKAGE_DESCRIPTION_SUMMARY "FAST Protocol for Wireshark")
 set (CPACK_PACKAGE_VENDOR "Some Students")
 set (CPACK_PACKAGE_CONTACT "http://code.google.com/p/fast-wireshark")
-set (CPACK_PACKAGE_VERSION_MAJOR "0")
-set (CPACK_PACKAGE_VERSION_MINOR "5")
+set (CPACK_PACKAGE_VERSION_MAJOR "1")
+set (CPACK_PACKAGE_VERSION_MINOR "0")
 set (CPACK_PACKAGE_VERSION_PATCH "0")
 set (CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/COPYING")
+
 
 set (CPACK_NSIS_URL_INFO_ABOUT "http://code.google.com/p/fast-wireshark")
 
