@@ -2,6 +2,8 @@
 # Just a guess, can probably go older.
 cmake_minimum_required (VERSION 2.8)
 
+# option(dev "Compiles devlopment tools" OFF)
+
 subdirs (util)
 
 project (FastWireshark)

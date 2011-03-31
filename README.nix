@@ -10,7 +10,7 @@ sudo apt-get install build-essential bison flex \
                   libxml2-dev cmake
 
 You may want to get Wireshark too.
-  apt-get install wireshark
+                  apt-get install wireshark
 
 These are pretty much the same packages you'll need for Fedora
 sudo yum install build-essential bison flex \
@@ -24,23 +24,9 @@ directory. Next, build you need to generate a correct config.h from the
 Wireshark source directory.
   ./configure
 
-
->-> Run CMake.
-Poll the system for dependent libraries.
-  cmake .
-
-If all went well, you will never need to do that again. It will
-automatically be rerun as needed if the CMakeLists.txt file
-changes.
-
-
 >-> Build and install.
-Make the plugin, install it in $HOME/.wireshark/plugins.
-  make
-  make install
-
-Of course, you can just always run 'make install' and it'll do the 'make' part
-for you.
+Run the install scrip located in $HOME/.wireshark/plugins.
+  ./install.sh
 
 
 >-> Fix your permissions.
