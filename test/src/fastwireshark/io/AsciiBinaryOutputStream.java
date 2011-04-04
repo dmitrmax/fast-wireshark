@@ -19,7 +19,7 @@ public class AsciiBinaryOutputStream extends OutputStream{
 	 * @param o OutputStream to wrap
 	 */
 	public AsciiBinaryOutputStream(OutputStream o){
-		out = o;
+		this(o,false);
 	}
 	
 	/**

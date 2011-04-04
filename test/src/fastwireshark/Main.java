@@ -1,5 +1,7 @@
 package fastwireshark;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,6 +15,8 @@ import fastwireshark.io.MessageTemplateRepository;
 import fastwireshark.io.PcapFileWriter;
 import fastwireshark.io.TCPLoopBackOutputStream;
 import fastwireshark.io.UDPLoopBackOutputStream;
+import fastwireshark.io.UDPReceiverInputStream;
+import fastwireshark.io.UDPSenderOutputStream;
 import fastwireshark.io.XMLDataPlanLoader;
 import fastwireshark.runner.DataPlanRunner;
 import fastwireshark.util.Constants;
@@ -34,6 +38,8 @@ public class Main {
 			public short port = -1;
 			public String pcapFile;
 			public boolean tcpip;
+			public String receiver;
+			public String sender;
 
 			/**
 			 * Parses out the command line arguments and sets the public fields
@@ -80,8 +86,16 @@ public class Main {
 						if(tcpip){throw new RuntimeException("Multiple TCP/IP definitions");}
 						tcpip = true;
 					}
+					if(cur.equals("-R")){
+						if(receiver != null){throw new RuntimeException("Multiple receiver definitions");}
+						receiver = args[++i];
+					}
+					if(cur.equals("-S")){
+						if(sender != null){throw new RuntimeException("Multiple sender definitions");}
+						sender = args[++i];
+					}
 				}
-				if(dataPlanFile == null){
+				if(dataPlanFile == null && receiver == null){
 					throw new RuntimeException("No data plan file specified");
 				}
 			}
@@ -106,10 +120,14 @@ public class Main {
 			System.exit(1);
 		}
 		try{
-			/*
-			 * LOAD TEMPLATE 
-			 */
+			if(cargs.receiver != null && cargs.port > 0){
+				//This goes into an infinite loop
+				networkReciever(cargs.receiver,cargs.port);
+			}
 			OutputStream out;
+			if(cargs.sender != null && cargs.port > 0){
+				out = new UDPSenderOutputStream(cargs.port, cargs.sender);
+			} else
 			if(cargs.pcapFile != null && cargs.port > 0){
 				out = new PcapFileWriter(cargs.port, cargs.pcapFile);
 			} else
@@ -125,7 +143,9 @@ public class Main {
 				out = new AsciiBinaryOutputStream(System.out, true);
 			}
 			MessageOutputStream messageOut = new MessageOutputStream(out);
-			
+			/*
+			 * LOAD TEMPLATE 
+			 */
 			if(cargs.templateFiles != null){
 				for(String templateFile : cargs.templateFiles){
 					MessageTemplateRepository.loadTemplates(templateFile);
@@ -151,6 +171,18 @@ public class Main {
 			e.printStackTrace();
 		}
 
+	}
+	
+	public static void networkReciever(String addr,int port){
+		InputStream in = new UDPReceiverInputStream(port, addr);
+		OutputStream out = new AsciiBinaryOutputStream(System.out, true);
+		while(true){
+			try {
+				out.write(in.read());
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 
