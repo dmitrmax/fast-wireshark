@@ -28,6 +28,8 @@ static gboolean prepend_length (xmlNodePtr xmlnode, const FieldType* parent,
 static gboolean parse_decimal (xmlNodePtr xmlnode, FieldType * tfield, GNode * tnode, char * dictionary);
 static gboolean parse_sequence (xmlNodePtr xmlnode, FieldType* tfield, GNode* tnode, char * dictionary);
 static gboolean operator_type_match (xmlNodePtr node, FieldOperatorIdentifier type);
+static gboolean check_valid_operator(xmlNodePtr xmlnode, FieldType * tfield);
+static gboolean is_integer(FieldTypeIdentifier type);
 
 static gint templateID = -1; /* Stores tid while parsing */
 
@@ -472,18 +474,51 @@ gboolean parse_operator (xmlNodePtr xmlnode, FieldType * tfield){
     log_static_error(1, xmlnode->line, g_strdup_printf("FAST syntax error: Invalid operator (%s) for field %s", xmlnode->name, tfield->name));
     return FALSE;
   }
+  
+  if(!check_valid_operator(xmlnode, tfield)){
+    return FALSE;
+  }
 			
   /* get value of operator if given */
   prop = xmlGetProp(xmlnode, (xmlChar*)"value");
   if (prop!=NULL) {
     tfield->hasDefault = TRUE;
     string_to_field_value((char*)prop, tfield->type, &tfield->value);
-    /* DBG2("value is %s  tfield name is %s", (char *)prop, tfield->name); */
   } else {
     tfield->hasDefault = FALSE;			
 	}
 		
   return TRUE;
+}
+
+/*! \brief  Check if a field's operator is valid
+ *
+ * \param tfield  Field to check
+ */
+static gboolean check_valid_operator(xmlNodePtr xmlnode, FieldType * tfield){
+  
+  if(tfield->op == FieldOperatorIncrement && !is_integer(tfield->type)){
+    log_static_error(2, xmlnode->line, g_strdup_printf("Field %s cannot have an operator of type %s\nIncrement can only be used on integers.", tfield->name, xmlnode->name));
+    return FALSE;
+  }
+  
+  if(tfield->op == FieldOperatorTail){
+    if(is_integer(tfield->type) || tfield->type == FieldTypeDecimal){
+      log_static_error(2, xmlnode->line, g_strdup_printf("Field %s cannot have an operator of type %s\nTail can only be used on strings and bytevectors."
+                                                         , tfield->name, xmlnode->name));
+      return FALSE;
+    }
+  }
+    
+  return TRUE;
+}
+
+static gboolean is_integer(FieldTypeIdentifier type){
+  if(type == FieldTypeInt32 || type == FieldTypeInt64 || type == FieldTypeUInt32 || type == FieldTypeUInt64){
+    return TRUE;
+  } else {
+    return FALSE;
+  }
 }
 
 

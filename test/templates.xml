@@ -210,6 +210,7 @@
 	<template name="t_increment" id="18" dictionary="template">
 	  <uInt32 id="0" presence="optional" name="inc_u32"> <increment value="0"/> </uInt32>
 	  <uInt32 id="0" presence="optional" name="inc_u32_empty"> <increment/> </uInt32>
+    
 
 	  <uInt64 id="0" presence="optional" name="inc_u64"> <increment value="0"/> </uInt64>
 	  <uInt64 id="0" presence="optional" name="inc_u64_empty"> <increment/> </uInt64>	  
