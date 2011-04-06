@@ -1,0 +1,41 @@
+<plan>
+	<message value="30">
+		<int32 value="0"/>
+	</message>
+	<message value="30">
+		<int32 value="0"/>
+	</message>
+	<message value="30">
+		<int32 value="1"/>
+	</message>
+	<message value="30">
+		<int32 value="1"/>
+	</message>
+	<message value="30">
+		<int32 value="2"/>
+	</message>
+	<message value="30">
+		<int32 value="3"/>
+	</message>
+	<message value="30">
+		<int32 value="1"/>
+	</message>
+	<message value="30">
+		<int32 value="0"/>
+	</message>
+	<message value="30">
+		<int32 value="1"/>
+	</message>
+	<message value="23">
+		<int32 value="0"/>
+	</message>
+	<message value="23">
+		<int32 value="8704"/>
+	</message>
+	<message value="23">
+		<int32 value="0"/>
+	</message>
+	<message value="23">
+		<int32 value="8704"/>
+	</message>
+</plan>
