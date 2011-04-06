@@ -103,7 +103,7 @@ gboolean run_tshark (const char* tshark_exe,
 
   guint        pref_idx  ;
   const guint nprefs = 10 ;
-  char*        prefs  [10];
+  char*        prefs  [11];
 
   char* output = 0;
   char** output_ptr = 0;
@@ -128,6 +128,7 @@ gboolean run_tshark (const char* tshark_exe,
   prefs[pref_idx++] = g_strdup_printf ("%s.show_field_keys:false", proto_abbr);
   prefs[pref_idx++] = g_strdup_printf ("%s.show_field_operators:false", proto_abbr);
   prefs[pref_idx++] = g_strdup_printf ("%s.show_field_mandatoriness:false", proto_abbr);
+  prefs[pref_idx++] = g_strdup_printf ("%s.enable_dialogs:false", proto_abbr);
 
   /* Build up the command. */
   {

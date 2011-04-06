@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <gtk/gtk.h>
 #include <glib/gprintf.h>
 #include <libxml/xmlmemory.h>
 #include <libxml/parser.h>
@@ -11,6 +10,7 @@
 
 #include "parse-template.h"
 #include "dictionaries.h"
+#include "error_log.h"
 
 /* Private (static) headers. */
 static GNode* parseTemplate (xmlNodePtr cur);
@@ -31,33 +31,6 @@ static gboolean operator_type_match (xmlNodePtr node, FieldOperatorIdentifier ty
 
 static gint templateID = -1; /* Stores tid while parsing */
 
-/* Function to open a dialog box displaying the message provided. */
-void quick_message (gchar *message)
-{
-   GtkWidget *dialog, *label, *content_area;
-
-   /* Create the widgets */
-   dialog = gtk_dialog_new_with_buttons ("Message",
-                                         NULL,
-                                         GTK_DIALOG_DESTROY_WITH_PARENT,
-                                         GTK_STOCK_OK,
-                                         GTK_RESPONSE_NONE,
-                                         NULL);
-   content_area = gtk_dialog_get_content_area (GTK_DIALOG (dialog));
-   label = gtk_label_new (message);
-
-   /* Ensure that the dialog box is destroyed when the user responds */
-   g_signal_connect_swapped (dialog,
-                             "response",
-                             G_CALLBACK (gtk_widget_destroy),
-                             dialog);
-
-   /* Add the label, and show everything we've added to the dialog */
-
-   gtk_container_add (GTK_CONTAINER (content_area), label);
-   gtk_widget_show_all (dialog);
-}
-
 /*! \brief  Convert an XML file into an internal representation of
  *          the templates.
  * \param filename  Name of the XML file to parse.
@@ -73,8 +46,7 @@ GNode* parse_templates_xml(const char* filename)
 	doc = xmlParseFile(filename); /* attempt to parse xml file and get pointer to parsed document */
 	
 	if (doc == NULL) {
-		quick_message("Document not parsed successfully.");
-    fprintf(stderr,"Document not parsed successfully. \n");
+		log_static_error(1, -1, " Invalid XML syntax\nRun wireshark from console for more details.");
 		return 0;
 	}
 
@@ -92,7 +64,7 @@ GNode* parse_templates_xml(const char* filename)
 	
 	/* Check if root is of type "templates". */
 	if (xmlStrcmp(cur->name, (xmlChar*) "templates")) {
-		fprintf(stderr,"document of the wrong type, root node != templates\n");
+		log_static_error(1, cur->line, " FAST syntax error: root node != templates");
 		xmlFreeDoc(doc);
 		return 0;
 	}
@@ -116,8 +88,7 @@ GNode* parse_templates_xml(const char* filename)
         }
       }
       else {
-        fprintf(stderr,"Warning: Unkown templates child: %s\n", cur->name);
-        fprintf(stderr,"Continuing to parse templates file ...\n");
+        log_static_error(1, cur->line, g_strdup_printf("Warning: Unkown templates child: %s\n", cur->name));
       }
     }
     cur = cur->next;
@@ -291,10 +262,10 @@ GNode* new_parsed_field (xmlNodePtr xmlnode, char* dictionary)
     /* TODO: Free parse tree. */
     tnode = 0;
     if (!valid) {
-      DBG1("Field %s could not be parsed.", xmlnode->name);
+      log_static_error(1, xmlnode->line, g_strdup_printf("FAST syntax error: Field %s could not be parsed.", xmlnode->name));
     }
     else {
-      DBG1("Unknown field type %s.", xmlnode->name);
+      log_static_error(1, xmlnode->line, g_strdup_printf("FAST syntax error: Unknown field type %s.", xmlnode->name));
     }
   }
   return tnode;
@@ -324,15 +295,13 @@ gboolean prepend_length (xmlNodePtr xmlnode, const FieldType* parent,
     if (0 == xmlStrcasecmp(xmlnode->name, (xmlChar*)"length")) {
       set_field_attributes(xmlnode, ftype);
       if (!parse_field_operator(xmlnode, ftype)) {
-        BAILOUT(FALSE, "Failed to get length.");
+        log_static_error(1, xmlnode->line, g_strdup_printf("FAST syntax error: no length field for %s.", parent->name));
+        BAILOUT(FALSE, "TemplateParser: Failed to get length.");
       }
     }
   }
   
   if(!ftype->key){
-    if(!parent->name){
-      DBG0("******no name and parent had no name*******");
-    }
     ftype->key = (char*)g_strdup_printf("%s-length",parent->name);
   }
   
@@ -378,11 +347,13 @@ gboolean parse_decimal (xmlNodePtr xmlnode, FieldType * tfield, GNode * tnode, c
       if(0 == xmlStrcasecmp(xmlnode->name, (xmlChar*)"exponent")){
         set_field_attributes(xmlnode, expt);
         if(!parse_field_operator(xmlnode, expt)) {
+          log_static_error(1, xmlnode->line, g_strdup_printf("FAST syntax error: failed to parse operator for field %s.", tfield->name));
           BAILOUT(FALSE, "Failed to get exponent.");
         }
       } else if( 0 == xmlStrcasecmp(xmlnode->name, (xmlChar*)"mantissa")){
         set_field_attributes(xmlnode, mant);
         if(!parse_field_operator(xmlnode, mant)) {
+          log_static_error(1, xmlnode->line, g_strdup_printf("FAST syntax error: failed to parse operator for field %s.", tfield->name));
           BAILOUT(FALSE, "Failed to get mantissa.");
         }
       } else {
@@ -498,7 +469,7 @@ gboolean parse_operator (xmlNodePtr xmlnode, FieldType * tfield){
   } else if (operator_type_match (xmlnode, FieldOperatorTail)) {
     tfield->op = FieldOperatorTail;
   } else {
-    DBG2("Invalid operator (%s) for field %s", xmlnode->name, name);
+    log_static_error(1, xmlnode->line, g_strdup_printf("FAST syntax error: Invalid operator (%s) for field %s", xmlnode->name, tfield->name));
     return FALSE;
   }
 			
@@ -557,7 +528,7 @@ void set_field_attributes (xmlNodePtr xmlnode, FieldType* tfield)
       tfield->mandatory = TRUE;
     }
     else {
-      DBG1("Error, bad presence option '%s'.", (char*) str);
+      log_static_error(1, xmlnode->line, g_strdup_printf("FAST syntax error: Error, bad presence option (%s) for field %s", (char*) str, tfield->name));
     }
   }
   xmlFree((void*)str);

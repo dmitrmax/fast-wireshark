@@ -30,6 +30,7 @@
 #include "template.h"
 #include "dictionaries.h"
 #include "debug-tree.h"
+#include "error_log.h"
 
 
 
@@ -70,6 +71,7 @@ static gboolean showFieldKeys = 0;
 static gboolean showFieldDictionaries = 0;
 static gboolean showFieldOperators = 0;
 static gboolean showFieldMandatoriness = 0;
+static gboolean showDialogWindows = 0;
 
 enum ProtocolImplem { GenericImplem, CMEImplem, UMDFImplem, NImplem };
 enum Protocol { UDPImplem, TCPImplem, NOImplem };
@@ -255,6 +257,11 @@ void proto_register_fast ()
                                   "Show if each field is mandatory",
                                   &showFieldMandatoriness);
                                   
+  prefs_register_bool_preference(module,
+                                  "enable_dialogs",
+                                  "Enable error dialogs",
+                                  "Shows global and static errors in dialog windows\ntshark WILL NOT function with this enabled",
+                                  &showDialogWindows);  
 
   register_dissector("fast", &dissect_fast, proto_fast);
 }
@@ -273,6 +280,8 @@ void proto_reg_handoff_fast ()
   static dissector_handle_t fast_handle;
   static char* currentPortField = "udp.port";
 
+  setDisplayDialogs(showDialogWindows);
+  
   if(protocol){
     config_port_field = "tcp.port";
   } else {
@@ -730,9 +739,6 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
       }
     } else {
       /* The field has an error */
-
-      time_t ltime;   
-      FILE *log;
       
       header_field = hf_fast[FieldTypeError];
       message_error = TRUE;
@@ -744,25 +750,13 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
                                  ftype->id,
                                  fdata->value.ascii.bytes);
 
-      /* get current cal time */
-      ltime=time(NULL); 
       
       /* display error message in info column */
       if(check_col(pinfo->cinfo, COL_INFO)) {
         col_add_fstr(pinfo->cinfo, COL_INFO, "%s", fdata->value.ascii.bytes);
       }
       
-      /* write to error log file */
-      log = fopen("error_log.txt","a"); 
-      fprintf(log,
-      "%s\n%s\n\nField Name:\t%s\nField ID:\t%d\nTemplate ID:\t%d\n\n%s\n",
-      asctime(localtime(&ltime)),
-      fdata->value.ascii.bytes,
-      ftype->name,
-      ftype->id,
-      ftype->tid,
-      "**********************************************************************");
-      fclose(log); 
+      log_dynamic_error(ftype, fdata);
     }
 
     tnode = tnode->next;

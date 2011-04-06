@@ -1,7 +1,6 @@
 <templates xmlns="http://www.fixprotocol.org/ns/template-definition" 
 		   templateNs="http://www.fixprotocol.org/ns/templates/sample" 
 		   ns="http://www.fixprotocol.org/ns/fix">
-		   
 	<template name="t_int32" id="0" dictionary="template">
 		<int32 id="1" name="int32"/>
 	</template>
@@ -21,12 +20,11 @@
 	<template name="t_decimal" id="4" dictionary="template">
 		<decimal id="1" name="decimal" />
 	</template>
+  
 	
 	<template name="t_ascii" id="5" dictionary="template">
 		<string charset="ascii" id="1" name="string" />
 	</template>
-	
-
 	
 	<template name="t_ascii_unicode_string" id="6" dictionary="template">
 		<string charset="ascii" id="2" name="a" />
