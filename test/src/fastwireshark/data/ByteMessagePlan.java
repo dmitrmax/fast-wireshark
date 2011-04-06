@@ -1,6 +1,6 @@
 package fastwireshark.data;
 
-public class ByteMessagePlan implements Message{
+public class ByteMessagePlan extends Message{
 
 	private final byte[] bytes;
 	
@@ -8,7 +8,8 @@ public class ByteMessagePlan implements Message{
 	 * Creates a new byte message plan with the given bytes
 	 * @param bytes The bytes to use in the message
 	 */
-	public ByteMessagePlan(byte[] bytes){
+	public ByteMessagePlan(byte[] bytes, String from, String to){
+		super(from,to);
 		if(bytes == null){
 			throw new IllegalArgumentException("bytes is null");
 		}

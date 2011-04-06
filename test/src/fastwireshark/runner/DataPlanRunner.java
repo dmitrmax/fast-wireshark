@@ -20,6 +20,7 @@ import org.openfast.template.Sequence;
 import fastwireshark.data.ByteMessagePlan;
 import fastwireshark.data.DataPlan;
 import fastwireshark.data.MessagePlan;
+import fastwireshark.io.PcapFileWriter;
 import fastwireshark.util.Constants;
 
 public class DataPlanRunner implements Constants{
@@ -56,6 +57,11 @@ public class DataPlanRunner implements Constants{
 			throw new RuntimeException("messageOut is null");
 		}
 		for(fastwireshark.data.Message mp : dp){
+			if(messageOut.getUnderlyingStream() instanceof PcapFileWriter){
+				PcapFileWriter writer = (PcapFileWriter) messageOut.getUnderlyingStream();
+				writer.setFrom(mp.getFrom());
+				writer.setTo(mp.getTo());
+			}
 			if(mp instanceof MessagePlan){
 				runMessagePlan((MessagePlan)mp);
 			} else if (mp instanceof ByteMessagePlan){

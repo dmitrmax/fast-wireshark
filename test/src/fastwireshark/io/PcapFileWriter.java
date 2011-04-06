@@ -3,6 +3,7 @@ package fastwireshark.io;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream.GetField;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
@@ -20,6 +21,8 @@ public class PcapFileWriter extends OutputStream implements Constants{
 	private int checkSum = 0;
 	private final short port;
 	private ByteBuffer buffer;
+	private String from;
+	private String to;
 	
 	public PcapFileWriter(short port, String fileName){
 		if(port <= 0){
@@ -97,8 +100,8 @@ public class PcapFileWriter extends OutputStream implements Constants{
 			checkSum(new byte[]{(byte)0x40,(byte)0x11});
 			out.write((byte)0x40);
 			out.write((byte)0x11);
-			checkSum(intToByteArrayNoSwap(0x7f000001));
-			checkSum(intToByteArrayNoSwap(0x7f000001));
+			checkSum(stringIPv4AddressToByteArray(from));
+			checkSum(stringIPv4AddressToByteArray(to));
 			//checksum
 			while((checkSum >> 16) > 0){
 				checkSum = (checkSum & 0xFFFF) + (checkSum>>16);
@@ -106,8 +109,8 @@ public class PcapFileWriter extends OutputStream implements Constants{
 			checkSum = ~checkSum;
 			out.write(shortToByteArrayNoSwap((short)checkSum));
 			//127.0.0.1 = 0x7f000001
-			out.write(intToByteArrayNoSwap(0x7f000001));
-			out.write(intToByteArrayNoSwap(0x7f000001));
+			out.write(stringIPv4AddressToByteArray(from));
+			out.write(stringIPv4AddressToByteArray(to));
 			out.write(shortToByteArrayNoSwap((short)port));
 			out.write(shortToByteArrayNoSwap((short)port));
 			out.write(shortToByteArrayNoSwap((short)(packet.length + 8)));
@@ -133,6 +136,30 @@ public class PcapFileWriter extends OutputStream implements Constants{
 	private byte[] shortToByteArrayNoSwap(short s){
 		return new byte[] {(byte)(s>>8),(byte)(s>>0)};
 	}
+	
+	/**
+	 * Converts and IPv4 string to bytes
+	 * @param addr
+	 * @return
+	 */
+	private byte[] stringIPv4AddressToByteArray(String addr){
+		String[] addrs = addr.split("\\.");
+		byte[] b = new byte[4];
+		for(int i = 0 ; i < addrs.length ; i++){
+			b[i] = Byte.valueOf(addrs[i]);
+		}
+		return b;
+	}
+	
+	public void setFrom(String from){
+		if(from == null){throw new NullPointerException("From is null");}
+		this.from = from;
+	}
+	public void setTo(String to){
+		if(to == null){throw new NullPointerException("To is null");}
+		this.to = to;
+	}
+	
 	private void checkSum(byte[] ba){
 		
 		for(int i = 0 ; i < ba.length ; i+=2){
@@ -143,9 +170,6 @@ public class PcapFileWriter extends OutputStream implements Constants{
 			}
 			if((checkSum & 0x80000000)>0){
 				checkSum = (checkSum & 0xffff) + (checkSum>>16);
-			}
-			if(checkSum == 0xbc3c){
-				System.out.println("EQUALS");
 			}
 		}
 	}

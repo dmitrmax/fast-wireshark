@@ -14,7 +14,7 @@ public class UDPReceiver {
 	private DatagramChannel channel;
 	private DatagramSocket socket;
 	
-	public UDPReceiver(int port, String addr){
+	public UDPReceiver(int port){
 		try {
 			channel = DatagramChannel.open();
 			socket = channel.socket();

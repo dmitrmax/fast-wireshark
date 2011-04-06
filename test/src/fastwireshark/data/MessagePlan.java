@@ -4,12 +4,13 @@ import java.util.List;
 import org.openfast.template.MessageTemplate;
 
 
-public class MessagePlan implements Message{
+public class MessagePlan extends Message{
 
 	private MessageTemplate template;
 	private List<Object> values;
 	
-	public MessagePlan(MessageTemplate t, List<Object> v){
+	public MessagePlan(MessageTemplate t, List<Object> v, String from, String to){
+		super(from,to);
 		template = t;
 		values = v;
 	}

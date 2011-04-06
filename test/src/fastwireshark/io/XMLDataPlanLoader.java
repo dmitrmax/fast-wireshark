@@ -29,6 +29,8 @@ public class XMLDataPlanLoader extends DefaultHandler implements Constants{
 	private List<Object> curValues;
 	private Stack<List<Object>> valueStack;
 	private ByteBuffer byteMessage;
+	private String messageFrom;
+	private String messageTo;
 	
 	/**
 	 * Attempts to load the data plan from the specified XML file.
@@ -116,12 +118,24 @@ public class XMLDataPlanLoader extends DefaultHandler implements Constants{
 					throw new RuntimeException("First Message lacks a template");
 				}
 			}
+			if(attributes.getValue(FROM) != null){
+				messageFrom = attributes.getValue(FROM);
+			}
+			if(attributes.getValue(TO) != null){
+				messageTo = attributes.getValue(TO);
+			}
 			curValues = new ArrayList<Object>();
 			valueStack = new Stack<List<Object>>();
 		} else
 		if(qName.equalsIgnoreCase(BYTE_MESSAGE)){
 			if(curValues != null){
 				throw new RuntimeException("Starting another message without finishing the old one");
+			}
+			if(attributes.getValue(FROM) != null){
+				messageFrom = attributes.getValue(FROM);
+			}
+			if(attributes.getValue(TO) != null){
+				messageTo = attributes.getValue(TO);
 			}
 			byteMessage = ByteBuffer.allocate(MAX_PACKET_SIZE);
 		} else
@@ -187,14 +201,14 @@ public class XMLDataPlanLoader extends DefaultHandler implements Constants{
 	@Override
 	public void endElement(String uri, String localName, String qName) throws SAXException {
 		if(qName.equalsIgnoreCase(MESSAGE)){
-			plan.addMessagePlan(new MessagePlan(curMessageTemplate, curValues));
+			plan.addMessagePlan(new MessagePlan(curMessageTemplate, curValues,messageFrom,messageTo));
 			curValues = null;
 		} else 
 		if(qName.equalsIgnoreCase(BYTE_MESSAGE)){
 			byte[] data = new byte[byteMessage.position()];
 			byteMessage.rewind();
 			byteMessage.get(data);
-			plan.addMessagePlan(new ByteMessagePlan(data));
+			plan.addMessagePlan(new ByteMessagePlan(data,messageFrom,messageTo));
 			byteMessage = null;
 		} else
 		if(qName.equalsIgnoreCase(GROUP) ||

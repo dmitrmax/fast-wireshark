@@ -14,8 +14,8 @@ public class UDPReceiverInputStream extends InputStream {
 	private int pos = 0;
 	private int cpos = 0;
 	
-	public UDPReceiverInputStream(int port, String addr){
-		receiver = new UDPReceiver(port,addr);
+	public UDPReceiverInputStream(int port){
+		receiver = new UDPReceiver(port);
 	}
 
 	@Override

@@ -23,6 +23,8 @@ public interface Constants {
 	public static final String TEMPLATE_ID = "templateID";
 	public static final String TEMPLATE_NAME = "templateName";
 	public static final String VALUE = "value";
+	public static final String FROM = "from";
+	public static final String TO = "to";
 	
 	public static final int MAX_PACKET_SIZE = 1024*1024*10;
 	public static final int BITS_IN_BYTE = 8;
@@ -34,4 +36,6 @@ public interface Constants {
 	public static final short PCAP_MAJOR_VERSION_NUMBER = (short)2;
 	public static final short PCAP_MINOR_VERSION_NUMBER = (short)4;
 	public static final int PCAP_ETHERNET = 1;
+	
+	public static final String DEFAULT_ADDRESS = "127.0.0.1";
 }

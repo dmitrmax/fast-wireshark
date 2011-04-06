@@ -38,7 +38,7 @@ public class Main {
 			public short port = -1;
 			public String pcapFile;
 			public boolean tcpip;
-			public String receiver;
+			public boolean receiver;
 			public String sender;
 
 			/**
@@ -87,15 +87,15 @@ public class Main {
 						tcpip = true;
 					}
 					if(cur.equals("-R")){
-						if(receiver != null){throw new RuntimeException("Multiple receiver definitions");}
-						receiver = args[++i];
+						if(receiver){throw new RuntimeException("Multiple receiver definitions");}
+						receiver = true;
 					}
 					if(cur.equals("-S")){
 						if(sender != null){throw new RuntimeException("Multiple sender definitions");}
 						sender = args[++i];
 					}
 				}
-				if(dataPlanFile == null && receiver == null){
+				if(dataPlanFile == null && !receiver){
 					throw new RuntimeException("No data plan file specified");
 				}
 			}
@@ -120,9 +120,9 @@ public class Main {
 			System.exit(1);
 		}
 		try{
-			if(cargs.receiver != null && cargs.port > 0){
+			if(cargs.receiver && cargs.port > 0){
 				//This goes into an infinite loop
-				networkReciever(cargs.receiver,cargs.port);
+				networkReciever(cargs.port);
 			}
 			OutputStream out;
 			if(cargs.sender != null && cargs.port > 0){
@@ -173,8 +173,8 @@ public class Main {
 
 	}
 	
-	public static void networkReciever(String addr,int port){
-		InputStream in = new UDPReceiverInputStream(port, addr);
+	public static void networkReciever(int port){
+		InputStream in = new UDPReceiverInputStream(port);
 		OutputStream out = new AsciiBinaryOutputStream(System.out, true);
 		while(true){
 			try {
