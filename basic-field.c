@@ -7,7 +7,8 @@
 
 #include "basic-field.h"
 
-static void  string_to_decimal_value (const char* str, FieldValue* value);
+static gboolean string_to_decimal_value (const char* str, FieldValue* value);
+static gboolean is_number(const char* str);
 
 /*! \brief  Initialize the memory of a FieldValue.
  */
@@ -68,27 +69,58 @@ void cleanup_field_value (FieldTypeIdentifier type, FieldValue* value)
   }
 }
 
-void string_to_field_value(const char* str, FieldTypeIdentifier type, FieldValue* value)
+static gboolean is_number(const char* str){
+  int i;
+  int len;
+  len=strlen(str);
+  for(i=0; i<len; i++){
+    if(!g_ascii_isdigit(str[i]) && str[i]!='-'){
+      return FALSE;
+    }
+  }
+  return TRUE;
+}
+
+gboolean string_to_field_value(const char* str, FieldTypeIdentifier type, FieldValue* value)
 {
     switch (type) {
       int i;
       int len;
       
+      
       case FieldTypeUInt32:
+        if(!is_number(str)){
+          DBG1("not a number %s", str);
+          return FALSE;
+        }
         value->u32 = atoi(str);
         break;
       case FieldTypeInt32:
+        if(!is_number(str)){
+          DBG1("not a number %s", str);
+          return FALSE;
+        }
         value->i32 = atoi(str);
         break;
       case FieldTypeUInt64:
+        if(!is_number(str)){
+          DBG1("not a number %s", str);
+          return FALSE;
+        }
         value->u64 = g_ascii_strtoull(str, NULL, 10);
         break;
       case FieldTypeInt64:
+        if(!is_number(str)){
+          DBG1("not a number %s", str);
+          return FALSE;
+        }
         value->i64 = g_ascii_strtoll(str, NULL, 10);
         break;
         
       case FieldTypeDecimal:
-        string_to_decimal_value (str, value);
+        if(!string_to_decimal_value (str, value)){
+          return FALSE;
+        }
         break;
         
       case FieldTypeAsciiString:
@@ -113,19 +145,22 @@ void string_to_field_value(const char* str, FieldTypeIdentifier type, FieldValue
           else {
             value->bytevec.bytes[i/2] = 0;
             DBG2("invalid character: index %d in string [%s]", i, str);
+            return FALSE;
           }
         }
         
         break;
       default:
         DBG0("Called with bad type.");
+        return FALSE;
         break;
     }
+    return TRUE;
 }
 
 
 /*! \brief  Translate a string to a decimal value. */
-void  string_to_decimal_value (const char* str, FieldValue* value)
+gboolean string_to_decimal_value (const char* str, FieldValue* value)
 {
   unsigned left, right, len;
   unsigned dot;
@@ -142,7 +177,7 @@ void  string_to_decimal_value (const char* str, FieldValue* value)
 
   buf = g_strdup (str);
   if (!buf) {
-    BAILOUT(;,"Failed malloc");
+    return FALSE;
   }
 
   for (i = 0; i < len; ++i) {
@@ -154,9 +189,15 @@ void  string_to_decimal_value (const char* str, FieldValue* value)
       case '0':
         break;
       case '.':
+        if(dot!=len){
+          return FALSE;
+        }
         dot = i;
         break;
       default:
+        if(!g_ascii_isdigit(buf[i])){
+          return FALSE;
+        }
         if (i < left)   left  = i;
         if (i > right)  right = i;
         break;
@@ -176,11 +217,13 @@ void  string_to_decimal_value (const char* str, FieldValue* value)
   value->decimal.mantissa = g_ascii_strtoll(buf, NULL, 10);
   if (0 == value->decimal.mantissa) {
     /* Our /right/ was never set correctly, could be invalid.
-     * Thus, the exponent may be strange. Zero it.
+     * Thus, the exponent may be strange.
      */
     value->decimal.exponent = 0;
+    /* return FALSE; */
   }
 
   g_free(buf);
+  return TRUE;
 }
 

@@ -483,7 +483,9 @@ gboolean parse_operator (xmlNodePtr xmlnode, FieldType * tfield){
   prop = xmlGetProp(xmlnode, (xmlChar*)"value");
   if (prop!=NULL) {
     tfield->hasDefault = TRUE;
-    string_to_field_value((char*)prop, tfield->type, &tfield->value);
+    if(!string_to_field_value((char*)prop, tfield->type, &tfield->value)){
+      log_static_error(3, xmlnode->line, g_strdup_printf("Unable to parse value(%s) for field %s", prop, tfield->name));
+    }
   } else {
     tfield->hasDefault = FALSE;			
 	}

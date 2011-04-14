@@ -71,7 +71,7 @@ static gboolean showFieldKeys = 0;
 static gboolean showFieldDictionaries = 0;
 static gboolean showFieldOperators = 0;
 static gboolean showFieldMandatoriness = 0;
-static gboolean showDialogWindows = 0;
+static gboolean showDialogWindows = 1;
 
 enum ProtocolImplem { GenericImplem, CMEImplem, UMDFImplem, NImplem };
 enum Protocol { UDPImplem, TCPImplem, NOImplem };

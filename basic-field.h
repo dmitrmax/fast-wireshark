@@ -74,7 +74,7 @@ void init_field_value (FieldValue* value);
 void copy_field_value (FieldTypeIdentifier type, const FieldValue* src,
                        FieldValue* dest);
 void cleanup_field_value (FieldTypeIdentifier type, FieldValue* value);
-void string_to_field_value(const char* str, FieldTypeIdentifier type, FieldValue* value);
+gboolean string_to_field_value(const char* str, FieldTypeIdentifier type, FieldValue* value);
 
 #endif
 
