@@ -78,6 +78,7 @@ enum ProtocolImplem { GenericImplem, CMEImplem, UMDFImplem, NImplem };
 enum Protocol { UDPImplem, TCPImplem, NOImplem };
 /*! The specific implementation of FAST to use. */
 static gint implementation = 0;
+/*! Default protocol is UDP (0).  Other option is TCP (1)*/
 static gint protocol = 0;
 /*! Table to hold pointers to previously dissected
  * packets to assure sequential disection.
@@ -185,6 +186,9 @@ void proto_register_fast ()
   module = prefs_register_protocol(proto_fast,
                                    proto_reg_handoff_fast);
 
+                                   
+  /*** register plugin preferences ***/
+  
   prefs_register_bool_preference(module,
                                    "enabled",
                                    "Plugin Enabled",
@@ -262,8 +266,8 @@ void proto_register_fast ()
                                   "enable_dialogs",
                                   "Enable error dialogs",
                                   "Shows global and static errors in dialog windows\ntshark WILL NOT function with this enabled",
-                                  &showDialogWindows);
-  
+                                  &showDialogWindows);  
+                                  
   prefs_register_bool_preference(module,
                                   "enable_logging",
                                   "Enable logging to file",
@@ -289,6 +293,7 @@ void proto_reg_handoff_fast ()
 
   setLogSettings(showDialogWindows, logErrors);
   
+  /* listen for TCP or UDP, depending on user preference */
   if(protocol){
     config_port_field = "tcp.port";
   } else {
@@ -332,6 +337,9 @@ void proto_reg_handoff_fast ()
 }
 
 /*! \brief Hook function that Wireshark calls to dissect a packet.
+ *  \param tvb the actual packet data
+ *  \param pinfo metadata for this packet
+ *  \param tree where we put the data we want wireshark to print
  */
 void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
 {
@@ -367,12 +375,13 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
     /* check if this packet has already been dissected and get it if it has */
     packetData = (PacketData*) g_hash_table_lookup(dissected_packets_table, &(frameData->num));
     
+    /* if this packet has not been dissected yet, dissect it */
     if (!packetData) {
-      /* Dissect the payload. */
       DissectPosition stacked_position;
       DissectPosition* position;
       guint header_offset = 0;
 
+      /* ignore headers for CME and UMDF */
       if (implementation == CMEImplem) {
         header_offset = 5;
       }
@@ -400,6 +409,8 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
         GNode* data;
         GNode* tmpl;
         data = g_node_new(0);
+        
+        /* call function in dissect.c that dissects the data */
         tmpl = dissect_fast_bytes (position, data, &pinfo->src, &pinfo->dst);
         
         /* If no template is found for the message make a fake message/template then break out */
@@ -440,6 +451,7 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
           fdata->start = 0;
           fdata->nbytes = 0;
           
+          /* throw dynamic error D9: template does not exist */
           err_d(9, fdata);
           
           /* Stop parsing the packet as we don't know whats going on any more */
@@ -449,14 +461,16 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
         packetData->tmplTrees = g_list_append(packetData->tmplTrees, tmpl);
       }
       
-      /* TODO why was this here?
+      /* TODO: Issue 87 should remove this */
       if (implementation == CMEImplem || implementation == UMDFImplem) {
-        set_dictionaries(full_templates_tree());
-      }*/
+        /* resets the dictionaries for CME and UMDF between packets */
+        clear_dictionaries(pinfo->src, pinfo->dst);
+      }
       
       g_hash_table_insert(dissected_packets_table, &(packetData->frameNum), packetData);
     }
     
+    /* scope created to escape compile error due to mixed code and declarations */
     {
       GList* tmplTrees;
       GList* dataTrees;
@@ -496,6 +510,11 @@ void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
 
 
 /*! \brief  Store all message data in a proto_tree.
+ *  \param tvb packet data
+ *  \param tree where we store stuff for wireshark to print
+ *  \param tmpl template to use
+ *  \param parent top level of FAST protocol tree - says "FAST (FIX Adapted for STreaming) Protocol"
+ *  \param pinfo packet metadata
  */
 void display_message (tvbuff_t* tvb, proto_tree* tree,
 		      const GNode* tmpl, const GNode* parent,
@@ -514,8 +533,8 @@ void display_message (tvbuff_t* tvb, proto_tree* tree,
     } else {
       field_name = UNNAMED;
     }
-
     
+    /* add message information to the proto_tree */
     item = proto_tree_add_none_format(tree, hf_fast_tid, tvb,
                                       fdata->start, fdata->nbytes,
                                       "%s - tid: %d", field_name, ftype->id);
@@ -530,6 +549,11 @@ void display_message (tvbuff_t* tvb, proto_tree* tree,
 
 
 /*! \brief  Add field data to a proto_tree.
+ *  \param tvb packet data
+ *  \param tree where we store stuff for wireshark to display
+ *  \param tnode template node
+ *  \param dnode data node
+ *  \param pinfo packet metadata
  */
 void display_fields (tvbuff_t* tvb, proto_tree* tree,
                      const GNode* tnode, const GNode* dnode,
@@ -562,10 +586,12 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
       header_field = hf_fast[ftype->type];
     }
     if (fdata->status == FieldExists) {
+      /* add field values to proto_tree: 
+       * type - name (id): value        
+       */
       switch (ftype->type) {
+        
         case FieldTypeUInt32:
-          /*type - name (id): value*/
-	  
           proto_tree_add_none_format(tree, header_field, tvb,
                                      fdata->start, fdata->nbytes,
                                      "uInt32 - %s (%d)%s: %u",
@@ -574,8 +600,8 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
                                      field_info,
                                      fdata->value.u32);
           break;
-	case FieldTypeUInt64:
-	  
+          
+        case FieldTypeUInt64:
           proto_tree_add_none_format(tree, header_field, tvb,
                                      fdata->start, fdata->nbytes,
                                      "uInt64 - %s (%d)%s: %" G_GINT64_MODIFIER "u",
@@ -584,8 +610,8 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
                                      field_info,
                                      fdata->value.u64);
           break;
+          
         case FieldTypeInt32:
-	  
           proto_tree_add_none_format(tree, header_field, tvb,
                                      fdata->start, fdata->nbytes,
                                      "int32 - %s (%d)%s: %d",
@@ -594,8 +620,8 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
                                      field_info,
                                      fdata->value.i32);
           break;
+          
         case FieldTypeInt64:
-	  
           proto_tree_add_none_format(tree, header_field, tvb,
                                      fdata->start, fdata->nbytes,
                                      "int64 - %s (%d)%s: %" G_GINT64_MODIFIER "d",
@@ -604,13 +630,13 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
                                      field_info,
                                      fdata->value.i64);
           break;
+          
         case FieldTypeDecimal:
-          if(!sciNotation){
+          if(!sciNotation) {
             /* get the decimal representation of the field */
             decimalNum = toDecimal(fdata->value.decimal.exponent, fdata->value.decimal.mantissa);
           } else { decimalNum = NULL; } 
           if(sciNotation || decimalNum==NULL ){
-	    
             proto_tree_add_none_format(tree, header_field, tvb,
                                      fdata->start, fdata->nbytes,
                                      "decimal - %s (%d)%s: %" G_GINT64_MODIFIER "de%d",
@@ -620,7 +646,6 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
                                      fdata->value.decimal.mantissa,
                                      fdata->value.decimal.exponent);
           } else {
-	    
             proto_tree_add_none_format(tree, header_field, tvb,
                                      fdata->start, fdata->nbytes,
                                      "decimal - %s (%d)%s: %s",
@@ -630,8 +655,8 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
                                      decimalNum);
           }
           break;
+          
         case FieldTypeAsciiString:
-	  
           proto_tree_add_none_format(tree, header_field, tvb,
                                      fdata->start, fdata->nbytes,
                                      "ascii - %s (%d)%s: %s", field_name,
@@ -639,8 +664,8 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
                                      field_info,
                                      fdata->value.ascii.bytes);
           break;
+          
         case FieldTypeUnicodeString:
-	  
           proto_tree_add_none_format(tree, header_field, tvb,
                                      fdata->start, fdata->nbytes,
                                      "unicode - %s (%d)%s: %s", field_name,
@@ -648,8 +673,10 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
                                      field_info,
                                      fdata->value.unicode.bytes);
           break;
+          
         case FieldTypeByteVector:
           {
+            /* convert bytevector to string */
             guint8* str;
             const SizedData* vec;
             vec = &fdata->value.bytevec;
@@ -661,7 +688,8 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
                             "%02x", vec->bytes[i]);
               }
               str[2*vec->nbytes] = 0;
-	      
+              
+              /* add bytevector string to proto_tree */
               proto_tree_add_none_format(tree, header_field, tvb,
                                          fdata->start, fdata->nbytes,
                                          "byteVector - %s (%d)%s: %s", field_name,
@@ -681,11 +709,12 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
             }
           }
           break;
+          
         case FieldTypeGroup:
           {
             proto_item* item;
             proto_tree* subtree;
-	    
+
             item = proto_tree_add_none_format(tree, header_field, tvb,
                                               fdata->start, fdata->nbytes,
                                               "group - %s (%d):", field_name,
@@ -693,15 +722,16 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
                                               );
 
             subtree = proto_item_add_subtree(item, ett_fast);
-	    display_fields (tvb, subtree, tnode->children, dnode->children, pinfo);
+            display_fields (tvb, subtree, tnode->children, dnode->children, pinfo);
           }
           break;
+          
         case FieldTypeSequence:
           {
             proto_item* item;
             proto_tree* subtree;
             GNode* length_tnode;
-	    
+            
             item = proto_tree_add_none_format(tree, header_field, tvb,
                                               fdata->start, fdata->nbytes,
                                               "sequence - %s (%d)%s length %d:", field_name,
@@ -721,7 +751,7 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
               for (group_dnode = dnode->children;
                    group_dnode;
                    group_dnode = group_dnode->next) {
-		display_fields (tvb, subtree, group_tnode, group_dnode, pinfo);
+              display_fields (tvb, subtree, group_tnode, group_dnode, pinfo);
               }
             }
             else {
@@ -729,6 +759,7 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
             }
           }
           break;
+          
         default:
           DBG1("Bad field type %u", ftype->type);
           break;
@@ -746,7 +777,6 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
       }
     } else {
       /* The field has an error */
-      
       header_field = hf_fast[FieldTypeError];
       message_error = TRUE;
       
@@ -772,13 +802,17 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
   
 }
 
-
+/*! \brief generate information about a field to be displayed in wireshark
+ *  \param ftype field type
+ *  \return field info
+ */
 char * generate_field_info(const FieldType* ftype){
   char * field_info;
   char * temp;
   
   field_info=NULL;
   if(showFieldDictionaries){
+    /* dictionary */
     if(ftype->dictionary==NULL){
       field_info = g_strdup_printf("[dictionary=global");
     } else {
@@ -786,6 +820,7 @@ char * generate_field_info(const FieldType* ftype){
     }
   }
   if(showFieldKeys && ftype->key!=NULL){
+    /* key */
     temp = field_info;
     if(temp){
       field_info = g_strdup_printf("%s key=%s", temp, ftype->key);
@@ -795,6 +830,7 @@ char * generate_field_info(const FieldType* ftype){
     }
   }
   if(showFieldOperators){
+    /* operator */
     temp = field_info;
     if(temp){
       field_info = g_strdup_printf("%s operator=%s", temp, operator_typename(ftype->op));
@@ -804,6 +840,7 @@ char * generate_field_info(const FieldType* ftype){
     }
   }
   if(showFieldMandatoriness){
+    /* mandatory? */
     temp = field_info;
     if(temp){
       if(ftype->mandatory) field_info = g_strdup_printf("%s mandatory", temp);
@@ -815,6 +852,7 @@ char * generate_field_info(const FieldType* ftype){
     }
   }
   if(field_info!=NULL){
+    /* other field info */
     temp=field_info;
     field_info = g_strdup_printf("%s]", temp);
     g_free(temp);
@@ -828,6 +866,11 @@ char * generate_field_info(const FieldType* ftype){
 
 #define MaxMant 21 /* max char length (decimal) of 64bit number including sign */
 #define MaxExpt 10
+/*! \brief takes an exponent and mantissa and converts it into a decimal in a string
+ *  \param expt exponent of decimal number
+ *  \param mant mantissa of decimal number
+ *  \return string representation of decimal number
+ */
 char * toDecimal(gint32 expt, gint64 mant)
 {
   char * decimalNum;
