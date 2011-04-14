@@ -9,7 +9,7 @@
 #include "template.h"
 #include "basic-dissect.h"
 
-void setDisplayDialogs(gboolean display);
+void setLogSettings(gboolean display, gboolean log);
 
 void log_dynamic_error(const FieldType* ftype, const FieldData* fdata);
 

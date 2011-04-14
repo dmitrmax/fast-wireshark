@@ -3,6 +3,7 @@
 #include "debug.h"
 
 static gboolean displayDialogs;
+static gboolean logToFile;
 
  /* write dynamic error to log file */
 void log_dynamic_error(const FieldType* ftype, const FieldData* fdata){
@@ -23,16 +24,19 @@ void log_dynamic_error(const FieldType* ftype, const FieldData* fdata){
   ftype->tid,
   "**********************************************************************");
       
-  log = fopen("error_log.txt","a"); 
-  fprintf(log,
-  "%s\n%s\n\nField Name:\t%s\nField ID:\t%d\nTemplate ID:\t%d\n\n%s\n",
-  asctime(localtime(&ltime)),
-  fdata->value.ascii.bytes,
-  ftype->name,
-  ftype->id,
-  ftype->tid,
-  "**********************************************************************");
-  fclose(log);
+  if(logToFile){
+    log = fopen("error_log.txt","a"); 
+    fprintf(log,
+    "%s\n%s\n\nField Name:\t%s\nField ID:\t%d\nTemplate ID:\t%d\n\n%s\n",
+    asctime(localtime(&ltime)),
+    fdata->value.ascii.bytes,
+    ftype->name,
+    ftype->id,
+    ftype->tid,
+    "**********************************************************************");
+    fclose(log);
+  }
+  
 }
 
 void log_static_error(int err_no, int line, const char* extra_error_info){
@@ -80,20 +84,23 @@ void log_static_error(int err_no, int line, const char* extra_error_info){
   extra_error_info,
   "**********************************************************************");
   
-  log = fopen("error_log.txt","a"); 
-  fprintf(log,
-  "%s\n%s\n%s%s\n%s\n",
-  asctime(localtime(&ltime)),
-  err,
-  lineString,
-  extra_error_info,
-  "**********************************************************************");
-  fclose(log);
+  if(logToFile){
+    log = fopen("error_log.txt","a"); 
+    fprintf(log,
+    "%s\n%s\n%s%s\n%s\n",
+    asctime(localtime(&ltime)),
+    err,
+    lineString,
+    extra_error_info,
+    "**********************************************************************");
+    fclose(log);
+  }
   
 }
 
-void setDisplayDialogs(gboolean display){
+void setLogSettings(gboolean display, gboolean log){
   displayDialogs = display;
+  logToFile = log;
 }
 
 /* Function to open a dialog box displaying the message provided. */

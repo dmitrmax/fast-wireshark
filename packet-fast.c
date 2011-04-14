@@ -72,6 +72,7 @@ static gboolean showFieldDictionaries = 0;
 static gboolean showFieldOperators = 0;
 static gboolean showFieldMandatoriness = 0;
 static gboolean showDialogWindows = 1;
+static gboolean logErrors = 1;
 
 enum ProtocolImplem { GenericImplem, CMEImplem, UMDFImplem, NImplem };
 enum Protocol { UDPImplem, TCPImplem, NOImplem };
@@ -261,7 +262,13 @@ void proto_register_fast ()
                                   "enable_dialogs",
                                   "Enable error dialogs",
                                   "Shows global and static errors in dialog windows\ntshark WILL NOT function with this enabled",
-                                  &showDialogWindows);  
+                                  &showDialogWindows);
+  
+  prefs_register_bool_preference(module,
+                                  "enable_logging",
+                                  "Enable logging to file",
+                                  "Logs all errors to error_log.txt",
+                                  &logErrors);
 
   register_dissector("fast", &dissect_fast, proto_fast);
 }
@@ -280,7 +287,7 @@ void proto_reg_handoff_fast ()
   static dissector_handle_t fast_handle;
   static char* currentPortField = "udp.port";
 
-  setDisplayDialogs(showDialogWindows);
+  setLogSettings(showDialogWindows, logErrors);
   
   if(protocol){
     config_port_field = "tcp.port";
