@@ -1,3 +1,6 @@
+/*
+ * $License$
+ */ 
 package fastwireshark;
 
 import java.io.IOException;
