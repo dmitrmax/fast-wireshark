@@ -486,6 +486,10 @@ gboolean parse_operator (xmlNodePtr xmlnode, FieldType * tfield){
     if(!string_to_field_value((char*)prop, tfield->type, &tfield->value)){
       log_static_error(3, xmlnode->line, g_strdup_printf("Unable to parse value(%s) for field %s", prop, tfield->name));
     }
+  } else if(tfield->op == FieldOperatorConstant){
+    log_static_error(4, xmlnode->line, "No value specified with a constant operator.");
+  } else if(tfield->op == FieldOperatorDefault  && tfield->mandatory){
+    log_static_error(5, xmlnode->line, "No value specified with a default operator on a mandatory field.");
   } else {
     tfield->hasDefault = FALSE;			
 	}
