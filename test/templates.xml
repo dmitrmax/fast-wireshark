@@ -336,6 +336,12 @@
       <increment/>
     </int32>
   </template> 
+  
+  <template name="t_optional_int_default_empty" id="31" dictionary="template">
+    <int32 id="1" name="int32" presence="optional" key="key">
+      <default/>
+    </int32>
+  </template> 
 
 
   

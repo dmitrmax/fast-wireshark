@@ -1,21 +1,20 @@
 /*
-* This file is part of FAST Wireshark.
-*
-* FAST Wireshark is free software: you can redistribute it and/or modify
-* it under the terms of the Lesser GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* FAST Wireshark is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* Lesser GNU General Public License for more details.
-*
-* You should have received a copy of the Lesser GNU General Public License
-* along with FAST Wireshark.  If not, see 
-* <http://www.gnu.org/licenses/lgpl.txt>.
-*/
-
+ * This file is part of FAST Wireshark.
+ *
+ * FAST Wireshark is free software: you can redistribute it and/or modify
+ * it under the terms of the Lesser GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * FAST Wireshark is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * Lesser GNU General Public License for more details.
+ * 
+ * You should have received a copy of the Lesser GNU General Public License
+ * along with FAST Wireshark.  If not, see 
+ * <http://www.gnu.org/licenses/lgpl.txt>.
+ */
 /*!
  * \file dictionaries.c
  * \brief  Handle dictionary setting on field types in templates
@@ -51,6 +50,17 @@ struct typed_value_struct
 };
 typedef struct typed_value_struct TypedValue;
 
+/*!
+ * \brief Struct to track all dictionaries
+ * Tracks all dictionaries, normal and template.  Stores the dictionaries in a
+ * hash table for fast insert/lookup.
+ */
+struct _conversation_tables {
+  GHashTable* normal;
+  GHashTable* templates;
+};
+typedef struct _conversation_tables ConversationTables;
+
 /* Private (static) headers. */
 static GHashTable* src_table = 0;
 
@@ -60,6 +70,10 @@ static GHashTable* src_table = 0;
  */
 static GHashTable* get_dictionary(const FieldType * ftype, address src, address dest);
 
+/*!
+ * \brief Duplicates an integer into the heap
+ * \param i The integer to the duped into the heap
+ */
 static guint32* int_dup(guint32 i);
 
 /*!
@@ -68,15 +82,31 @@ static guint32* int_dup(guint32 i);
  */
 static void free_typed_value(TypedValue* val);
 
+/*!
+ * \brief Frees a conversation table including its children
+ * Frees the conversation table pointed to by p.  First calls
+ * g_hash_table_destroy on the normal and template dictionaries
+ * \param p Pointer to the conversation table to free
+ */
 static void free_conversation_table(gconstpointer p);
 
-struct _conversation_tables {
-  GHashTable* normal;
-  GHashTable* templates;
-};
-typedef struct _conversation_tables ConversationTables;
-
+/*!
+ * \brief Retrieves the conversation table for the given conversation
+ * Retrieves the conversation table for the given conversation.  A
+ * convenience method so this functionality could be isolated.
+ * \param src The source participant of the conversation
+ * \param dest The destination participant of the conversation
+ * \return The conversation table associated with the pair
+ */
 static ConversationTables * get_conversation_table(address src, address dest);
+
+/*!
+ * \brief Frees the typed value given
+ * Frees the typed value provided by first cleaning up the data is stores
+ * then deleting the typed value
+ * \param val Pointer to the typed value to be freed
+ */
+static void free_typed_value(TypedValue* val);
 
 GHashTable* get_dictionary(const FieldType * ftype, address src, address dest){
   ConversationTables* conversation_tables = NULL;
@@ -87,6 +117,7 @@ GHashTable* get_dictionary(const FieldType * ftype, address src, address dest){
   /* Determine if we need a template or a non-template dictionary */
   if(g_strcmp0(ftype->dictionary,TEMPLATE_DICTIONARY) == 0){
     dictionary = g_hash_table_lookup(conversation_tables->templates, &(ftype->tid));
+    /* If the dictionary does not exist create it */
     if(!dictionary){
       dictionary = g_hash_table_new_full(&g_str_hash,&g_str_equal,
 				       (GDestroyNotify)&g_free,
@@ -95,6 +126,7 @@ GHashTable* get_dictionary(const FieldType * ftype, address src, address dest){
     } 
   } else {
     dictionary = g_hash_table_lookup(conversation_tables->normal, ftype->dictionary);
+    /* If the dictionary does not exist create it */
     if(!dictionary){
       dictionary = g_hash_table_new_full(&g_str_hash,&g_str_equal,
 				       (GDestroyNotify)&g_free,
@@ -148,7 +180,6 @@ ConversationTables * get_conversation_table(address src, address dest){
 }
 
 void free_conversation_table(gconstpointer p){
-  
   ConversationTables* conversation_tables = (ConversationTables*)p;
   
   if(conversation_tables->normal){
@@ -166,6 +197,8 @@ void clear_dictionaries(address src, address dest)
   GList* list;
   ConversationTables * ctables = get_conversation_table(src, dest);
   
+  /* Free all the key/value pairs in all the dictionaries, but keep the
+   * dictionaries as they will probably be used again later */
   list = g_hash_table_get_keys(ctables->normal);
   while(list) {
     GHashTable* dictionary = g_hash_table_lookup(ctables->normal,
@@ -175,6 +208,8 @@ void clear_dictionaries(address src, address dest)
   }
   g_list_free(list);
   
+  /* Same as above, free the value, not the dictionaries as the dictionaries
+   * will probably be used again */
   list = g_hash_table_get_keys(ctables->templates);
   while(list) {
     GHashTable* dictionary = g_hash_table_lookup(ctables->templates,
@@ -187,7 +222,7 @@ void clear_dictionaries(address src, address dest)
   return;
 }
 
-static void free_typed_value(TypedValue* val)
+void free_typed_value(TypedValue* val)
 {
   if (!val->empty) {
     cleanup_field_value(val->type, &val->value);
@@ -203,14 +238,15 @@ gboolean get_dictionary_value(const FieldType* ftype,
   GHashTable* dictionary = 0;
   const TypedValue* prev = 0;
   
-  /* call getdictionary here */
   dictionary = get_dictionary(ftype, src, dest);
   if (!ftype->key) {
     BAILOUT(FALSE, "No key on field.");
   }
   prev = g_hash_table_lookup(dictionary,ftype->key);
   if (prev) {
+    /* Determine if the types match */
     if (prev->type == ftype->type) {
+      /* Copy the previous value for use */
       found = TRUE;
       fdata->status = prev->empty ? FieldEmpty : FieldExists;
       if (fdata->status == FieldExists) {
@@ -224,9 +260,8 @@ gboolean get_dictionary_value(const FieldType* ftype,
       err_d(4, fdata);
     }
   }
-  /* TODO Revist does empty mean this has a default value, or that the default is empty?*/
   else if(ftype->hasDefault){
-    /* TODO FIX THIS */
+    /* TODO FIX THIS remove the || TRUE once the other todo has been handled*/
     if(ftype->mandatory || TRUE){
       fdata->status = FieldExists;
       copy_field_value(ftype->type, &ftype->value, &fdata->value);
@@ -260,7 +295,7 @@ void set_dictionary_value(const FieldType* ftype,
   }
 
   prev_value = g_hash_table_lookup(dictionary, ftype->key);
-  
+  /* Recycle the previous value */
   if (prev_value) {
     if (!prev_value->empty) {
       cleanup_field_value(ftype->type, &prev_value->value);
@@ -270,6 +305,7 @@ void set_dictionary_value(const FieldType* ftype,
   else {
     new_value = g_malloc(sizeof(TypedValue));
   }
+  /* Copy in the values */
   new_value->type = ftype->type;
   new_value->empty = fdata->status == FieldEmpty;
   if (!new_value->empty) {
@@ -283,5 +319,4 @@ void set_dictionary_value(const FieldType* ftype,
   } else {
     DBG1("Failed to set value for field type: %s", ftype->name);
   }
-  
 }
