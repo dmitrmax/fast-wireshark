@@ -1,4 +1,4 @@
-PLAN RUNNER
+PLAN RUNNER README
 ______________________________________________________________________________
 --- Description
 
@@ -8,6 +8,7 @@ Allows output for UDP, UDP pcap file, TCP, raw bytes, and ascii binary.
 
 Based on the FAST 1.1 specification
   http://www.fixprotocol.org/fastspec
+
 
 ______________________________________________________________________________
 --- Building
@@ -56,6 +57,9 @@ java -jar OpenFastPlanRunner.jar
     traffic
   -T Use TCP instead of UDP, requires -n
 
+* Some of the switches don't work with each other.  They will ignore each other
+  if used together.  These are generally the output control switches
+
 
 ______________________________________________________________________________
 --- Template and Plan Files
@@ -64,6 +68,8 @@ ______________________________________________________________________________
 
 Template files are the standard template files as defined in the FAST 1.1
 specification.
+
+A sample template file is ./templates.xml.
 
 >-> Plan Files
 
@@ -99,7 +105,25 @@ general format is:
 These bytes will be sent as written to the output stream specified by the.
 command line switches.
 
+There are optional attributes of bytemessages when outputting to a PCAP
+file.  These are "from" and "to" which are the IPv4 addresses of the
+source of the packet and the destination of the packet.  An example of
+this can be found in byteplans/multiple_sources.xml
+
 Example plan files can be found in the plans/ and byteplans/ directories.
+
+
+______________________________________________________________________________
+--- Notes for Maintainers
+
+>-> Notes
+
+Don't try to maintain this if you can avoid it.  This was designed and
+implemented as a development tool.  As the project evolved so did this,
+but without much planning or quality control, quick fixes over long term
+maintainability.
+
+It needs a massive overhaul if any serious modifications are needed.
 
 
 ____________________________________________________________________________
