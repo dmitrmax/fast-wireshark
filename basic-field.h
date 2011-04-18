@@ -19,12 +19,16 @@
 /*!
  * \file basic-field.h
  * \brief Essential data-driven field definitions.
+ *        Contains data types and conversions that are used for everything.
  */
 
 #ifndef BASIC_FIELD_H_INCLUDED_
 #define BASIC_FIELD_H_INCLUDED_
 #include <glib.h>
 
+
+/*! \brief Possible field Types.
+ */
 enum field_type_identifier_enum
 { 
   FieldTypeUInt32,
@@ -43,6 +47,9 @@ enum field_type_identifier_enum
 };
 typedef enum field_type_identifier_enum FieldTypeIdentifier;
 
+
+/*! \brief Possible field Operators.
+ */
 enum field_operator_identifier_enum
 {
   FieldOperatorNone,
@@ -57,7 +64,8 @@ enum field_operator_identifier_enum
 typedef enum field_operator_identifier_enum FieldOperatorIdentifier;
 
 
-/*! \brief  Hold a size prefixed data chunk. */
+/*! \brief  Hold a size prefixed data chunk. 
+ */
 struct sized_data_struct
 {
   guint nbytes;
@@ -65,7 +73,8 @@ struct sized_data_struct
 };
 typedef struct sized_data_struct SizedData;
 
-/*! \brief  Hold a decimal value. */
+/*! \brief  Hold a decimal value. 
+ */
 struct decimal_field_value_struct
 {
   gint64 mantissa;
@@ -73,7 +82,8 @@ struct decimal_field_value_struct
 };
 typedef struct decimal_field_value_struct DecimalFieldValue;
 
-/*! \brief  Hold any type of simple field value. */
+/*! \brief  Hold any type of simple field value. 
+ */
 union field_value_union
 {
   guint32 u32;
@@ -88,10 +98,34 @@ union field_value_union
 };
 typedef union field_value_union FieldValue;
 
+
+/*! \brief  Initialize the memory of a FieldValue to blank.
+ *  \param value The FieldValue to be initialized.
+ */
 void init_field_value (FieldValue* value);
+
+
+/*! \brief  Copy a FieldValue, malloc'ing if needed. 
+ *  \param type The type of the FieldValue.
+ *  \param src FieldValue to be copied.
+ *  \param dest FieldValue it will be copied to.
+ */
 void copy_field_value (FieldTypeIdentifier type, const FieldValue* src,
                        FieldValue* dest);
+
+
+/*! \brief  Clean up a FieldValue's data members. 
+ *  \param type The type of the FieldValue.
+ *  \param value The FieldValue to be freed.
+ */
 void cleanup_field_value (FieldTypeIdentifier type, FieldValue* value);
+
+
+/*! \brief  Translate a string to a decimal value. 
+ *  \param str The string stored in the field to be converted.
+ *  \param type The type of the FieldValue to convert to.
+ *  \param value The FieldValue that the result will be stored in.
+ */
 gboolean string_to_field_value(const char* str, FieldTypeIdentifier type, FieldValue* value);
 
 #endif

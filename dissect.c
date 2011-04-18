@@ -23,10 +23,6 @@
 #include "dictionaries.h"
 #include "dissect.h"
   
-static gboolean dissect_int_op(gint64 * delta, const FieldType * ftype, 
-                               FieldData * fdata, DissectPosition * position, address* src, address* dest);
-gboolean dissect_ascii_delta(const FieldType* ftype, FieldData* fdata,
-                             DissectPosition* position, address* src, address* dest);
 
 /*! \brief  Save some typing when initializing valiables
  *          in a dissect_TYPE function.
@@ -35,14 +31,8 @@ gboolean dissect_ascii_delta(const FieldType* ftype, FieldData* fdata,
  * \param tnode  Template tree node containing /ftype/.
  * \param dnode  Dissect tree node containing /fdata/.
  */
-#define SetupDissectStack(ftype, fdata, tnode, dnode) \
-  const FieldType* ftype; \
-  FieldData* fdata; \
-  ftype = (FieldType*) tnode->data; \
-  fdata = (FieldData*) dnode->data;
-
-
-
+static gboolean dissect_int_op(gint64 * delta, const FieldType * ftype, 
+                               FieldData * fdata, DissectPosition * position, address* src, address* dest);
 
 
 /*! \brief  Given a byte stream, dissect delta or increment (or nothing).
@@ -51,6 +41,17 @@ gboolean dissect_ascii_delta(const FieldType* ftype, FieldData* fdata,
  * \param dnode  Dissect tree node.
  * \return true if we need to still do a basic dissect
  */
+gboolean dissect_ascii_delta(const FieldType* ftype, FieldData* fdata,
+                             DissectPosition* position, address* src, address* dest);
+
+
+#define SetupDissectStack(ftype, fdata, tnode, dnode) \
+  const FieldType* ftype; \
+  FieldData* fdata; \
+  ftype = (FieldType*) tnode->data; \
+  fdata = (FieldData*) dnode->data;
+
+  
 gboolean dissect_int_op(gint64* delta,
                         const FieldType* ftype,
                         FieldData* fdata,

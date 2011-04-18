@@ -24,17 +24,26 @@
 
 #include "basic-field.h"
 
+
+/*! \brief Converts a string to a decimal.
+ *  \param str String from the parser to be converted to decimal.
+ *  \param value Where the parsed decimal will be stored.
+ */
 static gboolean string_to_decimal_value (const char* str, FieldValue* value);
+
+
+/*! \brief Checks if an ascii string is a number.
+ *  \param str String from the parser to be checked.
+ */
 static gboolean is_number(const char* str);
 
-/*! \brief  Initialize the memory of a FieldValue.
- */
+
 void init_field_value (FieldValue* value)
 {
   memset(value, 0, sizeof(FieldValue));
 }
 
-/*! \brief  Copy a FieldValue, malloc'ing if needed. */
+
 void copy_field_value (FieldTypeIdentifier type,
                        const FieldValue* src,
                        FieldValue* dest)
@@ -60,7 +69,7 @@ void copy_field_value (FieldTypeIdentifier type,
   }
 }
 
-/*! \brief  Clean up a FieldValue's data members. */
+
 void cleanup_field_value (FieldTypeIdentifier type, FieldValue* value)
 {
   switch (type) {
@@ -97,6 +106,7 @@ static gboolean is_number(const char* str){
   }
   return TRUE;
 }
+
 
 gboolean string_to_field_value(const char* str, FieldTypeIdentifier type, FieldValue* value)
 {
@@ -176,7 +186,6 @@ gboolean string_to_field_value(const char* str, FieldTypeIdentifier type, FieldV
 }
 
 
-/*! \brief  Translate a string to a decimal value. */
 gboolean string_to_decimal_value (const char* str, FieldValue* value)
 {
   unsigned left, right, len;
