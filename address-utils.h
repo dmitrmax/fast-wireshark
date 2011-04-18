@@ -16,6 +16,19 @@
 * <http://www.gnu.org/licenses/lgpl.txt>.
 */
 
+/*!
+* \file address-utils.h
+* \brief  Converts wireshark macros into functions
+*  Contains functions that are wrappers for macros in wireshark
+*  so that they can be passed in as function pointers
+*
+*  Functions:
+*     addressHash
+*     addressEqual
+*     addressDelete
+*     copyAddress
+*/
+
 #ifndef ADDRESS_H_INCLUDED_
 #define ADDRESS_H_INCLUDED_
 
@@ -23,13 +36,28 @@
 #include <glib.h>
 #include <epan/address.h>
 
-
+/*! \brief function wrapper for wireshark macro ADD_ADDRESS_TO_HASH
+ *  \param p address pointer to be added
+ *  \return guint return value from ADD_ADDRESS_TO_HASH
+ */
 guint addressHash( gconstpointer p);
 
+/*! \brief function wrapper for wireshark macro ADDRESSES_EQUAL
+*  \param a first address to be compared
+*  \param b second address to be compared
+*  \return true if the addresses are equal
+*/
 gboolean addressEqual(gconstpointer a, gconstpointer b);
 
+/*! \brief frees memory located at given address
+*  \param data gpointer pointing to data to be deleted
+*/
 void addressDelete(gpointer data);
 
+/*! \brief function wrapper for wireshark macro COPY_ADDRESS
+*  \param addr address pointer of data to be copied
+*  \return address pointer to new copy
+*/
 address* copyAddress(address* addr);
 
 #endif

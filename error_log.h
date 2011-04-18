@@ -27,12 +27,27 @@
 #include "template.h"
 #include "basic-dissect.h"
 
+/*! \brief set user preferences for error dialogs and log files
+ *  \param display true if user wants error dialogs to display
+ *  \param log true if user wants error messages written to log file
+ */
 void setLogSettings(gboolean display, gboolean log);
 
+/*! \brief log a dynamic error that has occurred
+*  \param ftype field type for the field that caused the error
+*  \param fdata field data for the field that caused the error
+*/
 void log_dynamic_error(const FieldType* ftype, const FieldData* fdata);
 
+/*! \brief log a static error that has occurred
+*  \param ftype field type for the field that caused the error
+*  \param fdata field data for the field that caused the error
+*/
 void log_static_error(int type, int line, const char* extra_error_info);
 
+/*! \brief open a gtk dialog box displaying the message provided
+*  \param message the message to display in the dialog
+*/
 void quick_message (gchar *message);
 
 #endif

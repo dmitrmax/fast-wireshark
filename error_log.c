@@ -22,7 +22,6 @@
 static gboolean displayDialogs;
 static gboolean logToFile;
 
- /* write dynamic error to log file */
 void log_dynamic_error(const FieldType* ftype, const FieldData* fdata){
   
   time_t ltime;   
@@ -31,26 +30,26 @@ void log_dynamic_error(const FieldType* ftype, const FieldData* fdata){
   /* get current cal time */
       ltime=time(NULL); 
   
-      
+  /* write error log to a string */
   fprintf(stderr,
-  "%s\n%s\n\nField Name:\t%s\nField ID:\t%d\nTemplate ID:\t%d\n\n%s\n",
-  asctime(localtime(&ltime)),
-  fdata->value.ascii.bytes,
-  ftype->name,
-  ftype->id,
-  ftype->tid,
-  "**********************************************************************");
-      
+          "%s\n\nField Name:\t%s\nField ID:\t%d\nTemplate ID:\t%d\n\n%s\n",
+          fdata->value.ascii.bytes,     /* error message  */
+          ftype->name,                  /* field name     */
+          ftype->id,                    /* field id       */
+          ftype->tid,                   /* template id    */
+          "**********************************************************************");
+              
+  /* write error log to file if user preference is set */
   if(logToFile){
     log = fopen("error_log.txt","a"); 
     fprintf(log,
-    "%s\n%s\n\nField Name:\t%s\nField ID:\t%d\nTemplate ID:\t%d\n\n%s\n",
-    asctime(localtime(&ltime)),
-    fdata->value.ascii.bytes,
-    ftype->name,
-    ftype->id,
-    ftype->tid,
-    "**********************************************************************");
+            "%s\n%s\n\nField Name:\t%s\nField ID:\t%d\nTemplate ID:\t%d\n\n%s\n",
+            asctime(localtime(&ltime)),   /* time stamp     */
+            fdata->value.ascii.bytes,     /* error message  */
+            ftype->name,                  /* field name     */
+            ftype->id,                    /* field id       */
+            ftype->tid,                   /* template id    */
+            "**********************************************************************");
     fclose(log);
   }
   
@@ -72,6 +71,7 @@ void log_static_error(int err_no, int line, const char* extra_error_info){
     "[ERR] Template error "
   };
   
+  /* set error message string */
   char * err;
   err_no--;
   if(err_no<0 || err_no>5){
@@ -89,27 +89,30 @@ void log_static_error(int err_no, int line, const char* extra_error_info){
   } else {
     lineString = "";
   }
-      
+
+  /* display pop-up dialog if user preference is set */
   if(displayDialogs){
     quick_message(g_strdup_printf("FAST Plugin\n%s\n%s%s", err, lineString, extra_error_info));
   }
   
+  /* display error message in console */
   fprintf(stderr,
-  "%s\n%s%s\n%s\n",
-  err,
-  lineString,
-  extra_error_info,
-  "**********************************************************************");
+          "%s\n%s%s\n%s\n",
+          err,
+          lineString,
+          extra_error_info,
+          "**********************************************************************");
   
+  /* write error message to file if user preference is set */
   if(logToFile){
     log = fopen("error_log.txt","a"); 
     fprintf(log,
-    "%s\n%s\n%s%s\n%s\n",
-    asctime(localtime(&ltime)),
-    err,
-    lineString,
-    extra_error_info,
-    "**********************************************************************");
+            "%s\n%s\n%s%s\n%s\n",
+            asctime(localtime(&ltime)),
+            err,
+            lineString,
+            extra_error_info,
+            "**********************************************************************");
     fclose(log);
   }
   
@@ -120,7 +123,6 @@ void setLogSettings(gboolean display, gboolean log){
   logToFile = log;
 }
 
-/* Function to open a dialog box displaying the message provided. */
 void quick_message (gchar *message)
 {
    GtkWidget *dialog, *label, *content_area;

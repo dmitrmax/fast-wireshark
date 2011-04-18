@@ -20,7 +20,6 @@
 #include "address-utils.h"
 #include "debug.h"
 
-
 guint addressHash( gconstpointer p){
   guint ret = 0;
   address* addr = (address*)p;
@@ -45,10 +44,10 @@ void addressDelete(gpointer p){
 }
 
 address* copyAddress(address* addr){
-  address* addre;
-  addre = (address*)g_malloc(sizeof(address));
-  COPY_ADDRESS(addre, addr);
-  return addre;
+  address* addr_copy;
+  addr_copy = (address*)g_malloc(sizeof(address));
+  COPY_ADDRESS(addr_copy, addr);
+  return addr_copy;
 }
   
   
