@@ -1,8 +1,21 @@
-/*!
- * \file dissect-read.c
- * \brief  Primitive readers for the byte stream
- *         using the dissector structures.
+/*
+ * This file is part of FAST Wireshark.
+ *
+ * FAST Wireshark is free software: you can redistribute it and/or modify
+ * it under the terms of the Lesser GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * FAST Wireshark is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * Lesser GNU General Public License for more details.
+ *
+ * You should have received a copy of the Lesser GNU General Public License
+ * along with FAST Wireshark.  If not, see 
+ * <http://www.gnu.org/licenses/lgpl.txt>.
  */
+
 #include "basic-dissect.h"
 
 #include "debug.h"
@@ -27,10 +40,7 @@
     offjmp  = 0; \
   } while (0)
 
-/*! \brief  Throw a dynamic error
-* \param err_no the dynamic error code
-* \param fdata the field data
-*/
+
 void err_d(guint8 err_no, FieldData* fdata)
 {
   char * string_err_d[15] =
@@ -51,9 +61,7 @@ void err_d(guint8 err_no, FieldData* fdata)
     string_err_d[err_no - 1]); 
 }
 
-/*! \brief  Shift the byte position of a dissection.
- * \sa ShiftBuffer
- */
+
 void ShiftBytes(DissectPosition* position)
 {
   ShiftBuffer(position->offjmp, position->offset,
@@ -61,10 +69,6 @@ void ShiftBytes(DissectPosition* position)
 }
 
 
-/*! \brief  Claim and retrieve a bit in the PMAP.
- * \param position  The dissector's current position.
- * \return  TRUE or FALSE depending on the PMAP bit value.
- */
 gboolean dissect_shift_pmap (DissectPosition* position)
 {
   gboolean result = FALSE;
@@ -83,10 +87,6 @@ gboolean dissect_shift_pmap (DissectPosition* position)
 }
 
 
-/*! \brief  Retrieve a bit in the PMAP.
- * \param position  The dissector's current position.
- * \return  TRUE or FALSE depending on the PMAP bit value.
- */
 gboolean dissect_peek_pmap (DissectPosition* position)
 {
   gboolean result;
@@ -96,10 +96,6 @@ gboolean dissect_peek_pmap (DissectPosition* position)
 }
 
 
-/*! \brief  Detect and skip null values.
- * \param position  The dissector's currect position.
- * \return  TRUE if a null value was detected and skipped.
- */
 gboolean dissect_shift_null(DissectPosition* position)
 {
   gboolean ret = FALSE;
@@ -118,13 +114,7 @@ gboolean dissect_shift_null(DissectPosition* position)
   return ret;
 }
 
-/*! \brief  Copy current position to a nested one (with a new pmap).
- *
- * Both arguments may be the same.
- *
- * \param parent_position  Position in the packet.
- * \param position  Return value. Moved position with a new pmap.
- */
+
 void basic_dissect_pmap (const DissectPosition* parent_position,
                          DissectPosition* position)
 {
@@ -155,10 +145,7 @@ void basic_dissect_pmap (const DissectPosition* parent_position,
   ShiftBytes(position);
 }
 
-/*! \brief  Given a byte stream, dissect an unsigned 32bit integer.
- * \param position  Position in the packet.
- * \param dnode  Dissect tree node.
- */
+
 void basic_dissect_uint32 (DissectPosition* position, FieldData* fdata)
 {
   position->offjmp = count_stop_bit_encoded (position->nbytes,
@@ -177,10 +164,6 @@ void basic_dissect_uint32 (DissectPosition* position, FieldData* fdata)
 }
 
 
-/*! \brief  Given a byte stream, dissect an unsigned 64bit integer.
- * \param position  Position in the packet.
- * \param fdata  Result data.
- */
 void basic_dissect_uint64 (DissectPosition* position, FieldData* fdata)
 {
   position->offjmp = count_stop_bit_encoded (position->nbytes,
@@ -198,10 +181,7 @@ void basic_dissect_uint64 (DissectPosition* position, FieldData* fdata)
   ShiftBytes(position);
 }
 
-/*! \brief  Given a byte stream, dissect a signed 32bit integer.
- * \param position  Position in the packet.
- * \param fdata  Result data.
- */
+
 void basic_dissect_int32 (DissectPosition* position, FieldData* fdata)
 {
   position->offjmp = count_stop_bit_encoded (position->nbytes,
@@ -227,10 +207,6 @@ void basic_dissect_int32 (DissectPosition* position, FieldData* fdata)
 }
 
 
-/*! \brief  Given a byte stream, dissect a signed 64bit integer.
- * \param position  Position in the packet.
- * \param fdata  Result data.
- */
 void basic_dissect_int64 (DissectPosition* position, FieldData* fdata)
 {
   position->offjmp = count_stop_bit_encoded (position->nbytes,
@@ -255,10 +231,6 @@ void basic_dissect_int64 (DissectPosition* position, FieldData* fdata)
 }
 
 
-/*! \brief  Given a byte stream, dissect an ASCII string.
- * \param position  Position in the packet.
- * \param fdata  Result data.
- */
 void basic_dissect_ascii_string (DissectPosition* position, FieldData* fdata)
 {
   guint8* bytes;
