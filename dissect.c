@@ -15,6 +15,10 @@
  * along with FAST Wireshark.  If not, see 
  * <http://www.gnu.org/licenses/lgpl.txt>.
  */
+/*!
+ * \file dissect.c
+ * \brief  Implementation of Wireshark independent payload dissecting.
+ */
 
 #include <string.h>
 #include "debug.h"
@@ -24,7 +28,7 @@
 #include "dissect.h"
   
 
-/*! \brief  Save some typing when initializing valiables
+/*! \brief  Save some typing when initializing variables
  *          in a dissect_TYPE function.
  * \param ftype  New variable to store the FieldType.
  * \param fdata  New variable to store the FieldData.

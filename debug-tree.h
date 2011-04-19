@@ -19,15 +19,35 @@
 /*!
  * \file  debug-tree.h
  * \brief  Useful tree debug functions.
+ *         Really only used for printing tree data.
  */
 
 #ifndef DEBUG_TREE_H_
-#define DEBUG_TREE_H_
+#define DEBUG_TREE_H_ 
 
 #include "template.h"
 
+
+/*!
+ * \brief Prints the field to debug.  Called by debug_print_field_tree.
+ * \param field FieldType to be printed.
+ * \param int The amount to indent the print.
+ */
 void debug_print_field (FieldType* field, int indent);
+
+
+/*!
+ * \brief Prints a field tree to debug.  This is a recursive function.
+ * \param node The root node of the field tree.
+ * \param level The current level of parsing we are at.
+ */
 void debug_print_field_tree (GNode * node, int level);
+
+
+/*!
+ * \brief Prints a template tree to debug.
+ * \param template_tree Template tree to be printed
+ */
 void debug_print_template_tree(GNode* template_tree);
 
 #endif

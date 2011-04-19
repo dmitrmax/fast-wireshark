@@ -17,7 +17,7 @@
  */
 
 /*!
- * \file dissect-read.h
+ * \file basic-dissect.h
  * \brief  Primitive readers for the byte stream
  *         Basically these are helper functions for dissect.c functions.
  *         While dissect.c does the logic dissection, these functions

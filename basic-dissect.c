@@ -15,6 +15,10 @@
  * along with FAST Wireshark.  If not, see 
  * <http://www.gnu.org/licenses/lgpl.txt>.
  */
+/*!
+ * \file basic-dissect.c
+ * \brief  Implementation of the primitive data dissector.
+ */
 
 #include "basic-dissect.h"
 

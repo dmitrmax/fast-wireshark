@@ -23,7 +23,6 @@
 
 #include "debug.h"
 #include "decode.h"
-
 #include "template.h"
 
 static GHashTable* template_table = 0;
@@ -32,10 +31,7 @@ static GNode* template_tree = 0;
 static gboolean requires_pmap_bit (const FieldType* ftype);
 static void fixup_walk_template (FieldType* parent, GNode* parent_node);
 
-/*! \brief  Add a new template to the lookup table.
- *
- * \param templates  The root of the templates tree.
- */
+
 void add_templates (GNode* templates)
 {
   GNode* tmpl;
@@ -60,12 +56,6 @@ void add_templates (GNode* templates)
 }
 
 
-/*!
- * \brief  Retrieve the name of the field type.
- * \param type  Field type for the name lookup.
- * \return  A string corresponding to the type given.
- *          If the type is invalid, return an empty string.
- */
 const gchar* field_typename (FieldTypeIdentifier type)
 {
   static const gchar* names[] =
@@ -83,12 +73,7 @@ const gchar* field_typename (FieldTypeIdentifier type)
   }
 }
 
-/*!
- * \brief  Retrieve the name of the operator type.
- * \param type  Operator type for the name lookup.
- * \return  A string corresponding to the type given.
- *          If the type is invalid, return an empty string.
- */
+
 const gchar* operator_typename (FieldOperatorIdentifier type)
 {
   static const gchar* names[] =
@@ -106,13 +91,6 @@ const gchar* operator_typename (FieldOperatorIdentifier type)
 }
 
 
-/*!
- * \brief  Create internal representation for a field wrapped in a GNode.
- *
- * \return  The new, initialized node holding a non-null FieldType.
- *          Both the GNode and the FieldType must be g_free()'d.
- *          NULL if a malloc failed.
- */
 GNode* create_field (FieldTypeIdentifier type,
                      FieldOperatorIdentifier op)
 {
@@ -141,10 +119,6 @@ GNode* create_field (FieldTypeIdentifier type,
 }
 
 
-/*! \brief  Lookup a template by its ID.
- *
- * \return  NULL if no template could be found.
- */
 GNode* find_template (guint32 id)
 {
   gint key;
@@ -203,8 +177,7 @@ void fixup_walk_template (FieldType* parent, GNode* parent_node)
   }
 }
 
-/*! \brief  Get the entire templates tree.
- */
+
 GNode* full_templates_tree ()
 {
   return template_tree;

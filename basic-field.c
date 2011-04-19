@@ -15,6 +15,10 @@
 * along with FAST Wireshark.  If not, see 
 * <http://www.gnu.org/licenses/lgpl.txt>.
 */
+/*!
+ * \file basic-field.c
+ * \brief Implementation needed for data type definitions.
+ */
 
 #include <ctype.h>
 #include <stdlib.h>
