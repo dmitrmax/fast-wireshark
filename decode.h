@@ -26,15 +26,98 @@
 
 #include <glib.h>
 
+/*! \brief  Count the number of bytes in a stop bit encoded byte array.
+ * \param nbytes  Number of bytes in the array.
+ * \param bytes  The actual byte array.
+ * \return 0 if the byte array is overrun before a stop bit is found.
+ *         Otherwise, a positive count of bytes less than /nbytes/.
+ */
 guint count_stop_bit_encoded (guint nbytes, const guint8* bytes);
+
+/*! \brief  Count the bits which will be decoded from a set number of bytes.
+ * \return  The bit count.
+ */
 guint number_decoded_bits (guint nbytes);
 
+/*! \brief  Decode a pmap into a pre-allocated boolean array.
+ *
+ * \param nbytes  Number of bytes to decode.
+ * \param bytes  Bytes to decode.
+ * \param pmap_res  Return value. Preallocated.
+ * \sa number_decoded_bits
+ */
 void decode_pmap (guint nbytes, const guint8* bytes, gboolean* pmap_res);
+
+/*! \brief  Decode an unsigned 32bit integer,
+ *          disregarding the first bit in each byte.
+ *
+ * This function assumes error checking has already occurred,
+ * and truncates its results accordingly.
+ *
+ * \param nbytes  Number of bytes to decode.
+ * \param bytes  Bytes to decode.
+ * \return  The decoded uInt32.
+ */
 guint32 decode_uint32 (guint nbytes, const guint8* bytes);
+
+/*! \brief  Decode an unsigned 64bit integer,
+ *          disregarding the first bit in each byte.
+ *
+ * This function assumes error checking has already occurred,
+ * and truncates its results accordingly.
+ *
+ * \param nbytes  Number of bytes to decode.
+ * \param bytes  Bytes to decode.
+ * \return  The decoded uInt64.
+ */
 guint64 decode_uint64 (guint nbytes, const guint8* bytes);
+
+/*! \brief  Decode a signed 32bit integer,
+ *          disregarding the first bit in each byte.
+ *
+ * This function assumes error checking has already occurred,
+ * and truncates its results accordingly.
+ *
+ * \param nbytes  Number of bytes to decode.
+ * \param bytes  Bytes to decode.
+ * \return  The decoded Int32.
+ * \sa decode_uint32
+ */
 gint32 decode_int32 (guint nbytes, const guint8* bytes);
+
+/*! \brief  Decode a signed 64bit integer,
+ *          disregarding the first bit in each byte.
+ *
+ * This function assumes error checking has already occurred,
+ * and truncates its results accordingly.
+ *
+ * \param nbytes  Number of bytes to decode.
+ * \param bytes  Bytes to decode.
+ * \return  The decoded Int64.
+ * \sa decode_uint64
+ */
 gint64 decode_int64 (guint nbytes, const guint8* bytes);
+
+/*! \brief  Decode an ASCII string.
+ *
+ * This function assumes error checking has already occurred,
+ * and truncates its results accordingly.
+ *
+ * \param nbytes  Number of bytes to decode.
+ * \param bytes  Bytes to decode.
+ * \param str  Return value. Must be preallocated to at least /nbytes/.
+ */
 void decode_ascii_string (guint nbytes, const guint8* bytes, guint8* str);
+
+/*! \brief  Decode a byte vector.
+ *
+ * This function assumes error checking has already occurred,
+ * and truncates its results accordingly.
+ *
+ * \param nbytes  Number of bytes to decode.
+ * \param bytes  Bytes to decode.
+ * \param vec  Return value. Must be preallocated to at least /nbytes/.
+ */
 void decode_byte_vector (guint nbytes, const guint8* bytes, guint8* vec);
 
 #endif
