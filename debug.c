@@ -25,12 +25,6 @@
 
 #include "debug.h"
 
-/*! \brief  Print debugging info.
- * \param file  Filename of caller.
- * \param func  Function name of caller.
- * \param line  Line number of caller.
- * \param fmt   Format string for a printf.
- */
 void debug_out(const char* file,
                const char* func,
                int line,
