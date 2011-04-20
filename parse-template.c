@@ -80,11 +80,6 @@ static gboolean is_integer(FieldTypeIdentifier type);
 
 static gint templateID = -1; /* Stores tid while parsing */
 
-/*! \brief  Convert an XML file into an internal representation of
- *          the templates.
- * \param filename  Name of the XML file to parse.
- * \return  An internal tree of FieldTypes.
- */
 GNode* parse_templates_xml(const char* filename)
 {
   xmlDocPtr doc; /* pointer to XML document */
@@ -312,17 +307,12 @@ GNode* new_parsed_field (xmlNodePtr xmlnode, char* dictionary)
     }
   }
 
-  /* TODO: what does this comment mean?
-   *
-   * If we retrieved built up the field,
-   * fill its attributes.
+  /* 
+   * If field type is not recognized or if the field was not correctly parsed
    */
-  if (found && valid) {
-  }
-  else {
+  if (!found || !valid) {
     /* TODO: Free parse tree. */
-     tnode = 0; 
-    /*g_node_destroy(tnode);*/
+    tnode = 0; 
     if (!valid) {
       log_static_error(1,
         xmlnode->line,

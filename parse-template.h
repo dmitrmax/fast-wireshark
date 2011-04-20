@@ -21,8 +21,12 @@
 
 #include <glib.h>
 
+/*! \brief  Convert an XML file into an internal representation of
+*          the templates.
+* \param filename  Name of the XML file to parse.
+* \return  An internal tree of FieldTypes.
+*/
 GNode* parse_templates_xml (const char* filename);
-void quick_message (gchar *message);
 
 #endif
 
