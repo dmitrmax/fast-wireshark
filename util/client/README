@@ -1,0 +1,28 @@
+CLIENT README
+______________________________________________________________________________
+--- Description
+
+client is a dev tool made in the early stages of the project to send FAST
+encoded network data.
+
+client encodes data to its respective FAST encoding then sends it over the
+network.  There is no state maintained and each run is a new packet to send.
+
+client is fully replaced by the Plan Runner.
+
+______________________________________________________________________________
+--- Building
+
+After following the directions for building the project in the root of the
+project, client can be built by calling make in this directory or the
+project's root directory.
+
+______________________________________________________________________________
+--- Notes for maintainers
+
+This utility could eventually replace the Plan Runner if it is given state
+handling and plan handling.  If this is not the intention, then the Plan
+Runner should be used and this should not be updated.
+
+______________________________________________________________________________
+--- EOF

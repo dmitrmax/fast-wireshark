@@ -1,0 +1,24 @@
+SERVER README
+______________________________________________________________________________
+--- Description
+
+server is a dev util built to be the counter part to the dev tool client.
+
+The main purpose of server is to open a socket and read the data so that
+error packets will not be returned by the host.
+
+______________________________________________________________________________
+--- Building
+
+After following the directions for building the project in the root of the
+project, server can be built by calling make in this directory or the
+project's root directory.
+
+______________________________________________________________________________
+--- Notes for maintainers
+
+This utility should not need to be maintained as the Plan Runner supports all
+the functionality this added.
+
+______________________________________________________________________________
+--- EOF
