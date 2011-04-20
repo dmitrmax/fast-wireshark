@@ -1,0 +1,38 @@
+RWCOMPARE README
+______________________________________________________________________________
+--- Description
+
+rwcompare is a dev tool made to make running regression tests on the project
+simpler.
+
+The primary functionality of rwcompare is to run a test plan through the
+Plan Runner to generate a pcap file.  Then to use tshark to read the pcap
+file and convert it to a pdml file containing the interpreted FAST data.
+The pdml file is then converted into a plan file which is then compared
+against the expected result plan file to check for correctness.
+
+The general concept is if we get out what we put it, the plugin works.  Or 
+if we get what we expected (in the case of FAST errors).
+
+Short depiction of the functionality:
+plan1 -> pcap -> pdml -> plan2 -> diff plan1 plan2
+
+______________________________________________________________________________
+--- Building
+
+After following the directions for building the project in the root of the
+project, rwcompare can be built by calling make in this directory or the
+project's root directory.
+
+______________________________________________________________________________
+--- Notes for maintainers
+
+To add functionality via command line rwcompare.c's main will need to be
+modified.
+
+This is a dev tool, therefore good maintainable programming practices were
+skipped at times in favor of quick implementations to test features of the
+main project.
+
+______________________________________________________________________________
+--- EOF
