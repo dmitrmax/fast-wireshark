@@ -91,6 +91,7 @@ static gboolean showFieldOperators = 0;
 static gboolean showFieldMandatoriness = 0;
 static gboolean showDialogWindows = 1;
 static gboolean logErrors = 1;
+static gboolean reparse_templates = 1; /* Tells dissector to reparse the template xml file */
 
 enum ProtocolImplem { GenericImplem, CMEImplem, UMDFImplem, NImplem };
 enum Protocol { UDPImplem, TCPImplem, NOImplem };
@@ -307,6 +308,7 @@ void proto_reg_handoff_fast ()
   static gboolean initialized = FALSE;
   static guint currentPort = 0;
   static dissector_handle_t fast_handle;
+  static char* currentTemplateXML = 0;
   static char* currentPortField = "udp.port";
 
   setLogSettings(showDialogWindows, logErrors);
@@ -337,11 +339,9 @@ void proto_reg_handoff_fast ()
 
     /* Read templates file. */
     if (initialized && config_template_xml_path) {
-      GNode* templates;
       fprintf(stderr, "Using xml file %s ...\n",config_template_xml_path);
-      templates = parse_templates_xml (config_template_xml_path);
-      if (templates) {
-        add_templates(templates);
+      if(g_strcmp0(config_template_xml_path, currentTemplateXML)!=0){
+        reparse_templates = TRUE;
       }
     }
 
@@ -360,10 +360,17 @@ void proto_reg_handoff_fast ()
  *  \param tree where we put the data we want wireshark to print
  */
 void dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
-{
+{  
   frame_data* frameData;
   PacketData* packetData;
   frameData = pinfo->fd;
+ 
+  if(reparse_templates){
+    GNode* templates;
+    templates = parse_templates_xml (config_template_xml_path);
+    add_templates(templates);
+    reparse_templates = FALSE;
+  } 
   
   /* fill in protocol column */
   if (check_col(pinfo->cinfo, COL_PROTOCOL)) {

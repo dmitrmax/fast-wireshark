@@ -21,6 +21,7 @@
 
 static gboolean displayDialogs;
 static gboolean logToFile;
+static char* home;
 
 void log_dynamic_error(const FieldType* ftype, const FieldData* fdata){
   
@@ -41,7 +42,7 @@ void log_dynamic_error(const FieldType* ftype, const FieldData* fdata){
               
   /* write error log to file if user preference is set */
   if(logToFile){
-    log = fopen("error_log.txt","a"); 
+    log = fopen(home, "a"); 
     fprintf(log,
             "%s\n%s\n\nField Name:\t%s\nField ID:\t%d\nTemplate ID:\t%d\n\n%s\n",
             asctime(localtime(&ltime)),   /* time stamp     */
@@ -105,7 +106,7 @@ void log_static_error(int err_no, int line, const char* extra_error_info){
   
   /* write error message to file if user preference is set */
   if(logToFile){
-    log = fopen("error_log.txt","a"); 
+    log = fopen(home, "a"); 
     fprintf(log,
             "%s\n%s\n%s%s\n%s\n",
             asctime(localtime(&ltime)),
@@ -121,6 +122,19 @@ void log_static_error(int err_no, int line, const char* extra_error_info){
 void setLogSettings(gboolean display, gboolean log){
   displayDialogs = display;
   logToFile = log;
+  
+  /* set logfile to output to users home directory */
+  home = getenv("HOMEPATH");
+  if(home){
+    /* OS is windows */
+    home = g_strdup_printf("%s\\fast_error_log.txt", home);
+  } else {
+    /* OS is unix */
+    home = getenv("HOME");
+    home = g_strdup_printf("%s/fast_error_log.txt", home);
+  }
+  
+  fprintf(stderr, "output log file: %s\n", home);
 }
 
 void quick_message (gchar *message)

@@ -34,14 +34,19 @@ static void fixup_walk_template (FieldType* parent, GNode* parent_node);
 
 void add_templates (GNode* templates)
 {
-  GNode* tmpl;
-  template_tree = templates;
+  GNode* tmpl;  
 
   /* TODO: Clear hash table and free old templates. */
 
   if (!template_table) {
     template_table = g_hash_table_new (&g_int_hash, &g_int_equal);
   }
+  
+  if(!templates){
+    return;
+  }
+  
+  template_tree = templates;
 
   if (!template_table)  BAILOUT(;,"Template lookup table not created.");
 
