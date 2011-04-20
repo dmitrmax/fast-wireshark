@@ -130,7 +130,7 @@ set (CPACK_PACKAGE_VENDOR "Some Students")
 set (CPACK_PACKAGE_CONTACT "http://code.google.com/p/fast-wireshark")
 set (CPACK_PACKAGE_VERSION_MAJOR "1")
 set (CPACK_PACKAGE_VERSION_MINOR "0")
-set (CPACK_PACKAGE_VERSION_PATCH "0")
+set (CPACK_PACKAGE_VERSION_PATCH "1")
 set (CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/COPYING")
 
 set (CPACK_NSIS_URL_INFO_ABOUT "http://code.google.com/p/fast-wireshark")
