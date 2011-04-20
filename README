@@ -29,7 +29,7 @@ correct location. This installation is local to the user.
 
 - local install
 
-cp dist/fast-ARCH.so $HOME/wireshark/plugins/fast.so
+cp .../fast-wireshark/fast.so $HOME/wireshark/plugins/fast.so
 
 The wireshark directory may be hidden in the home directory,
 so it may also be $HOME/.wireshark/plugins/fast.so
@@ -38,13 +38,12 @@ FAST should be sucessfully installed.
 
 -
 
-See "Linux Capture Permissions" page on the wireshark Wiki...
-
-- http://wiki.wireshark.org/CaptureSetup/CapturePrivileges
-
-...for how to run Wireshark as a user if you can't already
-If Wireshark is invoked with 'sudo', this install method will
-not work.
+>-> Fix your permissions.
+On Ubuntu, and other Debian-based systems I assume, this must be done to allow
+a user to run Wireshark. If root (or a sudo'd user) runs Wireshark, user
+plugins WILL NOT LOAD. The following allows dumpcap to listen on network
+interfaces without being run as root.
+  setcap 'CAP_NET_RAW+eip CAP_NET_ADMIN+eip' `which dumpcap`
 
 
 -------------
