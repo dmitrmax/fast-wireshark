@@ -167,7 +167,7 @@
     <uInt32 id="1" presence="mandatory" name="man_uint32"> <default value="0"/> </uInt32>
     <uInt32 id="2" presence="optional"  name="opt_uint32"> <default value="1"/> </uInt32>
     
-    <uInt64 id="2" presence="optional"  name="opt_uint64"> <default value="2"/> </uInt64>
+    <uInt64 id="2" presence="optional"  name="opt_uint64"> <default value="2.9"/> </uInt64>
     <int32 id="2" presence="optional"  name="opt_int32"> <default value="3"/> </int32>
     <int64 id="2" presence="optional"  name="opt_int64"> <default value="4"/> </int64>
     
