@@ -6,7 +6,8 @@ setup_dbgn_defines (${sources})
 
 add_executable (rwcompare ${sources})
 
-find_package(GLIB2 COMPONENTS gthread-2.0)
+find_package(GLIB2)
+find_package(GTHREAD2)
 
 include_directories (${GLIB2_INCLUDE_DIRS})
 include_directories (${LIBXML2_INCLUDE_DIR}) 
