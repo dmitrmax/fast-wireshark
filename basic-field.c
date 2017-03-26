@@ -12,7 +12,7 @@
 * Lesser GNU General Public License for more details.
 *
 * You should have received a copy of the Lesser GNU General Public License
-* along with FAST Wireshark.  If not, see 
+* along with FAST Wireshark.  If not, see
 * <http://www.gnu.org/licenses/lgpl.txt>.
 */
 /*!
@@ -64,8 +64,8 @@ void copy_field_value (FieldTypeIdentifier type,
     case FieldTypeUnicodeString:
     case FieldTypeByteVector:
       dest->bytevec.nbytes = src->bytevec.nbytes;
-      dest->bytevec.bytes = g_memdup(src->bytevec.bytes,
-                                     (1+src->bytevec.nbytes) * sizeof(guint8));
+      dest->bytevec.bytes = (guint8*)g_memdup(src->bytevec.bytes,
+                                              (1+src->bytevec.nbytes) * sizeof(guint8));
       break;
     default:
       DBG0("Called with bad type.");
@@ -117,8 +117,8 @@ gboolean string_to_field_value(const char* str, FieldTypeIdentifier type, FieldV
     switch (type) {
       int i;
       int len;
-      
-      
+
+
       case FieldTypeUInt32:
         if(!is_number(str)){
           DBG1("not a number %s", str);
@@ -147,29 +147,29 @@ gboolean string_to_field_value(const char* str, FieldTypeIdentifier type, FieldV
         }
         value->i64 = g_ascii_strtoll(str, NULL, 10);
         break;
-        
+
       case FieldTypeDecimal:
         if(!string_to_decimal_value (str, value)){
           return FALSE;
         }
         break;
-        
+
       case FieldTypeAsciiString:
       case FieldTypeUnicodeString:
         value->bytevec.nbytes = strlen(str);
         value->bytevec.bytes = (guint8*)g_strdup(str);
         break;
-      
+
       case FieldTypeByteVector:
         len = strlen(str);
         value->bytevec.nbytes = len/2;
-        value->bytevec.bytes = g_malloc(1+value->bytevec.nbytes);
+        value->bytevec.bytes = (guint8*)g_malloc(1+value->bytevec.nbytes);
         for(i=0; i + 1 < len; i += 2) {
           int nibble1;
           int nibble2;
           nibble1 = g_ascii_xdigit_value(str[i]);
           nibble2 = g_ascii_xdigit_value(str[i+1]);
-          
+
           if(-1 != nibble1 && -1 != nibble2) {
             value->bytevec.bytes[i/2] = (nibble1 << 4) | nibble2;
           }
@@ -179,7 +179,7 @@ gboolean string_to_field_value(const char* str, FieldTypeIdentifier type, FieldV
             return FALSE;
           }
         }
-        
+
         break;
       default:
         DBG0("Called with bad type.");
@@ -256,4 +256,3 @@ gboolean string_to_decimal_value (const char* str, FieldValue* value)
   g_free(buf);
   return TRUE;
 }
-

@@ -12,7 +12,7 @@
 * Lesser GNU General Public License for more details.
 *
 * You should have received a copy of the Lesser GNU General Public License
-* along with FAST Wireshark.  If not, see 
+* along with FAST Wireshark.  If not, see
 * <http://www.gnu.org/licenses/lgpl.txt>.
 */
 
@@ -24,7 +24,7 @@ guint addressHash( gconstpointer p){
   guint ret = 0;
   address* addr = (address*)p;
   if(!addr){BAILOUT(0,"NULL Pointer\n");}
-  ADD_ADDRESS_TO_HASH(ret, addr);
+  add_address_to_hash(ret, addr);
   return ret;
 }
 
@@ -33,7 +33,7 @@ gboolean addressEqual(gconstpointer a, gconstpointer b){
   address* addr2 = (address*)b;
   if(!addr1){BAILOUT(0,"NULL Pointer\n");}
   if(!addr2){BAILOUT(0,"NULL Pointer\n");}
-  return ADDRESSES_EQUAL(addr1, addr2);  
+  return addresses_equal(addr1, addr2);
 }
 
 void addressDelete(gpointer p){
@@ -46,8 +46,6 @@ void addressDelete(gpointer p){
 address* copyAddress(address* addr){
   address* addr_copy;
   addr_copy = (address*)g_malloc(sizeof(address));
-  COPY_ADDRESS(addr_copy, addr);
+  copy_address(addr_copy, addr);
   return addr_copy;
 }
-  
-  

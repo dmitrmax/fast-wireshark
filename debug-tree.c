@@ -12,7 +12,7 @@
 * Lesser GNU General Public License for more details.
 *
 * You should have received a copy of the Lesser GNU General Public License
-* along with FAST Wireshark.  If not, see 
+* along with FAST Wireshark.  If not, see
 * <http://www.gnu.org/licenses/lgpl.txt>.
 */
 
@@ -26,21 +26,21 @@
 #include "debug-tree.h"
 
 void debug_print_template_tree(GNode* template_tree){
-  GNode* template = 0;
-  template = g_node_first_child(template_tree);
-  
-  /* 
+  GNode* template_node = 0;
+  template_node = g_node_first_child(template_tree);
+
+  /*
    * Loop through all the templates to print
    */
-  while(template){
-    
-    debug_print_field_tree(template, 0);
-    template = g_node_next_sibling(template);
+  while(template_node){
+
+    debug_print_field_tree(template_node, 0);
+    template_node = g_node_next_sibling(template_node);
   }
 }
 
 void debug_print_field_tree (GNode * node, int level){
-  
+
   GNode* child = 0;
   FieldType* field_type = 0;
   field_type = (FieldType*)(node->data);
@@ -50,8 +50,8 @@ void debug_print_field_tree (GNode * node, int level){
   while(child){
     debug_print_field_tree (child, level+1);
     child = g_node_next_sibling(child);
-  } 
-  
+  }
+
 }
 
 void debug_print_field (FieldType* field, int indent){
@@ -65,4 +65,3 @@ void debug_print_field (FieldType* field, int indent){
        field->key,
        field->tid);
 }
-

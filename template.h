@@ -12,7 +12,7 @@
 * Lesser GNU General Public License for more details.
 *
 * You should have received a copy of the Lesser GNU General Public License
-* along with FAST Wireshark.  If not, see 
+* along with FAST Wireshark.  If not, see
 * <http://www.gnu.org/licenses/lgpl.txt>.
 */
 
@@ -44,7 +44,7 @@ struct field_type_struct
   gboolean hasDefault;
   FieldValue value;
   char * dictionary; /* Name of the dictionary used for this field */
-  
+
 };
 typedef struct field_type_struct FieldType;
 
@@ -88,7 +88,6 @@ GNode* find_template (guint32 id);
 
 /*! \brief  Get the entire templates tree.
  */
-GNode* full_templates_tree ();
+GNode* full_templates_tree (void);
 
 #endif
-

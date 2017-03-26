@@ -12,7 +12,7 @@
 * Lesser GNU General Public License for more details.
 *
 * You should have received a copy of the Lesser GNU General Public License
-* along with FAST Wireshark.  If not, see 
+* along with FAST Wireshark.  If not, see
 * <http://www.gnu.org/licenses/lgpl.txt>.
 */
 
@@ -35,47 +35,47 @@ static GNode* parseTemplate (xmlNodePtr cur);
 
 static void set_field_attributes (xmlNodePtr node,
                                   FieldType* tfield);
-                                  
+
 static gboolean ignore_xml_node (xmlNodePtr cur);
 
 static void parser_walk_children (xmlNodePtr cur,
-                                  GNode* parent, 
+                                  GNode* parent,
                                   GNode* tnode_prev,
                                   char * dictionary);
-                                  
+
 static GNode* new_parsed_field (xmlNodePtr xmlnode,
                                 char * dictionary);
-                                
+
 static gboolean field_type_match (xmlNodePtr node,
                                   FieldTypeIdentifier type);
-                                  
+
 static gboolean parse_field_operator (xmlNodePtr xmlnode,
                                       FieldType * tfield);
-                                      
+
 static gboolean parse_operator (xmlNodePtr xmlnode,
                                 FieldType * tfield);
-                                
+
 static gboolean prepend_length (xmlNodePtr xmlnode,
                                 const FieldType* parent,
                                 GNode* parent_node,
                                 char * dictionary);
-                                
+
 static gboolean parse_decimal (xmlNodePtr xmlnode,
                                FieldType * tfield,
                                GNode * tnode,
                                char * dictionary);
-                               
+
 static gboolean parse_sequence (xmlNodePtr xmlnode,
                                 FieldType* tfield,
                                 GNode* tnode,
                                 char * dictionary);
-                                
+
 static gboolean operator_type_match (xmlNodePtr node,
                                      FieldOperatorIdentifier type);
-                                     
+
 static gboolean check_valid_operator(xmlNodePtr xmlnode,
                                      FieldType * tfield);
-                                     
+
 static gboolean is_integer(FieldTypeIdentifier type);
 
 static gint templateID = -1; /* Stores tid while parsing */
@@ -88,10 +88,10 @@ GNode* parse_templates_xml(const char* filename)
   GNode* tnode_prev = 0;
 
   /* attempt to parse xml file and get pointer to parsed document */
-  doc = xmlParseFile(filename); 
+  doc = xmlParseFile(filename);
 
   if (doc == NULL) {
-    log_static_error(1,
+    fast_log_static_error(1,
                      -1,
                      " Invalid XML syntax\nRun wireshark \
                      from console for more details.");
@@ -100,7 +100,7 @@ GNode* parse_templates_xml(const char* filename)
 
   /* Start at the root of the XML document. */
 	cur = xmlDocGetRootElement(doc);
-	
+
 	if (cur == NULL) {
 		fprintf(stderr,"empty document\n");
 		xmlFreeDoc(doc);
@@ -109,16 +109,16 @@ GNode* parse_templates_xml(const char* filename)
 
   templates = g_node_new (0);
   if (!templates)  BAILOUT(0, "Error creating root of templates tree.");
-	
+
 	/* Check if root is of type "templates". */
 	if (xmlStrcmp(cur->name, (xmlChar*) "templates")) {
-		log_static_error(1,
+		fast_log_static_error(1,
                      cur->line,
                      " FAST syntax error: root node != templates");
 		xmlFreeDoc(doc);
 		return 0;
 	}
-	
+
   cur = cur->xmlChildrenNode;
   while (cur != NULL) {
 
@@ -138,7 +138,7 @@ GNode* parse_templates_xml(const char* filename)
         }
       }
       else {
-        log_static_error(1,
+        fast_log_static_error(1,
           cur->line,
           g_strdup_printf("Warning: Unkown templates child: %s\n",
                           cur->name));
@@ -171,7 +171,7 @@ GNode* parseTemplate (xmlNodePtr cur)
   if(!tfield->dictionary){
     tfield->dictionary = GLOBAL_DICTIONARY;
   }
-  
+
   /* Store templateID */
   tfield->tid = tfield->id;
   templateID = tfield->tid;
@@ -258,7 +258,7 @@ GNode* new_parsed_field (xmlNodePtr xmlnode, char* dictionary)
 
   /* Try decimal. */
   if (!found && field_type_match (xmlnode, FieldTypeDecimal)) {
-    
+
     found = TRUE;
     valid = parse_decimal(xmlnode, tfield, tnode, tfield->dictionary);
   }
@@ -307,20 +307,20 @@ GNode* new_parsed_field (xmlNodePtr xmlnode, char* dictionary)
     }
   }
 
-  /* 
+  /*
    * If field type is not recognized or if the field was not correctly parsed
    */
   if (!found || !valid) {
     /* TODO: Free parse tree. */
-    tnode = 0; 
+    tnode = 0;
     if (!valid) {
-      log_static_error(1,
+      fast_log_static_error(1,
         xmlnode->line,
         g_strdup_printf("FAST syntax error: Field %s could not be parsed.",
                         xmlnode->name));
     }
     else {
-      log_static_error(1,
+      fast_log_static_error(1,
         xmlnode->line,
         g_strdup_printf("FAST syntax error: Unknown field type %s.",
                         xmlnode->name));
@@ -348,7 +348,7 @@ gboolean prepend_length (xmlNodePtr xmlnode,
   if (!tnode) {
     BAILOUT(0, "Error creating exponent field.");
   }
-  
+
   g_node_insert_before (parent_node, parent_node->children, tnode);
   ftype = (FieldType*) tnode->data;
 
@@ -360,7 +360,7 @@ gboolean prepend_length (xmlNodePtr xmlnode,
     if (0 == xmlStrcasecmp(xmlnode->name, (xmlChar*)"length")) {
       set_field_attributes(xmlnode, ftype);
       if (!parse_field_operator(xmlnode, ftype)) {
-        log_static_error(1,
+        fast_log_static_error(1,
           xmlnode->line,
           g_strdup_printf("FAST syntax error: no length field for %s.",
                           parent->name));
@@ -368,18 +368,18 @@ gboolean prepend_length (xmlNodePtr xmlnode,
       }
     }
   }
-  
+
   /* set the key */
   if(!ftype->key){
     ftype->key = (char*)g_strdup_printf("%s-length",parent->name);
   }
-  
+
   /* set the dictionary */
   if(!ftype->dictionary){
     ftype->dictionary = dictionary;
   }
   ftype->tid = templateID;
-  
+
   ftype->mandatory = parent->mandatory;
   return TRUE;
 }
@@ -420,7 +420,7 @@ gboolean parse_decimal (xmlNodePtr xmlnode,
       if(0 == xmlStrcasecmp(xmlnode->name, (xmlChar*)"exponent")){
         set_field_attributes(xmlnode, expt);
         if(!parse_field_operator(xmlnode, expt)) {
-          log_static_error(1,
+          fast_log_static_error(1,
             xmlnode->line,
             g_strdup_printf("FAST syntax error: \
                             failed to parse operator for field %s.",
@@ -430,7 +430,7 @@ gboolean parse_decimal (xmlNodePtr xmlnode,
       } else if( 0 == xmlStrcasecmp(xmlnode->name, (xmlChar*)"mantissa")){
         set_field_attributes(xmlnode, mant);
         if(!parse_field_operator(xmlnode, mant)) {
-          log_static_error(1,
+          fast_log_static_error(1,
             xmlnode->line,
             g_strdup_printf("FAST syntax error: \
                             failed to parse operator for field %s.",
@@ -444,7 +444,7 @@ gboolean parse_decimal (xmlNodePtr xmlnode,
     }
     xmlnode = xmlnode->next;
   }
-  
+
   /* set dictionaries */
   if(!expt->dictionary){
     expt->dictionary = dictionary;
@@ -491,7 +491,7 @@ gboolean parse_sequence (xmlNodePtr xmlnode,
     return FALSE;
   }
   g_node_insert_after (tnode, 0, group_tnode);
-  
+
   /* Descend the tree on the group. */
   parser_walk_children (xmlnode->xmlChildrenNode, group_tnode, 0, dictionary);
 
@@ -503,25 +503,22 @@ gboolean parse_sequence (xmlNodePtr xmlnode,
  * \param tfield  A pointer to the field within the parse tree.
  * \return  True if sucessfully parsed
  */
-gboolean parse_field_operator(xmlNodePtr xmlnode, FieldType * tfield){
-  
-  const xmlChar *name;
-  name = xmlnode->name;
-
+gboolean parse_field_operator(xmlNodePtr xmlnode, FieldType * tfield)
+{
   /* loop through field to find operators */
   xmlnode = xmlnode->xmlChildrenNode;
   while (xmlnode != NULL) {
     if (!ignore_xml_node(xmlnode)){
-      
+
       return parse_operator(xmlnode, tfield);
 
     }
     xmlnode = xmlnode->next;
   }
-  
+
   return TRUE;
-}  
-  
+}
+
 
 
 /*! \brief  Fill in a field in the parse tree with operator info.
@@ -530,15 +527,13 @@ gboolean parse_field_operator(xmlNodePtr xmlnode, FieldType * tfield){
  * \return  True if sucessfully parsed
  */
 gboolean parse_operator (xmlNodePtr xmlnode, FieldType * tfield){
-  
+
   xmlChar *prop;
-  const xmlChar *name;
-  name = xmlnode->name;
 
   if (xmlnode==NULL){
     return FALSE;
   }
-  
+
   /* set the operator type */
   if (operator_type_match (xmlnode, FieldOperatorConstant)) {
     tfield->op = FieldOperatorConstant;
@@ -553,15 +548,15 @@ gboolean parse_operator (xmlNodePtr xmlnode, FieldType * tfield){
   } else if (operator_type_match (xmlnode, FieldOperatorTail)) {
     tfield->op = FieldOperatorTail;
   } else {
-    log_static_error(1, 
+    fast_log_static_error(1,
       xmlnode->line,
       g_strdup_printf("FAST syntax error: \
                       Invalid operator (%s) for field %s",
-                      xmlnode->name, 
+                      xmlnode->name,
                       tfield->name));
     return FALSE;
   }
-  
+
   if(!check_valid_operator(xmlnode, tfield)){
     return FALSE;
   }
@@ -571,24 +566,25 @@ gboolean parse_operator (xmlNodePtr xmlnode, FieldType * tfield){
   if (prop!=NULL) {
     tfield->hasDefault = TRUE;
     if(!string_to_field_value((char*)prop, tfield->type, &tfield->value)){
-      log_static_error(3,
+      fast_log_static_error(3,
         xmlnode->line,
         g_strdup_printf("Unable to parse value(%s) for field %s",
                         prop,
                         tfield->name));
     }
+    xmlFree(prop);
   } else if(tfield->op == FieldOperatorConstant){
-    log_static_error(4,
+    fast_log_static_error(4,
       xmlnode->line,
       "No value specified with a constant operator.");
   } else if(tfield->op == FieldOperatorDefault  && tfield->mandatory){
-    log_static_error(5,
+    fast_log_static_error(5,
       xmlnode->line,
       "No value specified with a default operator on a mandatory field.");
   } else {
-    tfield->hasDefault = FALSE;			
+    tfield->hasDefault = FALSE;
   }
-  
+
   return TRUE;
 }
 
@@ -597,20 +593,20 @@ gboolean parse_operator (xmlNodePtr xmlnode, FieldType * tfield){
  * \param tfield  Field to check
  */
 static gboolean check_valid_operator(xmlNodePtr xmlnode, FieldType * tfield){
-  
+
   if(tfield->op == FieldOperatorIncrement && !is_integer(tfield->type)){
-    log_static_error(2, 
-      xmlnode->line, 
+    fast_log_static_error(2,
+      xmlnode->line,
       g_strdup_printf("Field %s cannot have an operator of type %s\n\
                       Increment can only be used on integers.",
-                      tfield->name, 
+                      tfield->name,
                       xmlnode->name));
     return FALSE;
   }
-  
+
   if(tfield->op == FieldOperatorTail){
     if(is_integer(tfield->type) || tfield->type == FieldTypeDecimal){
-      log_static_error(2,
+      fast_log_static_error(2,
         xmlnode->line,
         g_strdup_printf("Field %s cannot have an operator of type %s\n\
                         Tail can only be used on strings and bytevectors.",
@@ -619,7 +615,7 @@ static gboolean check_valid_operator(xmlNodePtr xmlnode, FieldType * tfield){
       return FALSE;
     }
   }
-    
+
   return TRUE;
 }
 
@@ -674,7 +670,7 @@ void set_field_attributes (xmlNodePtr xmlnode, FieldType* tfield)
       tfield->mandatory = TRUE;
     }
     else {
-      log_static_error(1,
+      fast_log_static_error(1,
         xmlnode->line,
         g_strdup_printf("FAST syntax error: \
                         Error, bad presence option (%s) for field %s",
@@ -717,32 +713,35 @@ gboolean field_type_match (xmlNodePtr node, FieldTypeIdentifier type)
 {
   const xmlChar* str1 = node->name;
   const char* str2 = field_typename (type);
-  
+
   if (type == FieldTypeAsciiString) {
     if (0 == xmlStrcasecmp(str1, (xmlChar*) "string")) {
       /* check if charset is ascii or unicode */
+      gboolean result = TRUE;
       xmlChar * prop = xmlGetProp(node, (xmlChar*) "charset");
       if(prop==NULL){
         /* Assume ascii if not given */
         return TRUE;
       }
-      if(0 == xmlStrcasecmp(prop, (xmlChar*) "ascii")){
-        return TRUE;
-      }
+
+      result = (0 == xmlStrcasecmp(prop, (xmlChar*) "ascii"));
+      xmlFree(prop);
+      return result;
     }
     return FALSE;
   }
   else if (type == FieldTypeUnicodeString) {
     if (0 == xmlStrcasecmp(str1, (xmlChar*) "string")) {
       /* check if charset is ascii or unicode */
+      gboolean result = FALSE;
       xmlChar * prop = xmlGetProp(node, (xmlChar*)"charset");
       if(prop==NULL){
         /* Assume ascii if not given */
         return FALSE;
       }
-      if(0 == xmlStrcasecmp(prop, (xmlChar*) "unicode")){
-        return TRUE;
-      }
+      result = (0 == xmlStrcasecmp(prop, (xmlChar*) "unicode"));
+      xmlFree(prop);
+      return result;
     }
     return FALSE;
   }
@@ -762,5 +761,3 @@ gboolean operator_type_match (xmlNodePtr node, FieldOperatorIdentifier type)
   const char* str2 = operator_typename(type);
   return (0 == xmlStrcasecmp(str1, (xmlChar*) str2));
 }
-
-

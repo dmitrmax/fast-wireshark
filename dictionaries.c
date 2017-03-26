@@ -5,14 +5,14 @@
  * it under the terms of the Lesser GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * FAST Wireshark is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * Lesser GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the Lesser GNU General Public License
- * along with FAST Wireshark.  If not, see 
+ * along with FAST Wireshark.  If not, see
  * <http://www.gnu.org/licenses/lgpl.txt>.
  */
 /*!
@@ -111,38 +111,38 @@ static void free_typed_value(TypedValue* val);
 GHashTable* get_dictionary(const FieldType * ftype, address src, address dest){
   ConversationTables* conversation_tables = NULL;
   GHashTable* dictionary = NULL;
-  
+
   conversation_tables = get_conversation_table(src, dest);
-  
+
   /* Determine if we need a template or a non-template dictionary */
   if(g_strcmp0(ftype->dictionary,TEMPLATE_DICTIONARY) == 0){
-    dictionary = g_hash_table_lookup(conversation_tables->templates, &(ftype->tid));
+    dictionary = (GHashTable*)g_hash_table_lookup(conversation_tables->templates, &(ftype->tid));
     /* If the dictionary does not exist create it */
     if(!dictionary){
       dictionary = g_hash_table_new_full(&g_str_hash,&g_str_equal,
 				       (GDestroyNotify)&g_free,
 				       (GDestroyNotify)&free_typed_value);
       g_hash_table_insert(conversation_tables->templates, int_dup(ftype->tid), dictionary);
-    } 
+    }
   } else {
-    dictionary = g_hash_table_lookup(conversation_tables->normal, ftype->dictionary);
+    dictionary = (GHashTable*)g_hash_table_lookup(conversation_tables->normal, ftype->dictionary);
     /* If the dictionary does not exist create it */
     if(!dictionary){
       dictionary = g_hash_table_new_full(&g_str_hash,&g_str_equal,
 				       (GDestroyNotify)&g_free,
 				       (GDestroyNotify)&free_typed_value);
       g_hash_table_insert(conversation_tables->normal, ftype->dictionary, dictionary);
-    } 
+    }
   }
   /* Should never be run */
   if(!dictionary){BAILOUT(NULL,"Unable to retrieve dictionary");}
-  
+
   return dictionary;
 }
 
 guint32* int_dup(guint32 i){
   guint32* ret = NULL;
-  ret = g_malloc(sizeof(guint32));
+  ret = (guint32*)g_malloc(sizeof(guint32));
   *ret = i;
   return ret;
 }
@@ -158,7 +158,7 @@ ConversationTables * get_conversation_table(address src, address dest){
 				      (GDestroyNotify)&g_hash_table_destroy);
   }
   /* Get the table for this destination, or create if it doesn't exist */
-  dest_table = g_hash_table_lookup(src_table, &src);
+  dest_table = (GHashTable*)g_hash_table_lookup(src_table, &src);
   if(!dest_table){
     dest_table = g_hash_table_new_full(&addressHash, &addressEqual,
 				       (GDestroyNotify)&addressDelete,
@@ -166,22 +166,22 @@ ConversationTables * get_conversation_table(address src, address dest){
     g_hash_table_insert(src_table, copyAddress(&src), dest_table);
   }
   /* Retrieve the conversation tables, or create if not exist */
-  conversation_tables = g_hash_table_lookup(dest_table, &dest);
+  conversation_tables = (ConversationTables*)g_hash_table_lookup(dest_table, &dest);
   if(!conversation_tables){
-    conversation_tables = g_malloc(sizeof(ConversationTables));
+    conversation_tables = (ConversationTables*)g_malloc(sizeof(ConversationTables));
     conversation_tables->normal = g_hash_table_new_full(&g_str_hash, &g_str_equal,
 				       &g_free,(GDestroyNotify)&g_hash_table_destroy);
     conversation_tables->templates = g_hash_table_new_full(&g_int_hash, &g_int_equal,
 				       &g_free,(GDestroyNotify)&g_hash_table_destroy);
     g_hash_table_insert(dest_table, copyAddress(&dest), conversation_tables);
   }
-  
+
   return conversation_tables;
 }
 
 void free_conversation_table(gconstpointer p){
   ConversationTables* conversation_tables = (ConversationTables*)p;
-  
+
   if(conversation_tables->normal){
     g_hash_table_destroy(conversation_tables->normal);
   }
@@ -189,36 +189,39 @@ void free_conversation_table(gconstpointer p){
     g_hash_table_destroy(conversation_tables->templates);
   }
   g_free(conversation_tables);
-  
+
 }
 
-void clear_dictionaries(address src, address dest) 
+void clear_dictionaries(address src, address dest)
 {
   GList* list;
+  GList* node;
   ConversationTables * ctables = get_conversation_table(src, dest);
-  
+
   /* Free all the key/value pairs in all the dictionaries, but keep the
    * dictionaries as they will probably be used again later */
   list = g_hash_table_get_keys(ctables->normal);
-  while(list) {
-    GHashTable* dictionary = g_hash_table_lookup(ctables->normal,
-                                                 ((char*)list->data));
+  node = list;
+  while(node) {
+    GHashTable* dictionary = (GHashTable*)g_hash_table_lookup(ctables->normal,
+                                                 ((char*)node->data));
     g_hash_table_remove_all(dictionary);
-    list = g_list_next(list);
+    node = g_list_next(node);
   }
   g_list_free(list);
-  
+
   /* Same as above, free the value, not the dictionaries as the dictionaries
    * will probably be used again */
   list = g_hash_table_get_keys(ctables->templates);
-  while(list) {
-    GHashTable* dictionary = g_hash_table_lookup(ctables->templates,
-                                                 ((char*)list->data));
+  node = list;
+  while(node) {
+    GHashTable* dictionary = (GHashTable*)g_hash_table_lookup(ctables->templates,
+                                                 ((char*)node->data));
     g_hash_table_remove_all(dictionary);
-    list = g_list_next(list);
+    node = g_list_next(node);
   }
   g_list_free(list);
-  
+
   return;
 }
 
@@ -237,12 +240,12 @@ gboolean get_dictionary_value(const FieldType* ftype,
   gboolean found = FALSE;
   GHashTable* dictionary = 0;
   const TypedValue* prev = 0;
-  
+
   dictionary = get_dictionary(ftype, src, dest);
   if (!ftype->key) {
     BAILOUT(FALSE, "No key on field.");
   }
-  prev = g_hash_table_lookup(dictionary,ftype->key);
+  prev = (TypedValue*)g_hash_table_lookup(dictionary,ftype->key);
   if (prev) {
     /* Determine if the types match */
     if (prev->type == ftype->type) {
@@ -271,13 +274,13 @@ gboolean get_dictionary_value(const FieldType* ftype,
        * if so set status accordingly and return the value
        * otherwise do the same as above but handle for optional (-1 for ints and such)
        */
-      
+
     }
   }
   else {
     fdata->status = FieldUndefined;
   }
-  
+
   return found;
 }
 
@@ -287,14 +290,14 @@ void set_dictionary_value(const FieldType* ftype,
   GHashTable* dictionary = 0;
   TypedValue* prev_value = 0;
   TypedValue* new_value = 0;
-  
+
   dictionary = get_dictionary(ftype, src, dest);
-  
+
   if(!ftype->key) {
     return;
   }
 
-  prev_value = g_hash_table_lookup(dictionary, ftype->key);
+  prev_value = (TypedValue*)g_hash_table_lookup(dictionary, ftype->key);
   /* Recycle the previous value */
   if (prev_value) {
     if (!prev_value->empty) {
@@ -303,7 +306,7 @@ void set_dictionary_value(const FieldType* ftype,
     new_value = prev_value;
   }
   else {
-    new_value = g_malloc(sizeof(TypedValue));
+    new_value = (TypedValue*)g_malloc(sizeof(TypedValue));
   }
   /* Copy in the values */
   new_value->type = ftype->type;

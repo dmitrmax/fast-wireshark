@@ -12,7 +12,7 @@
  * Lesser GNU General Public License for more details.
  *
  * You should have received a copy of the Lesser GNU General Public License
- * along with FAST Wireshark.  If not, see 
+ * along with FAST Wireshark.  If not, see
  * <http://www.gnu.org/licenses/lgpl.txt>.
  */
 /*!
@@ -57,12 +57,12 @@ void err_d(guint8 err_no, FieldData* fdata)
     "[ERR D6] Mandatory field not present, empty previous value",
     "[ERR D7] Invalid subtraction length",
     "[ERR D8] ",
-    "[ERR D9] Template does not exist"  
+    "[ERR D9] Template does not exist"
   };
-  
+
   fdata->status = FieldError;
   fdata->value.ascii.bytes = (guint8*)g_strdup_printf("%s",
-    string_err_d[err_no - 1]); 
+    string_err_d[err_no - 1]);
 }
 
 
@@ -107,7 +107,7 @@ gboolean dissect_shift_null(DissectPosition* position)
     if(0x80 == position->bytes[0]) {
       ret = TRUE;
       position->offjmp = 1;
-      ShiftBytes(position);    
+      ShiftBytes(position);
     }
   }
   else {
@@ -139,7 +139,7 @@ void basic_dissect_pmap (const DissectPosition* parent_position,
     BAILOUT(;,"PMAP length is zero bytes?");
   }
 
-  position->pmap = g_malloc (position->pmap_len * sizeof(gboolean));
+  position->pmap = (gboolean*)g_malloc (position->pmap_len * sizeof(gboolean));
   if (!position->pmap) {
     position->pmap_len = 0;
     BAILOUT(;,"Could not allocate memory.");
@@ -243,7 +243,7 @@ void basic_dissect_ascii_string (DissectPosition* position, FieldData* fdata)
                                              position->bytes);
   nbytes = position->offjmp;
   fdata->nbytes = nbytes;
-  bytes = g_malloc ((1+ nbytes) * sizeof(guint8));
+  bytes = (guint8*)g_malloc ((1+ nbytes) * sizeof(guint8));
   if (bytes) {
     decode_ascii_string (position->offjmp, position->bytes, bytes);
     bytes[nbytes] = 0;
@@ -252,4 +252,3 @@ void basic_dissect_ascii_string (DissectPosition* position, FieldData* fdata)
   }
   ShiftBytes(position);
 }
-

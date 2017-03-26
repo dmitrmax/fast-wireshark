@@ -12,7 +12,7 @@
  * Lesser GNU General Public License for more details.
  *
  * You should have received a copy of the Lesser GNU General Public License
- * along with FAST Wireshark.  If not, see 
+ * along with FAST Wireshark.  If not, see
  * <http://www.gnu.org/licenses/lgpl.txt>.
  */
 /*!
@@ -26,7 +26,7 @@
 #include "template.h"
 #include "dictionaries.h"
 #include "dissect.h"
-  
+
 
 /*! \brief  Save some typing when initializing variables
  *          in a dissect_TYPE function.
@@ -35,7 +35,7 @@
  * \param tnode  Template tree node containing /ftype/.
  * \param dnode  Dissect tree node containing /fdata/.
  */
-static gboolean dissect_int_op(gint64 * delta, const FieldType * ftype, 
+static gboolean dissect_int_op(gint64 * delta, const FieldType * ftype,
                                FieldData * fdata, DissectPosition * position, address* src, address* dest);
 
 
@@ -55,7 +55,14 @@ gboolean dissect_ascii_delta(const FieldType* ftype, FieldData* fdata,
   ftype = (FieldType*) tnode->data; \
   fdata = (FieldData*) dnode->data;
 
-  
+#define SetupDissectStackNoFieldData(ftype, tnode, dnode) \
+  const FieldType* ftype; \
+  ftype = (FieldType*) tnode->data;
+
+#define SetupDissectStackNoFieldType(fdata, tnode, dnode) \
+  FieldData* fdata; \
+  fdata = (FieldData*) dnode->data;
+
 gboolean dissect_int_op(gint64* delta,
                         const FieldType* ftype,
                         FieldData* fdata,
@@ -63,22 +70,22 @@ gboolean dissect_int_op(gint64* delta,
 {
   gboolean presence_bit;
   gboolean dissect_it = FALSE;
-  
-  
+
+
   switch(ftype->op) {
     case FieldOperatorConstant:
       BAILOUT(FALSE;,"Don't try to set the dictionary value on a constant");
       break;
-      
+
     case FieldOperatorDelta:
       {
-        FieldData fdata_temp; 
+        FieldData fdata_temp;
         get_dictionary_value(ftype, fdata, *src, *dest);
-        
+
         if(FieldUndefined == fdata->status)
         {
           fdata->status = FieldExists;
-          
+
           if(ftype->hasDefault) {
             copy_field_value(ftype->type, &ftype->value, &fdata->value);
           } else {
@@ -91,16 +98,16 @@ gboolean dissect_int_op(gint64* delta,
     err_d(6, fdata);
           return FALSE;
         }
-        
+
         basic_dissect_int64(position, &fdata_temp);
         *delta = fdata_temp.value.i64;
         if (!ftype->mandatory && 0 < *delta) {
           *delta -= 1;
         }
-      
-      }      
+
+      }
       break;
-      
+
     case FieldOperatorIncrement:
       presence_bit = dissect_shift_pmap(position);
       if(presence_bit) {
@@ -109,7 +116,7 @@ gboolean dissect_int_op(gint64* delta,
       else {
         /* do a dictionary lookup */
         get_dictionary_value(ftype, fdata, *src, *dest);
-          
+
         if(FieldEmpty == fdata->status && ftype->mandatory)
         {
     err_d(6, fdata);
@@ -124,12 +131,12 @@ gboolean dissect_int_op(gint64* delta,
         }
       }
       break;
-      
+
     default:
-      dissect_it = TRUE;      
+      dissect_it = TRUE;
       break;
   }
-  
+
   return dissect_it;
 }
 
@@ -151,55 +158,55 @@ gboolean dissect_ascii_delta(const FieldType* ftype, FieldData* fdata,
   gint64 cut_length;
   gint64 input_str_len;
   gboolean append_to_front;
-  
+
   /* get the subtraction length */
   basic_dissect_int32(position, &fdata_temp);
   subtract = fdata_temp.value.i32;
-  
+
   /* get the previous string */
   if(!get_dictionary_value(ftype, &lookup, *src, *dest)) {
     return TRUE;
   }
-  
+
   /* get the input string */
   basic_dissect_ascii_string (position, &input_str);
-  
+
   /* ERROR catching for D7 */
-  
+
   /* subtration length is greater than 5 */
   if(fdata_temp.nbytes > 5){
-    
+
     err_d(7, fdata);
     cleanup_field_value(FieldTypeAsciiString, &lookup.value);
     return FALSE;
   }
   /* subtraction length equal to 5 and... */
-  if(fdata_temp.nbytes == 5 && 
+  if(fdata_temp.nbytes == 5 &&
      (FieldError == fdata_temp.status)) {
-    
+
     err_d(7, fdata);
     cleanup_field_value(FieldTypeAsciiString, &lookup.value);
     return FALSE;
   }
-  
+
   /* append to front or tail? */
   append_to_front = (subtract < 0);
   if(append_to_front)
     subtract = -(subtract + 1);
 
-  if(lookup.value.ascii.nbytes < subtract) 
+  if((gint32)lookup.value.ascii.nbytes < subtract)
   {
     /* if the previous value is shorter than the
      * subtraction length, this is an error.
      */
     cleanup_field_value(FieldTypeAsciiString, &input_str.value);
-    cleanup_field_value(FieldTypeAsciiString, &lookup.value); 
-    
+    cleanup_field_value(FieldTypeAsciiString, &lookup.value);
+
     err_d(7, fdata);
     return FALSE;
 
   }
-  
+
   /* malloc space for new string */
   cut_length = lookup.value.ascii.nbytes - subtract;
   input_str_len = input_str.value.ascii.nbytes;
@@ -208,36 +215,36 @@ gboolean dissect_ascii_delta(const FieldType* ftype, FieldData* fdata,
           g_malloc((fdata->value.ascii.nbytes + 1)*sizeof(guint8));
 
   if(append_to_front)
-  {    
-    /* append input string to front */                                      
+  {
+    /* append input string to front */
     memcpy(fdata->value.ascii.bytes,
-           input_str.value.ascii.bytes, 
+           input_str.value.ascii.bytes,
            input_str_len);
-    
-    /* append cut string to end */       
+
+    /* append cut string to end */
     memcpy(fdata->value.ascii.bytes + input_str_len,
            lookup.value.ascii.bytes + subtract,
            cut_length);
-  } 
-  else 
+  }
+  else
   {
-    /* append cut string to front */                                      
+    /* append cut string to front */
     memcpy(fdata->value.ascii.bytes,
            lookup.value.ascii.bytes,
            cut_length);
-    
+
     /* append input string to end */
     memcpy(fdata->value.ascii.bytes + cut_length,
-           input_str.value.ascii.bytes, 
+           input_str.value.ascii.bytes,
            input_str_len);
   }
-    
+
   /* null terminator */
   fdata->value.ascii.bytes[fdata->value.ascii.nbytes] = 0;
-  
+
   cleanup_field_value(FieldTypeAsciiString, &input_str.value);
   cleanup_field_value(FieldTypeAsciiString, &lookup.value);
-  
+
   return FALSE;
 }
 
@@ -389,25 +396,25 @@ void dissect_value (const GNode* tnode,
 
   if (fdata->status == FieldExists) {
     gboolean operator_used = FALSE;
-  
+
     switch (ftype->op) {
       case FieldOperatorCopy:
         operator_used = dissect_copy(tnode, position, dnode, src, dest);
         break;
-        
+
       case FieldOperatorConstant:
         copy_field_value(ftype->type, &ftype->value, &fdata->value);
         operator_used = TRUE;
         break;
-        
+
       case FieldOperatorDefault:
         operator_used = dissect_default(tnode, position, dnode, src, dest);
         break;
-        
+
       default:
         break;
-    } 
-       
+    }
+
     if(!operator_used) {
       /* Call the dissect function. */
       (*dissect_fn_map[ftype->type]) (tnode, position, dnode, src, dest);
@@ -431,7 +438,7 @@ void dissect_optional (const GNode* tnode,
     BAILOUT(;,"Don't call this function on a mandatory field.");
   }
   if ((FieldTypeDecimal == ftype->type ||
-       FieldTypeSequence == ftype->type) 
+       FieldTypeSequence == ftype->type)
       && FieldOperatorNone == ftype->op) {
     dissect_optional (tnode->children, position, dnode, src, dest);
     return;
@@ -464,7 +471,7 @@ void dissect_optional (const GNode* tnode,
       DBG0("Bad operator type.");
       break;
   }
-  
+
   if ((fdata->status == FieldEmpty) && check_pmap) {
     gboolean bit = dissect_peek_pmap(position);
     if (( bit && !check_null) ||
@@ -489,38 +496,38 @@ gboolean dissect_copy(const GNode* tnode,
 {
   gboolean used = TRUE;
   gboolean presence_bit;
-  
+
   SetupDissectStack(ftype, fdata, tnode, dnode);
-  
+
   presence_bit = dissect_shift_pmap(position);
   if(presence_bit) {
     used = FALSE;
   } else {
     get_dictionary_value(ftype, fdata, *src, *dest);
-    
+
     if(FieldUndefined == fdata->status && ftype->mandatory)
     {
       err_d(5, fdata);
-      
+
       return FALSE;
     }
     else if(FieldEmpty == fdata->status && ftype->mandatory)
     {
       err_d(6, fdata);
-      
+
       return FALSE;
     }
-    
+
   }
-  
+
   return used;
-}                      
+}
 
 
 gboolean dissect_default(const GNode* tnode,
                          DissectPosition* position, GNode* dnode, address* src, address* dest)
 {
-  gboolean used = TRUE;  
+  gboolean used = TRUE;
   gboolean presence_bit;
   SetupDissectStack(ftype, fdata,  tnode, dnode);
   presence_bit = dissect_shift_pmap(position);
@@ -541,15 +548,15 @@ void dissect_uint32 (const GNode* tnode,
   gboolean dissect_it = FALSE;
   SetupDissectStack(ftype, fdata,  tnode, dnode);
 
-  dissect_it = dissect_int_op(&delta, ftype, fdata, position, src, dest);  
-  
+  dissect_it = dissect_int_op(&delta, ftype, fdata, position, src, dest);
+
   if(dissect_it) {
     basic_dissect_uint32(position, fdata);
     if (!ftype->mandatory) {
       delta = -1;
     }
   }
-    
+
   fdata->value.u32 = (guint32) (fdata->value.u32 + delta);
   set_dictionary_value(ftype, fdata, *src, *dest);
 }
@@ -563,14 +570,14 @@ void dissect_uint64 (const GNode* tnode,
   SetupDissectStack(ftype, fdata,  tnode, dnode);
 
   dissect_it = dissect_int_op(&delta, ftype, fdata, position, src, dest);
-  
+
   if (dissect_it) {
     basic_dissect_uint64 (position, fdata);
     if (!ftype->mandatory) {
       delta = -1;
     }
   }
-  
+
   fdata->value.u64 += delta;
   set_dictionary_value(ftype, fdata, *src, *dest);
 }
@@ -584,13 +591,13 @@ void dissect_int32 (const GNode* tnode,
   SetupDissectStack(ftype, fdata,  tnode, dnode);
 
   dissect_it = dissect_int_op(&delta, ftype, fdata, position, src, dest);
-  
+
   if (dissect_it) {
     basic_dissect_int32 (position, fdata);
     if (!ftype->mandatory && 0 < fdata->value.i32) {
       delta = -1;
     }
-    
+
   }
 
   fdata->value.i32 = (gint32) (fdata->value.i32 + delta);
@@ -606,15 +613,15 @@ void dissect_int64 (const GNode* tnode,
   SetupDissectStack(ftype, fdata,  tnode, dnode);
 
   dissect_it = dissect_int_op(&delta, ftype, fdata, position, src, dest);
-  
+
   if (dissect_it) {
     basic_dissect_int64 (position, fdata);
-    
+
     if (!ftype->mandatory && 0 < fdata->value.i64) {
       delta = -1;
     }
   }
-  
+
   fdata->value.i64 += delta;
   set_dictionary_value(ftype, fdata, *src, *dest);
 }
@@ -625,25 +632,25 @@ void dissect_decimal (const GNode* tnode,
 {
   gint32 expt;       gint64 mant;
   GNode* expt_node;  GNode* mant_node;
-   
+
   SetupDissectStack(ftype, fdata,  tnode, dnode);
 
   /* Assure existence of 2 child nodes. */
   if (!tnode->children || !tnode->children->next) {
     BAILOUT(;,"Error in internal decimal field setup.");
   }
-  
+
   expt_node = tnode->children;
   mant_node = expt_node->next;
-  
+
   if(FieldOperatorDelta == ftype->op) {
-    gint64 delta = 0; 
+    gint64 delta = 0;
     FieldData expt_data;
     FieldData mant_data;
     dissect_int_op(&delta, ftype, &expt_data, position, src, dest);
     expt = (gint32) (delta + expt_data.value.decimal.exponent);
-    
-    dissect_int_op(&delta, ftype, &mant_data, position, src, dest);    
+
+    dissect_int_op(&delta, ftype, &mant_data, position, src, dest);
     mant = delta + mant_data.value.decimal.mantissa;
   }
   else {
@@ -654,7 +661,7 @@ void dissect_decimal (const GNode* tnode,
     dissect_value (mant_node, position, dnode, src, dest);
     mant = fdata->value.i64;
   }
-  
+
   fdata->value.decimal.mantissa = mant;
   fdata->value.decimal.exponent = expt;
 
@@ -680,7 +687,7 @@ void dissect_ascii_string (const GNode* tnode,
     case FieldOperatorDelta:
     case FieldOperatorTail:
         dissect_it = dissect_ascii_delta(ftype, fdata, position, src, dest);
-      break; 
+      break;
     default:
       DBG0("Invalid Operator.");
       break;
@@ -688,7 +695,7 @@ void dissect_ascii_string (const GNode* tnode,
   if (dissect_it) {
     basic_dissect_ascii_string (position, fdata);
   }
-  
+
   set_dictionary_value(ftype, fdata, *src, *dest);
 }
 
@@ -723,7 +730,7 @@ void dissect_byte_vector (const GNode* tnode,
       break;
     case FieldOperatorDelta:
     case FieldOperatorTail:
-      {    
+      {
         SizedData* vec;
         FieldData fdata_temp;
         FieldData input_str;
@@ -732,18 +739,18 @@ void dissect_byte_vector (const GNode* tnode,
         gint64 cut_length;
         gint64 input_str_len;
         gboolean append_to_front;
-        
+
         /* get the subtraction length */
         basic_dissect_int64(position, &fdata_temp);
         subtract = fdata_temp.value.i64;
-        
+
         /* get the previous string */
-        if(!get_dictionary_value(ftype, &lookup, *src, *dest)) 
+        if(!get_dictionary_value(ftype, &lookup, *src, *dest))
         {
           dissect_it = TRUE;
           break;
         }
-        
+
         /* get the input string */
         /* ----------------------------- TODO: generalize this. */
         vec = &input_str.value.bytevec;
@@ -756,7 +763,7 @@ void dissect_byte_vector (const GNode* tnode,
         /* Get the byte vector. */
         position->offjmp = vec->nbytes;
 
-        vec->bytes = g_malloc ((1+vec->nbytes) * sizeof(guint8));
+        vec->bytes = (guint8*)g_malloc ((1+vec->nbytes) * sizeof(guint8));
 
         if (vec->bytes) {
           decode_byte_vector (vec->nbytes, position->bytes, vec->bytes);
@@ -765,23 +772,23 @@ void dissect_byte_vector (const GNode* tnode,
 
         ShiftBytes(position);
         /* --------------------------------- */
-        
+
         /* append to front or tail? */
         append_to_front = (subtract < 0);
         if(append_to_front)
           subtract = -(subtract + 1);
 
-        if(lookup.value.bytevec.nbytes < subtract) 
+        if(lookup.value.bytevec.nbytes < subtract)
         {
           /* if the previous value is shorter than the
            * subtraction length, this is an error.
            *
            */
           cleanup_field_value(FieldTypeByteVector, &input_str.value);
-          cleanup_field_value(FieldTypeByteVector, &lookup.value); 
+          cleanup_field_value(FieldTypeByteVector, &lookup.value);
 	  err_d(7, fdata);
         }
-        
+
         /* malloc space for new string */
         cut_length = lookup.value.bytevec.nbytes - subtract;
         input_str_len = input_str.value.bytevec.nbytes;
@@ -790,37 +797,37 @@ void dissect_byte_vector (const GNode* tnode,
                 g_malloc((fdata->value.bytevec.nbytes + 1)*sizeof(guint8));
 
         if(append_to_front)
-        {    
-          /* append input string to front */                                      
+        {
+          /* append input string to front */
           memcpy(fdata->value.bytevec.bytes,
-                 input_str.value.bytevec.bytes, 
+                 input_str.value.bytevec.bytes,
                  input_str_len);
-          
-          /* append cut string to end */       
+
+          /* append cut string to end */
           memcpy(fdata->value.bytevec.bytes + input_str_len,
                  lookup.value.bytevec.bytes + subtract,
                  cut_length);
-        } 
-        else 
+        }
+        else
         {
-          /* append cut string to front */                                      
+          /* append cut string to front */
           memcpy(fdata->value.bytevec.bytes,
                  lookup.value.bytevec.bytes,
                  cut_length);
-          
+
           /* append input string to end */
           memcpy(fdata->value.bytevec.bytes + cut_length,
-                 input_str.value.bytevec.bytes, 
+                 input_str.value.bytevec.bytes,
                  input_str_len);
         }
-          
+
         /* null terminator */
         fdata->value.bytevec.bytes[fdata->value.ascii.nbytes] = 0;
-        
+
         cleanup_field_value(FieldTypeByteVector, &input_str.value);
         cleanup_field_value(FieldTypeByteVector, &lookup.value);
       }
-      break; 
+      break;
     default:
       DBG0("Invalid Operator.");
       break;
@@ -837,7 +844,7 @@ void dissect_byte_vector (const GNode* tnode,
     /* Get the byte vector. */
     position->offjmp = vec->nbytes;
 
-    vec->bytes = g_malloc ((1+vec->nbytes) * sizeof(guint8));
+    vec->bytes = (guint8*)g_malloc ((1+vec->nbytes) * sizeof(guint8));
 
     if (vec->bytes) {
       decode_byte_vector (vec->nbytes, position->bytes, vec->bytes);
@@ -855,7 +862,7 @@ void dissect_group (const GNode* tnode,
 {
   DissectPosition stacked_position;
   DissectPosition* nested_position;
-  SetupDissectStack(ftype, fdata,  tnode, dnode);
+  SetupDissectStackNoFieldData(ftype, tnode, dnode);
 
   if (ftype->value.pmap_exists) {
     basic_dissect_pmap (position, &stacked_position);
@@ -886,7 +893,7 @@ void dissect_sequence (const GNode* tnode,
   GNode* parent;
   GNode* length_tnode;
   GNode* group_tnode;
-  SetupDissectStack(ftype, fdata,  tnode, dnode);
+  SetupDissectStackNoFieldType(fdata,  tnode, dnode);
 
   if (!tnode->children || !tnode->children->next) {
     BAILOUT(;,"Error in sequence setup.");
@@ -910,4 +917,3 @@ void dissect_sequence (const GNode* tnode,
     dnode = dissect_descend (group_tnode, position, parent, dnode, src, dest);
   }
 }
-
