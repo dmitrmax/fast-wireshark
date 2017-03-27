@@ -20,46 +20,30 @@
  * \file template.c
  * \brief  Handle template storage/lookups.
  */
-
+#include "config.h"
+#include "wmem_aux.h"
 #include "debug.h"
 #include "decode.h"
 #include "template.h"
 
-static GHashTable* template_table = 0;
-static GNode* template_tree = 0;
-
 static gboolean requires_pmap_bit (const FieldType* ftype);
 static void fixup_walk_template (FieldType* parent, GNode* parent_node);
 
-
-void add_templates (GNode* templates)
+wmem_map_t* create_templates_table(GNode* templates)
 {
   GNode* tmpl;
-
-  /* TODO: Clear hash table and free old templates. */
-
-  if (!template_table) {
-    template_table = g_hash_table_new (&g_int_hash, &g_int_equal);
-  }
-
-  if(!templates){
-    return;
-  }
-
-  template_tree = templates;
-
-  if (!template_table)  BAILOUT(;,"Template lookup table not created.");
+  wmem_map_t* result = wmem_map_new(wmem_epan_scope(), &g_int_hash, &g_int_equal);
 
   /* Loop thru templates, add each to lookup table. */
-  for (tmpl = templates->children;  tmpl;  tmpl = tmpl->next) {
-    FieldType* tfield;
-    tfield = (FieldType*) tmpl->data;
+  for (tmpl = templates->children; tmpl; tmpl = tmpl->next) {
+    FieldType* tfield = (FieldType*) tmpl->data;
     tfield->value.pmap_exists = TRUE;
     fixup_walk_template (tfield, tmpl);
-    g_hash_table_insert (template_table, &tfield->id, tmpl);
+    wmem_map_insert(result, &tfield->id, tmpl);
   }
-}
 
+  return result;
+}
 
 const gchar* field_typename (FieldTypeIdentifier type)
 {
@@ -99,16 +83,8 @@ const gchar* operator_typename (FieldOperatorIdentifier type)
 GNode* create_field (FieldTypeIdentifier type,
                      FieldOperatorIdentifier op)
 {
-  FieldType* field;
-  GNode* node;
-  field = (FieldType*)g_malloc (sizeof (FieldType));
-  if (!field)  BAILOUT(0, "Error g_malloc().");
-
-  node = g_node_new (field);
-  if (!node) {
-    g_free (field);
-    BAILOUT(0, "Error g_new_node().");
-  }
+  FieldType* field = (FieldType*)wmem_new(wmem_epan_scope(), FieldType);
+  GNode* node = wmem_node_new (wmem_epan_scope(), field);
 
   field->name       = 0;
   field->id         = 0;
@@ -121,14 +97,6 @@ GNode* create_field (FieldTypeIdentifier type,
   field->dictionary = 0;
 
   return node;
-}
-
-
-GNode* find_template (guint32 id)
-{
-  gint key;
-  key = (gint) id;
-  return (GNode*) g_hash_table_lookup (template_table, &key);
 }
 
 /*! \brief  Check if a field type needs a bit in the PMAP. */
@@ -183,7 +151,11 @@ void fixup_walk_template (FieldType* parent, GNode* parent_node)
 }
 
 
-GNode* full_templates_tree (void)
-{
-  return template_tree;
-}
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 2
+ * tab-width: 2
+ * indent-tabs-mode: nil
+ * End:
+ */

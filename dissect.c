@@ -21,6 +21,7 @@
  */
 
 #include <string.h>
+#include "wmem_aux.h"
 #include "debug.h"
 #include "decode.h"
 #include "template.h"
@@ -211,8 +212,7 @@ gboolean dissect_ascii_delta(const FieldType* ftype, FieldData* fdata,
   cut_length = lookup.value.ascii.nbytes - subtract;
   input_str_len = input_str.value.ascii.nbytes;
   fdata->value.ascii.nbytes = cut_length + input_str_len;
-  fdata->value.ascii.bytes = (guint8 *)
-          g_malloc((fdata->value.ascii.nbytes + 1)*sizeof(guint8));
+  fdata->value.ascii.bytes = (guint8 *) wmem_alloc(wmem_file_scope(), (fdata->value.ascii.nbytes + 1) * sizeof(guint8));
 
   if(append_to_front)
   {
@@ -248,18 +248,14 @@ gboolean dissect_ascii_delta(const FieldType* ftype, FieldData* fdata,
   return FALSE;
 }
 
-
-GNode* dissect_fast_bytes (DissectPosition* position, GNode* parent, address* src, address* dest)
+GNode* dissect_fast_bytes (wmem_map_t* templates, DissectPosition* position, GNode* parent, address* src, address* dest)
 {
   static guint32 template_id = 0;
   GNode* tmpl = 0; /* Template. */
   FieldData* fdata; /* Template ID data node. */
 
   /* Initialize head node. */
-  fdata = (FieldData*) g_malloc (sizeof (FieldData));
-  if (!fdata) {
-    BAILOUT(0,"Could not allocate memory.");
-  }
+  fdata = (FieldData*) wmem_new(wmem_packet_scope(), FieldData);
   fdata->start  = position->offset;
   fdata->nbytes = 0;
   fdata->status  = FieldEmpty;
@@ -269,7 +265,6 @@ GNode* dissect_fast_bytes (DissectPosition* position, GNode* parent, address* sr
   basic_dissect_pmap (position, position);
 
   if (!position->pmap) {
-    g_free (fdata);
     BAILOUT(0,"PMAP not set.");
   }
 
@@ -280,11 +275,10 @@ GNode* dissect_fast_bytes (DissectPosition* position, GNode* parent, address* sr
     template_id = fdata->value.u32;
   }
 
-  tmpl = find_template (template_id);
+  tmpl = (GNode*) wmem_map_lookup(templates, &template_id);
 
   /* If no template return null */
   if (!tmpl) {
-    g_free(position->pmap);
     return 0;
   }
 
@@ -296,7 +290,6 @@ GNode* dissect_fast_bytes (DissectPosition* position, GNode* parent, address* sr
   }
 
   fdata->nbytes = position->offset - fdata->start;
-  g_free(position->pmap);
   return tmpl;
 }
 
@@ -333,20 +326,15 @@ GNode* dissect_descend (const GNode* tnode,
   }
 
   /* Set up data. */
-  fdata = (FieldData*) g_malloc (sizeof (FieldData));
-  if (!fdata)  BAILOUT(0,"Could not allocate memory.");
+  fdata = (FieldData*) wmem_new(wmem_file_scope(), FieldData);
 
-  dnode_next = g_node_new (fdata);
-  if (!dnode_next) {
-    g_free (fdata);
-    BAILOUT(0,"Could not allocate memory.");
-  }
+  dnode_next = wmem_node_new(wmem_file_scope(), fdata);
   g_node_insert_after(parent, dnode, dnode_next);
 
   dissect_value(tnode, position, dnode_next, src, dest);
 
   if(!(dnode_next->parent)){
-    g_node_destroy(dnode_next);   /* TODO: wat? */
+    g_node_unlink(dnode_next);   /* TODO: wat? */
     /* As we are building the tree,
      * the last node added will the the one we just made.
      */
@@ -763,7 +751,7 @@ void dissect_byte_vector (const GNode* tnode,
         /* Get the byte vector. */
         position->offjmp = vec->nbytes;
 
-        vec->bytes = (guint8*)g_malloc ((1+vec->nbytes) * sizeof(guint8));
+        vec->bytes = (guint8*)wmem_alloc (wmem_file_scope(), (1+vec->nbytes) * sizeof(guint8));
 
         if (vec->bytes) {
           decode_byte_vector (vec->nbytes, position->bytes, vec->bytes);
@@ -793,8 +781,7 @@ void dissect_byte_vector (const GNode* tnode,
         cut_length = lookup.value.bytevec.nbytes - subtract;
         input_str_len = input_str.value.bytevec.nbytes;
         fdata->value.bytevec.nbytes = cut_length + input_str_len;
-        fdata->value.bytevec.bytes = (guint8 *)
-                g_malloc((fdata->value.bytevec.nbytes + 1)*sizeof(guint8));
+        fdata->value.bytevec.bytes = (guint8 *)wmem_alloc(wmem_file_scope(), (fdata->value.bytevec.nbytes + 1)*sizeof(guint8));
 
         if(append_to_front)
         {
@@ -844,7 +831,7 @@ void dissect_byte_vector (const GNode* tnode,
     /* Get the byte vector. */
     position->offjmp = vec->nbytes;
 
-    vec->bytes = (guint8*)g_malloc ((1+vec->nbytes) * sizeof(guint8));
+    vec->bytes = (guint8*)wmem_alloc (wmem_file_scope(), (1+vec->nbytes) * sizeof(guint8));
 
     if (vec->bytes) {
       decode_byte_vector (vec->nbytes, position->bytes, vec->bytes);
@@ -878,10 +865,6 @@ void dissect_group (const GNode* tnode,
 
   position->offjmp = nested_position->offset - position->offset;
   ShiftBytes(position);
-
-  if (stacked_position.pmap) {
-    g_free(stacked_position.pmap);
-  }
 }
 
 

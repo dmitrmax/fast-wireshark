@@ -28,6 +28,8 @@
 
 #ifndef TEMPLATE_H_INCLUDED_
 #define TEMPLATE_H_INCLUDED_
+#include "config.h"
+#include <epan/wmem/wmem.h>
 #include "basic-field.h"
 
 /*! \brief  Hold data relevant to a template definition.
@@ -48,10 +50,10 @@ struct field_type_struct
 };
 typedef struct field_type_struct FieldType;
 
-/*! \brief  Add a new template to the lookup table.
+/*! \brief  Creates templates lookup table for a given templates tree.
  * \param templ  The root of the templates tree.
  */
-void add_templates (GNode* tmpl);
+wmem_map_t* create_templates_table(GNode* tmpl);
 
 /*!
  * \brief  Retrieve the name of the field type.
@@ -74,20 +76,18 @@ const gchar* operator_typename (FieldOperatorIdentifier type);
  * \param  type  Type of the field to be created.
  * \param  op  Any operator to be used with the new field.
  * \return  The new, initialized node holding a non-null FieldType.
- *          Both the GNode and the FieldType must be g_free()'d.
  *          NULL if a malloc failed.
  */
 GNode* create_field (FieldTypeIdentifier type,
                      FieldOperatorIdentifier op);
 
-/*! \brief  Lookup a template by its ID.
- *  \param id  Identifier for the template.
- *  \return  NULL if no template could be found.
- */
-GNode* find_template (guint32 id);
-
-/*! \brief  Get the entire templates tree.
- */
-GNode* full_templates_tree (void);
-
 #endif
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 2
+ * tab-width: 2
+ * indent-tabs-mode: nil
+ * End:
+ */

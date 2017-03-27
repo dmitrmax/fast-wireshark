@@ -39,7 +39,9 @@
 #include <gmodule.h>
 #include <epan/prefs.h>
 #include <epan/packet.h>
+#include <epan/proto_data.h>
 #include <epan/column-info.h>
+#include <epan/conversation.h>
 #include <epan/uat.h>
 
 #include "debug.h"
@@ -50,23 +52,36 @@
 #include "debug-tree.h"
 #include "error_log.h"
 
+#include "wmem_aux.h"
+
 void proto_register_fast(void);
 void proto_reg_handoff_fast(void);
 
 /* User Access Table */
 typedef struct _fast_port_item_t {
-    guint port;
-} fast_port_item_t;
+  guint8 proto;
+  guint  port;
+  guint8 favor;
+  gchar* template_file;
+} fast_uat_item_t;
+
+typedef struct _fast_templates_storage
+{
+  gchar*      filename;
+  GNode*      templates;
+  wmem_map_t* templates_table;
+  gboolean    used;
+} fast_templates_storage_t;
 
 /* Checks to see if a particular packet information element is needed for the packet list */
 #define CHECK_COL(cinfo, el) \
-    /* We are constructing columns, and they're writable */ \
-    (col_get_writable(cinfo, el) && \
-      /* There is at least one column in that format */ \
-    ((cinfo)->col_first[el] >= 0))
+  /* We are constructing columns, and they're writable */ \
+  (col_get_writable(cinfo, el) &&                         \
+   /* There is at least one column in that format */      \
+   ((cinfo)->col_first[el] >= 0))
 
 
-#define UNNAMED "un-named"
+static const char* UNNAMED = "unnamed";
 
 /*! Global id of our protocol plugin used by Wireshark. */
 static int proto_fast = -1;
@@ -81,11 +96,8 @@ static gint ett_fast = -1;
 
 /****** Preference controls ******/
 /*! Port number to use. */
-static fast_port_item_t* fast_uats = NULL;
+static fast_uat_item_t* fast_uats = NULL;
 static guint             config_n_port_items = 0;
-static char * config_port_field = "udp.port";
-/*! Template xml file, absolute or relative pathname. */
-static const char* config_template_xml_path = NULL;
 /*! Shows empty fields in data tree if true */
 static gboolean show_empty_optional_fields = 1;
 /*! If true does not capture or dissect packets */
@@ -99,7 +111,6 @@ static gboolean showFieldMandatoriness = 0;
 static gboolean config_show_dialog_windows = 1;
 static gboolean config_log_errors = 1;
 static const char* config_log_file_name = NULL;
-static gboolean reparse_templates = 1; /* Tells dissector to reparse the template xml file */
 static uat_t   *config_port_list_uat = NULL;
 
 enum ProtocolImplem { GenericImplem, CMEImplem, UMDFImplem, MOEXImplem, NImplem };
@@ -108,18 +119,17 @@ enum Protocol { UDPImplem, TCPImplem, NOImplem };
 static gint implementation = 0;
 /*! Default protocol is UDP (0).  Other option is TCP (1)*/
 static gint protocol = 0;
-/*! Table to hold pointers to previously dissected
- * packets to assure sequential disection.
- */
-static GHashTable* dissected_packets_table = 0;
+
+static wmem_map_t* templates_map = NULL;
+static wmem_map_t* port_map = NULL;
 
 struct packet_data_struct
 {
-  GList* dataTrees;
-  GList* tmplTrees;
+  wmem_list_t* dataTrees;
+  wmem_list_t* tmplTrees;
   guint32 frameNum;
 };
-typedef struct packet_data_struct PacketData;
+typedef struct packet_data_struct packet_data_t;
 
 
 /*** Forward declarations. ***/
@@ -131,19 +141,41 @@ static void display_message (tvbuff_t* tvb, proto_tree* tree,
 static void display_fields (tvbuff_t* tvb, proto_tree* tree,
                             const GNode* tnode, const GNode* dnode,
                             packet_info* pinfo);
-static char * toDecimal(gint32 expt, gint64 mant);
+static char * to_decimal(gint32 expt, gint64 mant);
 static char * generate_field_info(const FieldType* ftype);
 
-UAT_DEC_CB_DEF(fast_uats, port, fast_port_item_t)
+UAT_VS_DEF(fast_uats, proto, fast_uat_item_t, guint8, 0, "UDP")
+UAT_DEC_CB_DEF(fast_uats, port, fast_uat_item_t)
+UAT_VS_DEF(fast_uats, favor, fast_uat_item_t, guint8, 0, "Generic")
+UAT_FILENAME_CB_DEF(fast_uats, template_file, fast_uat_item_t)
 
 /*! \brief  Register the plugin with Wireshark.
  * This function is called by Wireshark
  */
 
+static void *
+fast_config_port_list_copy_cb(void* n, const void* o, size_t siz _U_)
+{
+  fast_uat_item_t* new_item = (fast_uat_item_t*)n;
+  const fast_uat_item_t* old_item = (const fast_uat_item_t *)o;
+
+  new_item->proto = old_item->proto;
+  new_item->port  = old_item->port;
+  new_item->favor = old_item->favor;
+
+  if (old_item->template_file) {
+    new_item->template_file = g_strdup(old_item->template_file);
+  } else {
+    new_item->template_file = NULL;
+  }
+
+  return new_item;
+}
+
 static gboolean
 fast_config_port_list_update_cb(void* r _U_, char** err)
 {
-    const fast_port_item_t* item = (const fast_port_item_t*)r;
+    const fast_uat_item_t* item = (const fast_uat_item_t*)r;
 
     if(item->port < 65536 && item->port > 0)
         return TRUE;
@@ -151,6 +183,14 @@ fast_config_port_list_update_cb(void* r _U_, char** err)
     if (err)
         *err = g_strdup("Port value must be in range of 1 to 65535");
     return FALSE;
+}
+
+static void
+fast_config_port_list_free_cb(void*r)
+{
+  fast_uat_item_t* item = (fast_uat_item_t *)r;
+
+  if (item->template_file) g_free(item->template_file);
 }
 
 void proto_register_fast (void)
@@ -187,9 +227,26 @@ void proto_register_fast (void)
     { 0, 0, 0 }
   };
 
+  static const value_string fast_transport_proto_vals[] = {
+    { UDPImplem, "UDP" },
+    { TCPImplem, "TCP" },
+    { 0, NULL }
+  };
+
+  static const value_string fast_application_proto_vals[] = {
+    { GenericImplem, "Generic" },
+    { CMEImplem, "CME" },
+    { UMDFImplem, "UMDF" },
+    { MOEXImplem, "MOEX" },
+    { 0, NULL }
+  };
+
   static uat_field_t fast_uats_flds[] = {
-      UAT_FLD_DEC(fast_uats, port, "Port", "Port Number"),
-      UAT_END_FIELDS
+    UAT_FLD_VS(fast_uats, proto, "Protocol", fast_transport_proto_vals, "Transport protocol"),
+    UAT_FLD_DEC(fast_uats, port, "Port", "Port Number"),
+    UAT_FLD_VS(fast_uats, favor, "Implementation", fast_application_proto_vals, "Application protocol (exchnage favor)"),
+    UAT_FLD_FILENAME(fast_uats, template_file, "XML template file", "Enter a valid filesystem path"),
+    UAT_END_FIELDS
   };
 
   /* Subtree array. */
@@ -218,16 +275,16 @@ void proto_register_fast (void)
 
 
   config_port_list_uat = uat_new("FAST Port List",
-                                 sizeof(fast_port_item_t),
+                                 sizeof(fast_uat_item_t),
                                  "fast_ports",
                                  TRUE,
                                  (void*)&fast_uats,
                                  &config_n_port_items,
                                  UAT_AFFECTS_DISSECTION,
                                  NULL,
-                                 NULL,
+                                 fast_config_port_list_copy_cb,
                                  fast_config_port_list_update_cb,
-                                 NULL,
+                                 fast_config_port_list_free_cb,
                                  proto_reg_handoff_fast,
                                  NULL,
                                  fast_uats_flds);
@@ -253,12 +310,6 @@ void proto_register_fast (void)
                                   &protocol,
                                   protocol_buttons,
                                   FALSE);
-
-  prefs_register_filename_preference(module,
-                                   "template",
-                                   "XML template file",
-                                   "Enter a valid filesystem path",
-                                   &config_template_xml_path);
 
   prefs_register_bool_preference(module,
                                    "show_empty",
@@ -328,6 +379,28 @@ void proto_register_fast (void)
   register_dissector("fast", dissect_fast, proto_fast);
 }
 
+static void fast_templates_mark_unused(gpointer key _U_, gpointer value, gpointer data _U_)
+{
+    fast_templates_storage_t* stor = (fast_templates_storage_t*)value;
+    stor->used = FALSE;
+}
+
+static void fast_templates_find_unused(gpointer key _U_, gpointer value, gpointer data)
+{
+    const fast_templates_storage_t* stor = (fast_templates_storage_t*)value;
+    if(!stor->used) {
+        GPtrArray *unused = (GPtrArray*)data;
+        g_ptr_array_add(unused, stor->filename);
+    }
+}
+
+static void fast_templates_clean_unused(gpointer key, gpointer user_data)
+{
+    wmem_map_t* map = (wmem_map_t*)user_data;
+
+    wmem_map_remove(map, key);
+}
+
 /*! \brief  Set user preferences.
  *
  * Port and template file are currently the only prefs being set.
@@ -339,39 +412,67 @@ void proto_reg_handoff_fast(void)
 {
   static gboolean initialized = FALSE;
   static dissector_handle_t fast_handle;
-  static char* currentTemplateXML = 0;
 
   fast_set_log_settings(config_show_dialog_windows, config_log_errors, config_log_file_name);
 
-  /* listen for TCP or UDP, depending on user preference */
-  if(protocol){
-    config_port_field = "tcp.port";
-  } else {
-    config_port_field = "udp.port";
-  }
-
   if(enabled && !initialized){
     fast_handle = create_dissector_handle(&dissect_fast, proto_fast);
+    templates_map = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
     initialized = TRUE;
   }
 
-  if(enabled && initialized){
+  if(enabled && initialized) {
     guint i = 0;
+
+    wmem_map_foreach(templates_map, fast_templates_mark_unused, NULL);
+
+    dissector_delete_all("udp.port", fast_handle);
+    dissector_delete_all("tcp.port", fast_handle);
+
+    port_map = wmem_map_new(wmem_epan_scope(), g_direct_hash, g_direct_equal);
+
     for(i = 0; i < config_n_port_items; i++) {
+        fast_templates_storage_t* stor = NULL;
+        /* listen for TCP or UDP, depending on user preference */
+        const char* config_port_field = 0;
+        switch(fast_uats[i].proto) {
+        case UDPImplem:
+            config_port_field = "udp.port";
+            break;
+        case TCPImplem:
+            config_port_field = "tcp.port";
+            break;
+        }
+
         /* Tell Wireshark what underlying protocol and port we use. */
         dissector_add_uint(config_port_field, fast_uats[i].port, fast_handle);
+
+        stor = (fast_templates_storage_t*) wmem_map_lookup(templates_map, fast_uats[i].template_file);
+
+        if(!stor) {
+            stor = (fast_templates_storage_t*) wmem_alloc(wmem_epan_scope(), sizeof(fast_templates_storage_t));
+            stor->filename = wmem_strdup(wmem_epan_scope(), fast_uats[i].template_file);
+            stor->templates = parse_templates_xml(fast_uats[i].template_file);
+            stor->templates_table = create_templates_table(stor->templates);
+            wmem_map_insert(templates_map, stor->filename, stor);
+        }
+
+        wmem_map_insert(port_map, GUINT_TO_POINTER(fast_uats[i].port), stor);
+
+        fprintf(stderr, "Using xml file %s ...\n", fast_uats[i].template_file);
+
+        stor->used = TRUE;
     }
 
-    /* Read templates file. */
-    if (initialized && config_template_xml_path) {
-        fprintf(stderr, "Using xml file %s ...\n",config_template_xml_path);
-        if(g_strcmp0(config_template_xml_path, currentTemplateXML)!=0){
-            reparse_templates = TRUE;
-        }
+    {
+        GPtrArray* unused_templates = g_ptr_array_new_full(wmem_map_size(templates_map), NULL);
+        wmem_map_foreach(templates_map, fast_templates_find_unused, unused_templates);
+
+        g_ptr_array_foreach(unused_templates, fast_templates_clean_unused, templates_map);
+
+        g_ptr_array_unref(unused_templates);
     }
   }
-
-  /* TODO: remove previous port bindings */
 }
 
 /*! \brief Hook function that Wireshark calls to dissect a packet.
@@ -381,47 +482,39 @@ void proto_reg_handoff_fast(void)
  */
 int dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* data_unused _U_)
 {
-  frame_data* frameData;
-  PacketData* packetData;
-  frameData = pinfo->fd;
+  wmem_map_t* templates = NULL;
+  conversation_t *conversation = NULL;
 
-  if(reparse_templates){
-    GNode* templates;
-    templates = parse_templates_xml (config_template_xml_path);
-    add_templates(templates);
-    reparse_templates = FALSE;
+  conversation = find_or_create_conversation(pinfo);
+
+  templates = (wmem_map_t*)conversation_get_proto_data(conversation, proto_fast);
+
+  if(!templates)
+  {
+    fast_templates_storage_t* stor = (fast_templates_storage_t*)wmem_map_lookup(port_map, GUINT_TO_POINTER(pinfo->destport));
+    if(!stor)
+      return 0;
+
+    templates = stor->templates_table;
+    conversation_add_proto_data(conversation, proto_fast, templates);
   }
 
   /* fill in protocol column */
-  if (CHECK_COL(pinfo->cinfo, COL_PROTOCOL)) {
+  if (CHECK_COL(pinfo->cinfo, COL_PROTOCOL))
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "FAST");
-  }
 
   /* clear anything out of the info column */
-  if (CHECK_COL(pinfo->cinfo, COL_INFO)) {
+  if (CHECK_COL(pinfo->cinfo, COL_INFO))
     col_clear(pinfo->cinfo, COL_INFO);
-  }
 
   /* Only do dissection if we are asked */
   if (tree) {
-    proto_item* ti;
-    proto_tree* fast_tree;
-
-    /* Create display subtree. */
-    ti = proto_tree_add_item(tree, proto_fast, tvb, 0, -1, ENC_NA);
-    fast_tree = proto_item_add_subtree(ti, ett_fast);
-
-    if(!dissected_packets_table) {
-      dissected_packets_table = g_hash_table_new(&g_int_hash, &g_int_equal);
-      /* If we fail to make the table bail */
-      if(!dissected_packets_table) { BAILOUT(0;,"Packet lookup table not created."); }
-    }
-
-    /* check if this packet has already been dissected and get it if it has */
-    packetData = (PacketData*) g_hash_table_lookup(dissected_packets_table, &(frameData->num));
+    proto_item* ti = proto_tree_add_item(tree, proto_fast, tvb, 0, -1, ENC_NA);
+    proto_tree* fast_tree = proto_item_add_subtree(ti, ett_fast);
+    packet_data_t* packet_data = (packet_data_t*) p_get_proto_data(wmem_file_scope(), pinfo, proto_fast, 0);
 
     /* if this packet has not been dissected yet, dissect it */
-    if (!packetData) {
+    if (!packet_data) {
       DissectPosition stacked_position;
       DissectPosition* position;
       guint header_offset = 0;
@@ -429,8 +522,7 @@ int dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* data
       /* ignore headers for CME and UMDF */
       if (implementation == CMEImplem) {
         header_offset = 5;
-      }
-      else if (implementation == UMDFImplem) {
+      } else if (implementation == UMDFImplem) {
         header_offset = 10;
       } else if (implementation == MOEXImplem) {
         header_offset = 4;
@@ -439,10 +531,10 @@ int dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* data
       /* Store pointers to display tree so it can be
        * loaded if user clicks on this packet again.
        */
-      packetData = (PacketData*)g_malloc(sizeof(PacketData));
-      packetData->frameNum = frameData->num;
-      packetData->dataTrees = 0;
-      packetData->tmplTrees = 0;
+      packet_data = (packet_data_t*)wmem_new0(wmem_file_scope(), packet_data_t);
+      packet_data->dataTrees = wmem_list_new(wmem_file_scope());
+      packet_data->tmplTrees = wmem_list_new(wmem_file_scope());
+      packet_data->frameNum = pinfo->fd->num;
 
       position = &stacked_position;
       position->offjmp = header_offset;
@@ -453,12 +545,11 @@ int dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* data
       ShiftBytes(position);
 
       while (position->nbytes) {
-        GNode* data;
         GNode* tmpl;
-        data = g_node_new(0);
+        GNode* data = wmem_node_new(wmem_file_scope(), 0);
 
         /* call function in dissect.c that dissects the data */
-        tmpl = dissect_fast_bytes (position, data, &pinfo->src, &pinfo->dst);
+        tmpl = dissect_fast_bytes (templates, position, data, &pinfo->src, &pinfo->dst);
 
         /* If no template is found for the message make a fake message/template then break out */
         if(tmpl == NULL){
@@ -484,17 +575,18 @@ int dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* data
           tmpl = tnode;
 
           /* Create data for the above template that describes the error */
-          fdata = (FieldData*) g_malloc(sizeof(FieldData));
-          g_free(data->data);
-          g_node_destroy(data);
-          data = g_node_new(fdata);
+          fdata = (FieldData*) wmem_new(wmem_file_scope(), FieldData);
+
+          g_node_unlink(data);
+          data = wmem_node_new(wmem_file_scope(), fdata);
           fdata->start = 0;
           fdata->nbytes = 0;
-          fdata-> status = FieldEmpty;
+          fdata->status = FieldEmpty;
           fdata->value.u32 = -1;
-          fdata = (FieldData*) g_malloc(sizeof(FieldData));
-          dnode = g_node_new(fdata);
-          g_node_insert_after(data,NULL,dnode);
+
+          fdata = (FieldData*) wmem_new(wmem_file_scope(), FieldData);
+          dnode = wmem_node_new(wmem_file_scope(), fdata);
+          g_node_insert_after(data, NULL, dnode);
           fdata->start = 0;
           fdata->nbytes = 0;
 
@@ -504,8 +596,8 @@ int dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* data
           /* Stop parsing the packet as we don't know whats going on any more */
           position->nbytes = 0;
         }
-        packetData->dataTrees = g_list_append(packetData->dataTrees, data);
-        packetData->tmplTrees = g_list_append(packetData->tmplTrees, tmpl);
+        wmem_list_append(packet_data->dataTrees, data);
+        wmem_list_append(packet_data->tmplTrees, tmpl);
       }
 
       /* TODO: Issue 87 should remove this */
@@ -514,22 +606,20 @@ int dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* data
         clear_dictionaries(pinfo->src, pinfo->dst);
       }
 
-      g_hash_table_insert(dissected_packets_table, &(packetData->frameNum), packetData);
+      p_add_proto_data(wmem_file_scope(), pinfo, proto_fast, 0, packet_data);
     }
 
     /* scope created to escape compile error due to mixed code and declarations */
     {
-      GList* tmplTrees;
-      GList* dataTrees;
+      wmem_list_frame_t* tmplTrees = wmem_list_head(packet_data->tmplTrees);
+      wmem_list_frame_t* dataTrees = wmem_list_head(packet_data->dataTrees);
       GNode* template_node;
       GNode* parent;
       guint message_cnt = 0;
-      tmplTrees = packetData->tmplTrees;
-      dataTrees = packetData->dataTrees;
 
       while (tmplTrees && dataTrees) {
-        template_node  = (GNode*) tmplTrees->data;
-        parent    = (GNode*) dataTrees->data;
+        template_node  = (GNode*) wmem_list_frame_data(tmplTrees);
+        parent         = (GNode*) wmem_list_frame_data(dataTrees);
         message_error = FALSE;
         display_message (tvb, fast_tree, template_node, parent, pinfo);
 
@@ -548,8 +638,8 @@ int dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* data
           }
         }
 
-        tmplTrees = tmplTrees->next;
-        dataTrees = dataTrees->next;
+        tmplTrees = wmem_list_frame_next(tmplTrees);
+        dataTrees = wmem_list_frame_next(dataTrees);
       }
     }
   }
@@ -574,7 +664,7 @@ void display_message (tvbuff_t* tvb, proto_tree* tree,
     proto_tree* newtree;
     const FieldType* ftype;
     const FieldData* fdata;
-    char * field_name;
+    const char* field_name;
     ftype = (FieldType*) tmpl->data;
     fdata = (FieldData*) parent->data;
     if(ftype->name){
@@ -606,30 +696,19 @@ void display_message (tvbuff_t* tvb, proto_tree* tree,
  */
 void display_fields (tvbuff_t* tvb, proto_tree* tree,
                      const GNode* tnode, const GNode* dnode,
-		     packet_info* pinfo)
+                     packet_info* pinfo)
 {
   if (!dnode) {
     BAILOUT(;,"Data node is null!");
   }
   while (tnode) {
     int header_field = -1;
-    const FieldType* ftype;
-    const FieldData* fdata;
-    char * field_name;
-    char * field_inf;
-    char * decimalNum;
-    ftype = (FieldType*) tnode->data;
-    fdata = (FieldData*) dnode->data;
-
-
-    if(ftype->name){
-      field_name = ftype->name;
-    } else {
-      field_name = UNNAMED;
-    }
-
+    const FieldType* ftype = (FieldType*) tnode->data;
+    const FieldData* fdata = (FieldData*) dnode->data;
+    const char* field_name = ftype->name ? ftype->name : UNNAMED;
     /* Generate optional field_info string */
-    field_inf = generate_field_info(ftype);
+    char* field_inf = generate_field_info(ftype);
+    char* decimal_num = NULL;
 
     if (ftype->type < FieldTypeEnumLimit) {
       header_field = hf_fast[ftype->type];
@@ -681,11 +760,11 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
           break;
 
         case FieldTypeDecimal:
-          if(!sciNotation) {
+          if(!sciNotation)
             /* get the decimal representation of the field */
-            decimalNum = toDecimal(fdata->value.decimal.exponent, fdata->value.decimal.mantissa);
-          } else { decimalNum = NULL; }
-          if(sciNotation || decimalNum==NULL ){
+            decimal_num = to_decimal(fdata->value.decimal.exponent, fdata->value.decimal.mantissa);
+
+          if(sciNotation || !decimal_num) {
             proto_tree_add_none_format(tree, header_field, tvb,
                                      fdata->start, fdata->nbytes,
                                      "decimal - %s (%d)%s: %" G_GINT64_MODIFIER "de%d",
@@ -701,7 +780,7 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
                                      field_name,
                                      ftype->id,
                                      field_inf,
-                                     decimalNum);
+                                     decimal_num);
           }
           break;
 
@@ -726,36 +805,22 @@ void display_fields (tvbuff_t* tvb, proto_tree* tree,
         case FieldTypeByteVector:
           {
             /* convert bytevector to string */
-            guint8* str;
-            const SizedData* vec;
-            vec = &fdata->value.bytevec;
-            str = (guint8*) g_malloc ((1+2*vec->nbytes) * sizeof(guint8));
-            if (str) {
-              guint i;
-              for (i = 0; i < vec->nbytes; ++i) {
-                g_snprintf ((gchar*)(2*i + str), 3*sizeof(guint8),
-                            "%02x", vec->bytes[i]);
-              }
-              str[2*vec->nbytes] = 0;
-
-              /* add bytevector string to proto_tree */
-              proto_tree_add_none_format(tree, header_field, tvb,
-                                         fdata->start, fdata->nbytes,
-                                         "byteVector - %s (%d)%s: %s", field_name,
-                                         ftype->id,
-                                         field_inf,
-                                         str);
-              g_free (str);
+            const SizedData* vec = &fdata->value.bytevec;
+            guint8* str = (guint8*) wmem_alloc (wmem_packet_scope(), (1+2*vec->nbytes) * sizeof(guint8));
+            guint i;
+            for (i = 0; i < vec->nbytes; ++i) {
+              g_snprintf ((gchar*)(2*i + str), 3*sizeof(guint8),
+                          "%02x", vec->bytes[i]);
             }
-            else {
-              DBG0("Error allocating memory.");
+            str[2*vec->nbytes] = 0;
 
-              proto_tree_add_none_format(tree, header_field, tvb,
-                                         fdata->start, fdata->nbytes,
-                                         "byteVector - %s (%d)%s: %s", field_name,
-                                         ftype->id, field_inf,
-                                         "");
-            }
+            /* add bytevector string to proto_tree */
+            proto_tree_add_none_format(tree, header_field, tvb,
+                                       fdata->start, fdata->nbytes,
+                                       "byteVector - %s (%d)%s: %s", field_name,
+                                       ftype->id,
+                                       field_inf,
+                                       str);
           }
           break;
 
@@ -863,48 +928,48 @@ char * generate_field_info(const FieldType* ftype){
   if(showFieldDictionaries){
     /* dictionary */
     if(ftype->dictionary==NULL){
-      field_inf = g_strdup_printf("[dictionary=global");
+      field_inf = wmem_strdup_printf(wmem_packet_scope(), "[dictionary=global");
     } else {
-      field_inf = g_strdup_printf("[dictionary=%s", ftype->dictionary);
+      field_inf = wmem_strdup_printf(wmem_packet_scope(), "[dictionary=%s", ftype->dictionary);
     }
   }
   if(showFieldKeys && ftype->key!=NULL){
     /* key */
     temp = field_inf;
     if(temp){
-      field_inf = g_strdup_printf("%s key=%s", temp, ftype->key);
-      g_free(temp);
+      field_inf = wmem_strdup_printf(wmem_packet_scope(), "%s key=%s", temp, ftype->key);
     } else {
-      field_inf = g_strdup_printf("[key=%s", ftype->key);
+      field_inf = wmem_strdup_printf(wmem_packet_scope(), "[key=%s", ftype->key);
     }
   }
   if(showFieldOperators){
     /* operator */
     temp = field_inf;
     if(temp){
-      field_inf = g_strdup_printf("%s operator=%s", temp, operator_typename(ftype->op));
-      g_free(temp);
+      field_inf = wmem_strdup_printf(wmem_packet_scope(), "%s operator=%s", temp, operator_typename(ftype->op));
     } else {
-      field_inf = g_strdup_printf("[operator=%s", operator_typename(ftype->op));
+      field_inf = wmem_strdup_printf(wmem_packet_scope(), "[operator=%s", operator_typename(ftype->op));
     }
   }
   if(showFieldMandatoriness){
     /* mandatory? */
     temp = field_inf;
     if(temp){
-      if(ftype->mandatory) field_inf = g_strdup_printf("%s mandatory", temp);
-      else field_inf = g_strdup_printf("%s not mandatory", temp);
-      g_free(temp);
+      if(ftype->mandatory)
+        field_inf = wmem_strdup_printf(wmem_packet_scope(), "%s mandatory", temp);
+      else
+        field_inf = wmem_strdup_printf(wmem_packet_scope(), "%s not mandatory", temp);
     } else {
-      if(ftype->mandatory) field_inf = g_strdup_printf("[mandatory");
-      else field_inf = g_strdup_printf("[not mandatory");
+      if(ftype->mandatory)
+        field_inf = wmem_strdup_printf(wmem_packet_scope(), "[mandatory");
+      else
+        field_inf = wmem_strdup_printf(wmem_packet_scope(), "[not mandatory");
     }
   }
   if(field_inf!=NULL){
     /* other field info */
     temp=field_inf;
-    field_inf = g_strdup_printf("%s]", temp);
-    g_free(temp);
+    field_inf = wmem_strdup_printf(wmem_file_scope(), "%s]", temp);
   } else {
     field_inf = "";
   }
@@ -920,25 +985,22 @@ char * generate_field_info(const FieldType* ftype){
  *  \param mant mantissa of decimal number
  *  \return string representation of decimal number
  */
-char * toDecimal(gint32 expt, gint64 mant)
+char* to_decimal(gint32 expt, gint64 mant)
 {
-  char * decimalNum;
   char zeros[MaxExpt+1]; /*array to hold zero padding */
   char neg[2]; /* array to hold negative sign or null string*/
   int i;
 
-  if(expt==0){
-    return "1";
-  }
+  if(expt == 0)
+    return wmem_strdup(wmem_file_scope(), "1");
 
-  if(expt<-MaxExpt || expt>MaxExpt){
+  if(expt < -MaxExpt || expt > MaxExpt)
     return NULL;
-  }
 
   /* Char* to hold string represenation of mant */
-  decimalNum = (char *) g_malloc(sizeof(char)*MaxMant);
 
-  if(expt<0){
+  if(expt < 0) {
+    char* result = (char*) wmem_alloc(wmem_file_scope(), sizeof(char)*MaxMant);
     char left [MaxExpt+2];
     char right [MaxMant];
     int point;
@@ -946,39 +1008,56 @@ char * toDecimal(gint32 expt, gint64 mant)
     int r;
 
     expt = (-1)*expt; /*abs(expt) */
-    if(mant<0){
+    if(mant < 0) {
       mant = (-1) * mant;
       neg[0]='-'; neg[1]='\0';
-    } else { neg[0]='\0'; }
-    len = sprintf (decimalNum, "%" G_GINT64_MODIFIER "d", mant); /* print base to string and get length */
-    point = len-expt; /* figure out where the decimal should be */
-    if(point>0){ /*point in middle of base */
+    } else {
+      neg[0]='\0';
+    }
+    len = sprintf (result, "%" G_GINT64_MODIFIER "d", mant); /* print base to string and get length */
+    point = len - expt; /* figure out where the decimal should be */
+    if(point > 0) { /*point in middle of base */
       /* break into two parts and put back together */
-      for(i=0; i<point; i++) left[i] = decimalNum[i];
+      for(i = 0; i < point; i++)
+        left[i] = result[i];
+
       left[i]='\0';
-      r=0;
-      for(i=point; i<MaxMant; i++){
-        right[r]=decimalNum[i];
-        r++;
-        if(decimalNum[i]=='\0') break;
+
+      r = 0;
+      for(i = point; i < MaxMant; i++, r++) {
+        right[r] = result[i];
+        if(result[i] == '\0')
+            break;
       }
-      sprintf(decimalNum, "%s%s.%s", neg, left, right);
+      sprintf(result, "%s%s.%s", neg, left, right);
     } else { /* point to left of base */
       point = (-1)*point;
-      for(i=0; i<point; i++){ /* gen zeros for left of base */
-        zeros[i]='0';
-      }
-      zeros[i] = '\0';
-      sprintf(right, "%s.%s%s", neg, zeros, decimalNum);
-      sprintf(decimalNum, "%s", right);
-    }
-  } else {
-    for(i=0; i<expt; i++){/* gen zeros to pad right side of base */
-      zeros[i]='0';
-    }
-    zeros[i] = '\0';
-    sprintf (decimalNum, "%" G_GINT64_MODIFIER "d%s", mant, zeros);
-  }
+      /* gen zeros for left of base */
+      for(i = 0; i < point; i++)
+        zeros[i] = '0';
 
-  return decimalNum;
+      zeros[i] = '\0';
+      sprintf(right, "%s.%s%s", neg, zeros, result);
+      sprintf(result, "%s", right);
+    }
+
+    return result;
+  } else {
+    /* gen zeros to pad right side of base */
+    for(i = 0; i < expt; i++)
+      zeros[i] = '0';
+
+    zeros[i] = '\0';
+
+    return wmem_strdup_printf(wmem_packet_scope(), "%" G_GINT64_MODIFIER "d%s", mant, zeros);
+  }
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 2
+ * tab-width: 2
+ * indent-tabs-mode: nil
+ * End:
+ */

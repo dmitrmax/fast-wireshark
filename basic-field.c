@@ -20,9 +20,13 @@
  * \brief Implementation needed for data type definitions.
  */
 
+#include "config.h"
+
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
+#include <epan/wmem/wmem.h>
+#include <epan/wmem/wmem_miscutl.h>
 
 #include "debug.h"
 
@@ -64,8 +68,9 @@ void copy_field_value (FieldTypeIdentifier type,
     case FieldTypeUnicodeString:
     case FieldTypeByteVector:
       dest->bytevec.nbytes = src->bytevec.nbytes;
-      dest->bytevec.bytes = (guint8*)g_memdup(src->bytevec.bytes,
-                                              (1+src->bytevec.nbytes) * sizeof(guint8));
+      dest->bytevec.bytes = (guint8*)wmem_memdup(wmem_epan_scope(),
+                                                 src->bytevec.bytes,
+                                                 (1+src->bytevec.nbytes) * sizeof(guint8));
       break;
     default:
       DBG0("Called with bad type.");
@@ -88,10 +93,8 @@ void cleanup_field_value (FieldTypeIdentifier type, FieldValue* value)
     case FieldTypeUnicodeString:
     case FieldTypeByteVector:
       value->bytevec.nbytes = 0;
-      if (value->bytevec.bytes) {
-        g_free(value->bytevec.bytes);
+      if (value->bytevec.bytes)
         value->bytevec.bytes = 0;
-      }
       break;
     default:
       DBG0("Called with bad type.");
@@ -157,13 +160,13 @@ gboolean string_to_field_value(const char* str, FieldTypeIdentifier type, FieldV
       case FieldTypeAsciiString:
       case FieldTypeUnicodeString:
         value->bytevec.nbytes = strlen(str);
-        value->bytevec.bytes = (guint8*)g_strdup(str);
+        value->bytevec.bytes = (guint8*)wmem_strdup(wmem_epan_scope(), str);
         break;
 
       case FieldTypeByteVector:
         len = strlen(str);
         value->bytevec.nbytes = len/2;
-        value->bytevec.bytes = (guint8*)g_malloc(1+value->bytevec.nbytes);
+        value->bytevec.bytes = (guint8*)wmem_alloc(wmem_epan_scope(), 1+value->bytevec.nbytes);
         for(i=0; i + 1 < len; i += 2) {
           int nibble1;
           int nibble2;
@@ -205,10 +208,7 @@ gboolean string_to_decimal_value (const char* str, FieldValue* value)
   right = start;
   dot   = len;
 
-  buf = g_strdup (str);
-  if (!buf) {
-    return FALSE;
-  }
+  buf = wmem_strdup (wmem_epan_scope(), str);
 
   for (i = 0; i < len; ++i) {
     switch (buf[i]) {
@@ -253,6 +253,5 @@ gboolean string_to_decimal_value (const char* str, FieldValue* value)
     /* return FALSE; */
   }
 
-  g_free(buf);
   return TRUE;
 }

@@ -12,7 +12,7 @@
  * Lesser GNU General Public License for more details.
  *
  * You should have received a copy of the Lesser GNU General Public License
- * along with FAST Wireshark.  If not, see 
+ * along with FAST Wireshark.  If not, see
  * <http://www.gnu.org/licenses/lgpl.txt>.
  */
 
@@ -22,7 +22,7 @@
  *  Dissects the various data types supported by FAST protocol.
  *  Also has functions for dissecting various data types when operators
  *  (such as Delta, Copy, etc) are also invoked.
- * 
+ *
  *  Functions...
  *    dissect_int_op
  *    dissect_ascii_delta
@@ -39,7 +39,7 @@
  * \param parent  Return value. The message data is built under it.
  * \return  The template that was used to dissect.
  */
-GNode* dissect_fast_bytes (DissectPosition* position, GNode* parent, address* src, address* dest);
+GNode* dissect_fast_bytes (wmem_map_t* templates, DissectPosition* position, GNode* parent, address* src, address* dest);
 
 /*! \brief  Construct
  a message data tree (of FieldData).
@@ -183,4 +183,3 @@ void dissect_sequence (const GNode* tnode,
                        DissectPosition* position, GNode* dnode, address* src, address* dest);
 
 #endif
-

@@ -20,11 +20,15 @@
  * \brief  Implementation of the primitive data dissector.
  */
 
+#include "config.h"
+
+#include <string.h>
+#include <epan/wmem/wmem.h>
+
 #include "basic-dissect.h"
 
 #include "debug.h"
 #include "decode.h"
-#include <string.h>
 
 /*! \brief  Shift a buffer by a certain amount.
  *
@@ -61,8 +65,7 @@ void err_d(guint8 err_no, FieldData* fdata)
   };
 
   fdata->status = FieldError;
-  fdata->value.ascii.bytes = (guint8*)g_strdup_printf("%s",
-    string_err_d[err_no - 1]);
+  fdata->value.ascii.bytes = (guint8*)wmem_strdup_printf(wmem_file_scope(), "%s", string_err_d[err_no - 1]);
 }
 
 
@@ -139,11 +142,7 @@ void basic_dissect_pmap (const DissectPosition* parent_position,
     BAILOUT(;,"PMAP length is zero bytes?");
   }
 
-  position->pmap = (gboolean*)g_malloc (position->pmap_len * sizeof(gboolean));
-  if (!position->pmap) {
-    position->pmap_len = 0;
-    BAILOUT(;,"Could not allocate memory.");
-  }
+  position->pmap = (gboolean*)wmem_alloc (wmem_packet_scope(), position->pmap_len * sizeof(gboolean));
 
   decode_pmap (position->offjmp, position->bytes, position->pmap);
   ShiftBytes(position);
@@ -243,7 +242,7 @@ void basic_dissect_ascii_string (DissectPosition* position, FieldData* fdata)
                                              position->bytes);
   nbytes = position->offjmp;
   fdata->nbytes = nbytes;
-  bytes = (guint8*)g_malloc ((1+ nbytes) * sizeof(guint8));
+  bytes = (guint8*)wmem_alloc (wmem_file_scope(), (1+ nbytes) * sizeof(guint8));
   if (bytes) {
     decode_ascii_string (position->offjmp, position->bytes, bytes);
     bytes[nbytes] = 0;

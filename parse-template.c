@@ -16,6 +16,8 @@
 * <http://www.gnu.org/licenses/lgpl.txt>.
 */
 
+#include "config.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -23,6 +25,7 @@
 #include <libxml/xmlmemory.h>
 #include <libxml/parser.h>
 
+#include "wmem_aux.h"
 #include "debug.h"
 #include "template.h"
 
@@ -31,7 +34,7 @@
 #include "error_log.h"
 
 /* Private (static) headers. */
-static GNode* parseTemplate (xmlNodePtr cur);
+static GNode* parse_template (xmlNodePtr cur);
 
 static void set_field_attributes (xmlNodePtr node,
                                   FieldType* tfield);
@@ -107,7 +110,7 @@ GNode* parse_templates_xml(const char* filename)
 		return 0;
 	}
 
-  templates = g_node_new (0);
+  templates = wmem_node_new (wmem_epan_scope(), 0);
   if (!templates)  BAILOUT(0, "Error creating root of templates tree.");
 
 	/* Check if root is of type "templates". */
@@ -124,8 +127,7 @@ GNode* parse_templates_xml(const char* filename)
 
     if (!ignore_xml_node(cur)) {
       if ((!xmlStrcasecmp(cur->name, (xmlChar*) "template"))) {
-        GNode* tnode;
-        tnode = parseTemplate(cur);
+        GNode* tnode = parse_template(cur);
         /* Parse template, and check if parse failed. */
         if (tnode) {
           g_node_insert_after (templates, tnode_prev, tnode);
@@ -138,10 +140,9 @@ GNode* parse_templates_xml(const char* filename)
         }
       }
       else {
-        fast_log_static_error(1,
-          cur->line,
-          g_strdup_printf("Warning: Unkown templates child: %s\n",
-                          cur->name));
+        char* extra_info = g_strdup_printf("Warning: Unkown templates child: %s\n", cur->name);
+        fast_log_static_error(1, cur->line, extra_info);
+        g_free(extra_info);
       }
     }
     cur = cur->next;
@@ -156,7 +157,7 @@ GNode* parse_templates_xml(const char* filename)
  * \param cur  Current position in the XML structure.
  * \return  Tree containing the internal template definition.
  */
-GNode* parseTemplate (xmlNodePtr cur)
+GNode* parse_template (xmlNodePtr cur)
 {
   GNode* tnode;
   FieldType* tfield;
@@ -313,18 +314,14 @@ GNode* new_parsed_field (xmlNodePtr xmlnode, char* dictionary)
   if (!found || !valid) {
     /* TODO: Free parse tree. */
     tnode = 0;
+    char* extra_info = 0;
     if (!valid) {
-      fast_log_static_error(1,
-        xmlnode->line,
-        g_strdup_printf("FAST syntax error: Field %s could not be parsed.",
-                        xmlnode->name));
+      extra_info = g_strdup_printf("FAST syntax error: Field %s could not be parsed.", xmlnode->name);
+    } else {
+      extra_info = g_strdup_printf("FAST syntax error: Unknown field type %s.", xmlnode->name);
     }
-    else {
-      fast_log_static_error(1,
-        xmlnode->line,
-        g_strdup_printf("FAST syntax error: Unknown field type %s.",
-                        xmlnode->name));
-    }
+    fast_log_static_error(1, xmlnode->line, extra_info);
+    g_free(extra_info);
   }
   return tnode;
 }
@@ -360,19 +357,17 @@ gboolean prepend_length (xmlNodePtr xmlnode,
     if (0 == xmlStrcasecmp(xmlnode->name, (xmlChar*)"length")) {
       set_field_attributes(xmlnode, ftype);
       if (!parse_field_operator(xmlnode, ftype)) {
-        fast_log_static_error(1,
-          xmlnode->line,
-          g_strdup_printf("FAST syntax error: no length field for %s.",
-                          parent->name));
+        char* extra_info = g_strdup_printf("FAST syntax error: no length field for %s.", parent->name);
+        fast_log_static_error(1, xmlnode->line, extra_info);
+        g_free(extra_info);
         BAILOUT(FALSE, "TemplateParser: Failed to get length.");
       }
     }
   }
 
   /* set the key */
-  if(!ftype->key){
-    ftype->key = (char*)g_strdup_printf("%s-length",parent->name);
-  }
+  if(!ftype->key)
+      ftype->key = (char*)wmem_strdup_printf(wmem_epan_scope(), "%s-length", parent->name);
 
   /* set the dictionary */
   if(!ftype->dictionary){
@@ -420,21 +415,17 @@ gboolean parse_decimal (xmlNodePtr xmlnode,
       if(0 == xmlStrcasecmp(xmlnode->name, (xmlChar*)"exponent")){
         set_field_attributes(xmlnode, expt);
         if(!parse_field_operator(xmlnode, expt)) {
-          fast_log_static_error(1,
-            xmlnode->line,
-            g_strdup_printf("FAST syntax error: \
-                            failed to parse operator for field %s.",
-                            tfield->name));
+          char* extra_info = g_strdup_printf("FAST syntax error: failed to parse operator for field %s.", tfield->name);
+          fast_log_static_error(1, xmlnode->line, extra_info);
+          g_free(extra_info);
           BAILOUT(FALSE, "Failed to get exponent.");
         }
       } else if( 0 == xmlStrcasecmp(xmlnode->name, (xmlChar*)"mantissa")){
         set_field_attributes(xmlnode, mant);
         if(!parse_field_operator(xmlnode, mant)) {
-          fast_log_static_error(1,
-            xmlnode->line,
-            g_strdup_printf("FAST syntax error: \
-                            failed to parse operator for field %s.",
-                            tfield->name));
+          char* extra_info = g_strdup_printf("FAST syntax error: failed to parse operator for field %s.", tfield->name);
+          fast_log_static_error(1, xmlnode->line, extra_info);
+          g_free(extra_info);
           BAILOUT(FALSE, "Failed to get mantissa.");
         }
       } else {
@@ -460,10 +451,10 @@ gboolean parse_decimal (xmlNodePtr xmlnode,
   /* set key */
   if (tfield->key) {
     if (!mant->key) {
-      mant->key = g_strdup_printf ("%s-mantissa", tfield->key);
+      mant->key = wmem_strdup_printf (wmem_epan_scope(), "%s-mantissa", tfield->key);
     }
     if (!expt->key) {
-      expt->key = g_strdup_printf ("%s-exponent", tfield->key);
+      expt->key = wmem_strdup_printf (wmem_epan_scope(), "%s-exponent", tfield->key);
     }
   }
 
@@ -548,12 +539,13 @@ gboolean parse_operator (xmlNodePtr xmlnode, FieldType * tfield){
   } else if (operator_type_match (xmlnode, FieldOperatorTail)) {
     tfield->op = FieldOperatorTail;
   } else {
-    fast_log_static_error(1,
-      xmlnode->line,
-      g_strdup_printf("FAST syntax error: \
-                      Invalid operator (%s) for field %s",
-                      xmlnode->name,
-                      tfield->name));
+    char* extra_info = g_strdup_printf(
+        "FAST syntax error: Invalid operator (%s) for field %s",
+        xmlnode->name,
+        tfield->name);
+
+    fast_log_static_error(1, xmlnode->line, extra_info);
+    g_free(extra_info);
     return FALSE;
   }
 
@@ -566,11 +558,11 @@ gboolean parse_operator (xmlNodePtr xmlnode, FieldType * tfield){
   if (prop!=NULL) {
     tfield->hasDefault = TRUE;
     if(!string_to_field_value((char*)prop, tfield->type, &tfield->value)){
-      fast_log_static_error(3,
-        xmlnode->line,
-        g_strdup_printf("Unable to parse value(%s) for field %s",
-                        prop,
-                        tfield->name));
+      char* extra_info = g_strdup_printf("Unable to parse value(%s) for field %s",
+                                               prop,
+                                               tfield->name);
+      fast_log_static_error(3, xmlnode->line, extra_info);
+      g_free(extra_info);
     }
     xmlFree(prop);
   } else if(tfield->op == FieldOperatorConstant){
@@ -595,23 +587,25 @@ gboolean parse_operator (xmlNodePtr xmlnode, FieldType * tfield){
 static gboolean check_valid_operator(xmlNodePtr xmlnode, FieldType * tfield){
 
   if(tfield->op == FieldOperatorIncrement && !is_integer(tfield->type)){
-    fast_log_static_error(2,
-      xmlnode->line,
-      g_strdup_printf("Field %s cannot have an operator of type %s\n\
-                      Increment can only be used on integers.",
-                      tfield->name,
-                      xmlnode->name));
+    char* extra_info = g_strdup_printf(
+        "Field %s cannot have an operator of type %s\nIncrement can only be used on integers.",
+        tfield->name,
+        xmlnode->name);
+
+    fast_log_static_error(2, xmlnode->line, extra_info);
+    g_free(extra_info);
     return FALSE;
   }
 
   if(tfield->op == FieldOperatorTail){
     if(is_integer(tfield->type) || tfield->type == FieldTypeDecimal){
-      fast_log_static_error(2,
-        xmlnode->line,
-        g_strdup_printf("Field %s cannot have an operator of type %s\n\
-                        Tail can only be used on strings and bytevectors.",
-                        tfield->name,
-                        xmlnode->name));
+      char* extra_info = g_strdup_printf(
+          "Field %s cannot have an operator of type %s\nTail can only be used on strings and bytevectors.",
+          tfield->name,
+          xmlnode->name);
+
+      fast_log_static_error(2, xmlnode->line, extra_info);
+      g_free(extra_info);
       return FALSE;
     }
   }
@@ -640,9 +634,9 @@ void set_field_attributes (xmlNodePtr xmlnode, FieldType* tfield)
   const xmlChar* str;
   /* Name. */
   str = xmlGetProp(xmlnode, (xmlChar*) "name");
-  if (str) {
-    tfield->name = g_strdup ((char*)str);
-  }
+  if (str)
+    tfield->name = wmem_strdup (wmem_epan_scope(), (char*)str);
+
   xmlFree((void*)str);
   /* set tid to parent template id */
   tfield->tid = templateID;
@@ -655,9 +649,9 @@ void set_field_attributes (xmlNodePtr xmlnode, FieldType* tfield)
   /* Key. */
   str = xmlGetProp(xmlnode, (xmlChar*) "key");
   if (str) {
-    tfield->key = g_strdup ((char*)str);
+    tfield->key = wmem_strdup (wmem_epan_scope(), (char*)str);
   } else if (tfield->name){
-    tfield->key = g_strdup (tfield->name);
+    tfield->key = wmem_strdup (wmem_epan_scope(), tfield->name);
   }
   xmlFree((void*)str);
   /* Presence. */
@@ -670,19 +664,20 @@ void set_field_attributes (xmlNodePtr xmlnode, FieldType* tfield)
       tfield->mandatory = TRUE;
     }
     else {
-      fast_log_static_error(1,
-        xmlnode->line,
-        g_strdup_printf("FAST syntax error: \
-                        Error, bad presence option (%s) for field %s",
-                        (char*) str,
-                        tfield->name));
+      char* extra_info = g_strdup_printf(
+          "FAST syntax error: Error, bad presence option (%s) for field %s",
+          (char*) str,
+          tfield->name);
+
+      fast_log_static_error(1, xmlnode->line, extra_info);
+      g_free(extra_info);
     }
   }
   xmlFree((void*)str);
 
   str = xmlGetProp(xmlnode, (xmlChar*) "dictionary");
   if (str) {
-    tfield->dictionary = g_strdup((char*) str);
+    tfield->dictionary = wmem_strdup(wmem_epan_scope(), (char*) str);
     xmlFree((void*)str);
   }
 }
