@@ -78,30 +78,31 @@ void ShiftBytes(DissectPosition* position)
 
 gboolean dissect_shift_pmap (DissectPosition* position)
 {
-  gboolean result = FALSE;
-  if (position->pmap_idx < position->pmap_len) {
-    result = position->pmap[position->pmap_idx];
-    position->pmap_idx += 1;
-  }
-  else {
+  if (position->pmap_idx >= position->pmap_len) {
 #ifdef OVERRUN_DEBUG
     DBG2("PMAP index out of bounds at %u (length %u).",
          position->pmap_idx,
          position->pmap_len);
 #endif
+    return FALSE;
   }
-  return result;
-}
 
+  return position->pmap[position->pmap_idx++];
+}
 
 gboolean dissect_peek_pmap (DissectPosition* position)
 {
-  gboolean result;
-  result = dissect_shift_pmap (position);
-  position->pmap_idx -= 1;
-  return result;
-}
+  if (position->pmap_idx >= position->pmap_len) {
+#ifdef OVERRUN_DEBUG
+    DBG2("PMAP index out of bounds at %u (length %u).",
+         position->pmap_idx,
+         position->pmap_len);
+#endif
+    return FALSE;
+  }
 
+  return position->pmap[position->pmap_idx];
+}
 
 gboolean dissect_shift_null(DissectPosition* position)
 {

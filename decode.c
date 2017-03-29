@@ -12,7 +12,7 @@
 * Lesser GNU General Public License for more details.
 *
 * You should have received a copy of the Lesser GNU General Public License
-* along with FAST Wireshark.  If not, see 
+* along with FAST Wireshark.  If not, see
 * <http://www.gnu.org/licenses/lgpl.txt>.
 */
 
@@ -53,17 +53,15 @@ guint number_decoded_bits (guint nbytes)
   return nbytes * (NBitsInByte -1);
 }
 
-void decode_pmap (guint nbytes, const guint8* bytes,
-                  gboolean* pmap_res)
+void decode_pmap(guint nbytes, const guint8* bytes, gboolean* pmap_res)
 {
   guint i;
   guint8 j;
 
+  size_t pmap_idx = 0;
   for (i = 0; i < nbytes; ++i) {
     for (j = 1; j < NBitsInByte; ++j) {
-      guint pmap_idx;
-      pmap_idx = (NBitsInByte-1) * i + j -1;
-      pmap_res[pmap_idx] = bytes[i] & (StopByte >> j);
+      pmap_res[pmap_idx++] = bytes[i] & (StopByte >> j);
     }
   }
 }
@@ -148,4 +146,3 @@ void decode_byte_vector (guint nbytes, const guint8* bytes,
 {
   memcpy (vec, bytes, nbytes*sizeof(guint8));
 }
-

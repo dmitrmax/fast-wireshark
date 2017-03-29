@@ -254,19 +254,18 @@ GNode* dissect_fast_bytes (wmem_map_t* templates, DissectPosition* position, GNo
   GNode* tmpl = 0; /* Template. */
   FieldData* fdata; /* Template ID data node. */
 
+  basic_dissect_pmap (position, position);
+
+  if (!position->pmap) {
+    BAILOUT(0,"PMAP not set.");
+  }
+
   /* Initialize head node. */
   fdata = (FieldData*) wmem_new(wmem_packet_scope(), FieldData);
   fdata->start  = position->offset;
   fdata->nbytes = 0;
   fdata->status  = FieldEmpty;
   parent->data  = fdata;
-
-
-  basic_dissect_pmap (position, position);
-
-  if (!position->pmap) {
-    BAILOUT(0,"PMAP not set.");
-  }
 
   /* Figure out current Template ID. */
   if (dissect_shift_pmap (position)) {

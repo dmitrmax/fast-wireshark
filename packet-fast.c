@@ -61,7 +61,7 @@ void proto_reg_handoff_fast(void);
 typedef struct _fast_port_item_t {
   guint8 proto;
   guint  port;
-  guint8 favor;
+  guint8 flavor;
   gchar* template_file;
 } fast_uat_item_t;
 
@@ -72,6 +72,12 @@ typedef struct _fast_templates_storage
   wmem_map_t* templates_table;
   gboolean    used;
 } fast_templates_storage_t;
+
+typedef struct _fast_conversation_data
+{
+  guint8 flavor;
+  wmem_map_t* templates_table;
+} fast_conversation_data_t;
 
 /* Checks to see if a particular packet information element is needed for the packet list */
 #define CHECK_COL(cinfo, el) \
@@ -97,7 +103,7 @@ static gint ett_fast = -1;
 /****** Preference controls ******/
 /*! Port number to use. */
 static fast_uat_item_t* fast_uats = NULL;
-static guint             config_n_port_items = 0;
+static guint            config_n_port_items = 0;
 /*! Shows empty fields in data tree if true */
 static gboolean show_empty_optional_fields = 1;
 /*! If true does not capture or dissect packets */
@@ -115,10 +121,6 @@ static uat_t   *config_port_list_uat = NULL;
 
 enum ProtocolImplem { GenericImplem, CMEImplem, UMDFImplem, MOEXImplem, NImplem };
 enum Protocol { UDPImplem, TCPImplem, NOImplem };
-/*! The specific implementation of FAST to use. */
-static gint implementation = 0;
-/*! Default protocol is UDP (0).  Other option is TCP (1)*/
-static gint protocol = 0;
 
 static wmem_map_t* templates_map = NULL;
 static wmem_map_t* port_map = NULL;
@@ -146,7 +148,7 @@ static char * generate_field_info(const FieldType* ftype);
 
 UAT_VS_DEF(fast_uats, proto, fast_uat_item_t, guint8, 0, "UDP")
 UAT_DEC_CB_DEF(fast_uats, port, fast_uat_item_t)
-UAT_VS_DEF(fast_uats, favor, fast_uat_item_t, guint8, 0, "Generic")
+UAT_VS_DEF(fast_uats, flavor, fast_uat_item_t, guint8, 0, "Generic")
 UAT_FILENAME_CB_DEF(fast_uats, template_file, fast_uat_item_t)
 
 /*! \brief  Register the plugin with Wireshark.
@@ -161,7 +163,7 @@ fast_config_port_list_copy_cb(void* n, const void* o, size_t siz _U_)
 
   new_item->proto = old_item->proto;
   new_item->port  = old_item->port;
-  new_item->favor = old_item->favor;
+  new_item->flavor = old_item->flavor;
 
   if (old_item->template_file) {
     new_item->template_file = g_strdup(old_item->template_file);
@@ -212,20 +214,6 @@ void proto_register_fast (void)
     { &hf_fast_tid,                     { "tid",        "fast.tid",         FT_NONE,     BASE_NONE, NULL, 0, "", HFILL } }
 
   };
-  static enum_val_t radio_buttons[] =
-  {
-    { "Generic", "Generic", GenericImplem },
-    { "CME", "CME", CMEImplem },
-    { "UMDF", "UMDF", UMDFImplem },
-    { "MOEX", "MOEX", MOEXImplem },
-    { 0, 0, 0 }
-  };
-  static enum_val_t protocol_buttons[] =
-  {
-    { "UDP", "UDP", UDPImplem },
-    { "TCP", "TCP", TCPImplem },
-    { 0, 0, 0 }
-  };
 
   static const value_string fast_transport_proto_vals[] = {
     { UDPImplem, "UDP" },
@@ -244,7 +232,7 @@ void proto_register_fast (void)
   static uat_field_t fast_uats_flds[] = {
     UAT_FLD_VS(fast_uats, proto, "Protocol", fast_transport_proto_vals, "Transport protocol"),
     UAT_FLD_DEC(fast_uats, port, "Port", "Port Number"),
-    UAT_FLD_VS(fast_uats, favor, "Implementation", fast_application_proto_vals, "Application protocol (exchnage favor)"),
+    UAT_FLD_VS(fast_uats, flavor, "Implementation", fast_application_proto_vals, "Application protocol (exchnage flavor)"),
     UAT_FLD_FILENAME(fast_uats, template_file, "XML template file", "Enter a valid filesystem path"),
     UAT_END_FIELDS
   };
@@ -303,14 +291,6 @@ void proto_register_fast (void)
                                 "Enter a valid port numbers",
                                 config_port_list_uat);
 
-  prefs_register_enum_preference(module,
-                                  "protocol",
-                                  "Protocol",
-                                  "Network Protocol",
-                                  &protocol,
-                                  protocol_buttons,
-                                  FALSE);
-
   prefs_register_bool_preference(module,
                                    "show_empty",
                                    "Show empty optional fields",
@@ -322,15 +302,6 @@ void proto_register_fast (void)
                                    "Show all decimals in scientific notation",
                                    "Check if you want to see all decimal fields in scientific notation",
                                    &sciNotation);
-
-
-  prefs_register_enum_preference(module,
-                                  "implementation",
-                                  "FAST Implementation",
-                                  "Select the specific implementation of FAST",
-                                  &implementation,
-                                  radio_buttons,
-                                  FALSE);
 
   prefs_register_bool_preference(module,
                                   "show_field_dictionaries",
@@ -482,21 +453,29 @@ void proto_reg_handoff_fast(void)
  */
 int dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* data_unused _U_)
 {
-  wmem_map_t* templates = NULL;
-  conversation_t *conversation = NULL;
+  conversation_t* conversation = NULL;
+  fast_conversation_data_t* fast_data = NULL;
 
   conversation = find_or_create_conversation(pinfo);
 
-  templates = (wmem_map_t*)conversation_get_proto_data(conversation, proto_fast);
+  fast_data = (fast_conversation_data_t*)conversation_get_proto_data(conversation, proto_fast);
 
-  if(!templates)
+  if(!fast_data)
   {
+    guint i;
     fast_templates_storage_t* stor = (fast_templates_storage_t*)wmem_map_lookup(port_map, GUINT_TO_POINTER(pinfo->destport));
     if(!stor)
       return 0;
 
-    templates = stor->templates_table;
-    conversation_add_proto_data(conversation, proto_fast, templates);
+    fast_data = wmem_new(wmem_file_scope(), fast_conversation_data_t);
+
+    fast_data->templates_table = stor->templates_table;
+
+    for(i = 0; i < config_n_port_items; i++) {
+      if(fast_uats[i].port == pinfo->destport)
+        fast_data->flavor = fast_uats[i].flavor;
+    }
+    conversation_add_proto_data(conversation, proto_fast, fast_data);
   }
 
   /* fill in protocol column */
@@ -520,12 +499,17 @@ int dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* data
       guint header_offset = 0;
 
       /* ignore headers for CME and UMDF */
-      if (implementation == CMEImplem) {
+      switch(fast_data->flavor)
+      {
+      case CMEImplem:
         header_offset = 5;
-      } else if (implementation == UMDFImplem) {
+        break;
+      case UMDFImplem:
         header_offset = 10;
-      } else if (implementation == MOEXImplem) {
+        break;
+      case MOEXImplem:
         header_offset = 4;
+        break;
       }
 
       /* Store pointers to display tree so it can be
@@ -540,7 +524,7 @@ int dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* data
       position->offjmp = header_offset;
       position->offset = 0;
       position->nbytes = tvb_reported_length (tvb);
-      position->bytes  = (guint8*)tvb_memdup (wmem_file_scope(), tvb, 0, position->nbytes);
+      position->bytes  = (guint8*)tvb_memdup (wmem_packet_scope(), tvb, 0, position->nbytes);
 
       ShiftBytes(position);
 
@@ -549,7 +533,7 @@ int dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* data
         GNode* data = wmem_node_new(wmem_file_scope(), 0);
 
         /* call function in dissect.c that dissects the data */
-        tmpl = dissect_fast_bytes (templates, position, data, &pinfo->src, &pinfo->dst);
+        tmpl = dissect_fast_bytes (fast_data->templates_table, position, data, &pinfo->src, &pinfo->dst);
 
         /* If no template is found for the message make a fake message/template then break out */
         if(tmpl == NULL){
@@ -601,9 +585,14 @@ int dissect_fast(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* data
       }
 
       /* TODO: Issue 87 should remove this */
-      if (implementation == CMEImplem || implementation == UMDFImplem || implementation == MOEXImplem) {
+      switch(fast_data->flavor)
+      {
+      case CMEImplem:
+      case UMDFImplem:
+      case  MOEXImplem:
         /* resets the dictionaries for CME and UMDF between packets */
         clear_dictionaries(pinfo->src, pinfo->dst);
+        break;
       }
 
       p_add_proto_data(wmem_file_scope(), pinfo, proto_fast, 0, packet_data);
